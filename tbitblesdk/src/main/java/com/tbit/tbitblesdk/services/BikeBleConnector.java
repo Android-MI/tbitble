@@ -1,13 +1,17 @@
 package com.tbit.tbitblesdk.services;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.BikeState;
 import com.tbit.tbitblesdk.BluEvent;
+import com.tbit.tbitblesdk.ReadTask;
+import com.tbit.tbitblesdk.WriteTask;
+import com.tbit.tbitblesdk.listener.Reader;
+import com.tbit.tbitblesdk.listener.Writer;
 import com.tbit.tbitblesdk.protocol.Constant;
-import com.tbit.tbitblesdk.Event;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.util.ByteUtil;
@@ -15,41 +19,50 @@ import com.tbit.tbitblesdk.util.EncryptUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
 
-public class BikeBleConnector {
+public class BikeBleConnector implements Reader, Writer {
     private static final String TAG = "BikeBleConnector";
-    private boolean isRunning = false;
-    private sendThread mSendThread;
+    private static final int DEFAULT_TIME_OUT = 5 * 1000;
     private Packet send_packet = new Packet();
     private Packet receive_packet = new Packet();
-    private int resent_cnt = 0;
     private EventBus bus;
-    private byte[] receiveData = null;
-    private byte[] head = new byte[8];
     private byte[] readTemp = null;
-    private ReadDataThread readDataThread;
     private BluetoothIO bluetoothIO;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private WriteTask writeTask;
+    private ReadTask readTask;
+    private int timeout = DEFAULT_TIME_OUT;
+    private BikeState bikeState;
+    private Set<Integer> requestQueue = Collections.synchronizedSet(new HashSet<Integer>());
 
     public BikeBleConnector(BluetoothIO bluetoothIO) {
         this.bus = EventBus.getDefault();
         this.bluetoothIO = bluetoothIO;
+        this.bikeState = new BikeState();
     }
 
     public void start() {
-        isRunning = true;
-        readDataThread = new ReadDataThread();
-        readDataThread.start();
+        readTask = new ReadTask(this);
+        readTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        writeTask = new WriteTask(this);
+        writeTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public void stop() {
-        isRunning = false;
+        readTask.cancel(true);
+        writeTask.cancel(true);
+    }
+
+    public BikeState getState() {
+        return bikeState;
     }
 
     /**
@@ -58,13 +71,31 @@ public class BikeBleConnector {
      * @param packet
      */
     private void send(Packet packet) {
-        final byte[] data = packet.toByteArray();//获得发送的数据包
-        mSendThread = new sendThread(data);//开始发送数据
-        mSendThread.start();
+        final int sequenceId = packet.getL1Header().getSequenceId();
+        requestQueue.add(Integer.valueOf(sequenceId));
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bus.post(new BluEvent.SendFailed(sequenceId));
+            }
+        }, timeout);
+//        final byte[] data = packet.toByteArray();//获得发送的数据包
+        writeTask.addData(packet);
+    }
+
+    public boolean removeFromQueue(Integer sequenceId) {
+        return requestQueue.remove(sequenceId);
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+        if (this.timeout <= 0)
+            this.timeout = DEFAULT_TIME_OUT;
     }
 
     public void onUpdateStatus(boolean status) {
-        mSendThread.updateStatus(status);
+        if (writeTask != null)
+            writeTask.updateStatus(status);
     }
 
     /**
@@ -95,7 +126,6 @@ public class BikeBleConnector {
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
         send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, value);
-        resent_cnt = 3;
     }
 
     /**
@@ -132,30 +162,46 @@ public class BikeBleConnector {
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
         send(send_packet);
-        resent_cnt = 3;
     }
 
-    public void connect(Byte[] key) {
+    // 校验密钥
+    public boolean connect(Byte[] key) {
+        if (requestQueue.contains(Constant.REQUEST_CONNECT))
+            return false;
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId((byte) (0x02));
-        packetValue.addData(new PacketValue.DataBean((byte)0x01, key));
+        packetValue.addData(new PacketValue.DataBean((byte) 0x01, key));
 
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
         send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, key);
-        resent_cnt = 3;
+        return true;
+    }
+
+    public boolean unlock() {
+        if (requestQueue.contains(Constant.REQUEST_UNLOCK))
+            return false;
+        send(Constant.REQUEST_UNLOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_LOCK,
+                new Byte[]{Constant.VALUE_ON});
+        return true;
+    }
+
+    public boolean lock() {
+        if (requestQueue.contains(Constant.REQUEST_LOCK))
+            return false;
+        send(Constant.REQUEST_LOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_LOCK,
+                new Byte[]{Constant.VALUE_OFF});
+        return true;
     }
 
     // 心跳包，同步系统状态
     public void sendHeartbeat() {
-        Log.d(TAG, "sendHeartbeat: " + "--发送心跳包");
         send(Constant.REQUEST_HEART_BEAT, Constant.COMMAND_HEART_BEAT,
                 (byte) 0x01, null);
     }
 
     // 是否打开日志输入，打开，终端有日志则会自动发送日志到APP
     public void setLog(boolean open) {
-        Log.d(TAG, "setLog: " + "--发送日志 " + open);
         send(Constant.REQUEST_LOG, Constant.COMMAND_LOG, (byte) 0x01,
                 new Byte[]{open ? Constant.VALUE_ON : Constant.VALUE_OFF});
     }
@@ -169,7 +215,6 @@ public class BikeBleConnector {
         byte[] data = received;
         receive_packet.append(data);
         Log.i(TAG, "-->>receive_packet value = " + receive_packet.toString());
-//        receiveTimerThread.setTimeOut(500).setStatus(TimerThread.RESTART);
         int checkResult = receive_packet.checkPacket();
         Log.i(TAG, "-->>Check:" + Integer.toHexString(checkResult));
         receive_packet.print();
@@ -179,15 +224,13 @@ public class BikeBleConnector {
         }
         //发送成功
         else if (checkResult == 0x10) {
-//            sendTimerThread.setStatus(TimerThread.STOP);
-//            receiveTimerThread.setStatus(TimerThread.STOP);
             Log.d(TAG, "parseReceivedPacket: " +
                     "checkResult == 0x10  Receive ACK:" + receive_packet.toString());
 //            if (BluetoothControlFragment.isStateRefreshNeeded) {
 //                parseSysState(data[2]);/*解析系统状态**/
 //            }
             int sequenceId = receive_packet.getL1Header().getSequenceId();
-            bus.post(new Event.SendSuccess(sequenceId));
+            bus.post(new BluEvent.SendSuccess(sequenceId));
             receive_packet.clear();
         }
         //ACK错误，需要重发
@@ -195,15 +238,17 @@ public class BikeBleConnector {
 //            sendTimerThread.setStatus(TimerThread.STOP);
 //            receiveTimerThread.setStatus(TimerThread.STOP);
             Log.i(TAG, "checkResult == 0x30  Receive ACK:" + receive_packet.toString());
-            if (0 < resent_cnt--) {
-                Log.i(TAG, "checkResult == 0x30  Resent Packet!");
-                send(send_packet);
-            } else {
+            int sequenceId = receive_packet.getL1Header().getSequenceId();
+            bus.post(new BluEvent.SendFailed(sequenceId));
+//            if (0 < resent_cnt--) {
+//                Log.i(TAG, "checkResult == 0x30  Resent Packet!");
+//                send(send_packet);
+//            } else {
 //                if (mPacketCallBack != null) {
 //                    mPacketCallBack.onSendFailure();
 //                }
-            }
-            receive_packet.clear();
+//            }
+//            receive_packet.clear();
         }
         //接收数据包校验正确
         else if (checkResult == 0) {
@@ -268,32 +313,35 @@ public class BikeBleConnector {
                     switch (key) {
                         case 0x02:
                             //用户连接返回
-                            Log.i(TAG, "--用户连接返回");
+                            Log.i(TAG, "--用户连接");
                             isConnSuccessfulUser(value);
                             break;
                         case 0x03:
                             //管理员连接返回
-                            Log.i(TAG, "--用户连接返回");
+                            Log.i(TAG, "--用户连接");
                             break;
                         case 0x81:
-                            Log.i(TAG, "--电池携带返回");
+                            Log.i(TAG, "--电池携带");
                             parseVoltage(value);
                             break;
                         case 0x82:
-                            Log.i(TAG, "--轮径携带返回");
-                            parseWheelSpeed(value);
+                            Log.i(TAG, "--校验失败原因");
+                            parseVerifyFailed(value);
                             break;
                         case 0x83:
-                            Log.i(TAG, "--温度携带返回");
-                            parseTemperature(value);
+                            Log.i(TAG, "--车辆故障");
+                            parseDeviceFault(value);
                             break;
                         case 0x84:
-                            Log.i(TAG, "--速度携带返回");
-                            parseSpeed(value);
+                            Log.i(TAG, "--经纬度");
+                            parseLocation(value);
                             break;
                         case 0x85:
-                            Log.i(TAG, "--是否终测过携带返回");
-                            parseIsTested(value);
+                            Log.i(TAG, "--小区基站信息相关");
+//                            parseIsTested(value);
+                            break;
+                        case 0x86:
+                            Log.i(TAG, "--GPS+GSM+BAT ");
                             break;
                     }
                     break;
@@ -307,16 +355,19 @@ public class BikeBleConnector {
                             parseVoltage(value);
                             break;
                         case 0x82: // 82 车辆轮子转动数
-                            parseWheelSpeed(value);
+                            parseVerifyFailed(value);
                             break;
                         case 0x83: // 83 当前温度
-                            parseTemperature(value);
+                            parseDeviceFault(value);
                             break;
                         case 0x84: // 84 当前速度
-                            parseSpeed(value);
+                            parseLocation(value);
                             break;
-                        case 0x85: // 85
-                            parseIsTested(value);
+                        case 0x85: // 85 小区基站信息相关
+//                            parseIsTested(value);
+                            break;
+                        case 0x86: // 86 GPS+GSM+BAT
+
                             break;
                     }
                     break;
@@ -374,14 +425,18 @@ public class BikeBleConnector {
      */
     private void isConnSuccessfulUser(Byte[] data) {
         if (data[0] == (byte) 0x01) {
-            Log.i(TAG, "--硬件与APP匹配成功");
             bus.post(new BluEvent.VerifySucceed());
 
         } else if (data[0] == (byte) 0x00) {
-            Log.i(TAG, "--硬件与APP匹配不成功，请确保正确的硬件设备与APP搭配使用");
             bus.post(new BluEvent.VerifyFailed());
         }
 
+    }
+
+    private void parseVerifyFailed(Byte[] data) {
+        if (data.length == 0)
+            return;
+        bikeState.setVerifyFailedCode(data[data.length - 1]);
     }
 
     private void parseWheelSpeed(Byte[] data) {
@@ -399,6 +454,15 @@ public class BikeBleConnector {
         //只返回一个字节的数据
         Log.i(TAG, "-->>parseSpeed 速度为：" + data[data.length - 1] + "km/h");
 //        EventBus.getDefault().post(new Event.BleSpeedUpdate(data[data.length - 1]));
+    }
+
+    private void parseLocation(Byte[] data) {
+        // TODO: 2016/12/7 0007 parse location
+    }
+
+    private void parseDeviceFault(Byte[] data) {
+        // TODO: 2016/12/7 0007 byte[] to int
+        bikeState.setDeviceFaltCode(0);
     }
 
     private void parseTemperature(Byte[] data) {
@@ -461,195 +525,52 @@ public class BikeBleConnector {
         send_packet.setPacketValue(null, false);
         send_packet.print();
 
-        final byte[] data = send_packet.toByteArray();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final int packLength = 20;
-                int lastLength = data.length;
-                byte[] sendData;
-                int sendIndex = 0;
-                while (lastLength > 0 && isRunning) {
-                    if (lastLength <= packLength) {
-                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + lastLength);
-                        sendIndex += lastLength;
-                        lastLength = 0;
-                    } else {
-                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + packLength);
-                        sendIndex += packLength;
-                        lastLength -= packLength;
-                    }
-//                    GattCommand.putExtra(BluetoothLeService.HandleCMD, BluetoothLeService.NUS_WRITE_CHARACTERISTIC);
-//                    GattCommand.putExtra(BluetoothLeService.HandleData, sendData);
-                    try {
-                        Thread.sleep(50L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    final byte[] resultData = sendData;
-                    runOnMainThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            bluetoothIO.writeRXCharacteristic(resultData);
-                        }
-                    });
-                }
-            }
-        }).start();
-//        sendTimerThread.setStatus(TimerThread.STOP);
+//        final byte[] data = send_packet.toByteArray();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                final int packLength = 20;
+//                int lastLength = data.length;
+//                byte[] sendData;
+//                int sendIndex = 0;
+//                while (lastLength > 0 && isRunning) {
+//                    if (lastLength <= packLength) {
+//                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + lastLength);
+//                        sendIndex += lastLength;
+//                        lastLength = 0;
+//                    } else {
+//                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + packLength);
+//                        sendIndex += packLength;
+//                        lastLength -= packLength;
+//                    }
+////                    GattCommand.putExtra(BluetoothLeService.HandleCMD, BluetoothLeService.NUS_WRITE_CHARACTERISTIC);
+////                    GattCommand.putExtra(BluetoothLeService.HandleData, sendData);
+//                    try {
+//                        Thread.sleep(50L);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                    final byte[] resultData = sendData;
+//                    runOnMainThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            bluetoothIO.writeRXCharacteristic(resultData);
+//                        }
+//                    });
+//                }
+//            }
+//        }).start();
+        send(send_packet);
         Log.i(TAG, "Send ACK:" + send_packet.toString());
     }
 
     public void setReadTemp(byte[] value) {
         this.readTemp = ByteUtil.byteMerger(readTemp, value);//拼接缓存
+        readTask.setData(readTemp);
     }
 
-    public class sendThread extends Thread {
-        byte[] mData;
-        boolean SEND_OVER = true;//发送完全标志位，存在拆包问题
-
-        sendThread(byte[] data) {
-            mData = data;
-        }
-
-        public void updateStatus(boolean status) {
-            SEND_OVER = status;
-        }
-
-        public void run() {
-            final int packLength = 20;//每个数据包的长度最长为20字节
-            int lastLength = mData.length;//数据的总长度
-            Log.d(TAG, "--send_data_total_size: " + lastLength);
-            byte[] sendData;
-            int sendIndex = 0;
-            try {
-                Thread.sleep(100L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            while (lastLength > 0 && isRunning) {
-                Log.i(TAG, "--while xun huan");
-                //此包的长度小于20字节，不用拆包，直接发送
-                if (lastLength <= packLength) {
-                    Log.i(TAG, "--不用拆包" + lastLength);
-                    sendData = Arrays.copyOfRange(mData, sendIndex, sendIndex + lastLength);
-                    sendIndex += lastLength;
-                    lastLength = 0;
-//                    SEND_OVER = true;
-                } else {
-                    //拆包发送
-                    sendData = Arrays.copyOfRange(mData, sendIndex, sendIndex + packLength);
-                    sendIndex += packLength;
-                    lastLength -= packLength;
-                    Log.i(TAG, "--拆包" + lastLength);
-                }
-
-                int count = 0;
-                do {
-                    try {
-                        count++;
-                        Thread.sleep(500L);
-                        Log.i(TAG, "--do while 循环还在");
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } while (!SEND_OVER && isRunning && count < 5);
-                if (count >= 5) {
-                    break;
-                }
-                //向蓝牙终端发送数据
-                StringBuilder builder = new StringBuilder();
-                for (byte b : sendData) {
-                    builder.append(String.format("%02X ", b));
-                }
-                Log.i("dataComeGo", "--sendData= " + builder.toString());
-                final byte[] resultData = sendData;
-                runOnMainThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        bluetoothIO.writeRXCharacteristic(resultData);
-                    }
-                });
-
-                SEND_OVER = false;
-            }
-        }
-    }
-
-    class ReadDataThread extends Thread {
-        boolean wait = true;
-        boolean wait2 = true;
-
-        public void setWait() {
-            wait = true;
-            wait2 = true;
-        }
-
-        @Override
-        public void run() {
-            super.run();
-            while (isRunning) {
-                try {
-//                    Log.d(TAG, "run: reading data...");
-                    if (readTemp != null && readTemp.length != 0) {
-                        Log.d(TAG, "readTemp: " + ByteUtil.bytesToHexString(readTemp));
-                        StringBuilder builder = new StringBuilder();
-                        for (byte b : readTemp) {
-                            builder.append(String.format("%02X ", b));
-                        }
-                        Log.i("dataComeGo", "--receiveData= " + builder.toString());
-                        for (int i = 0; i < readTemp.length; i++) {
-                            if (readTemp[i] == (byte) 0xAA) {
-                                Log.i(TAG, "--找到头");
-                                if (readTemp.length - i >= 8) {
-                                    Log.i(TAG, "--头的长度够了");
-                                    //可以拼接头
-                                    System.arraycopy(readTemp, i, head, 0, 8);//把数据复制到head
-                                    int len = head[5] & 0xFF;  //4 5角标为数据长度  这里存在小问题，后面研究
-                                    if (len <= readTemp.length - 8) {
-                                        //后面接着的数据达到len的长度，直接取出来
-                                        receiveData = ByteUtil.subBytes(readTemp, i, i + 8 + len);//将完整的数据包截取出来
-                                        Log.d(TAG, "=======================================");
-                                        for (byte b : receiveData) {
-                                            Log.i(TAG, "--receiveData: " + b);
-                                        }
-                                        parseReceivedPacket(receiveData);//发送指令
-                                        Log.i(TAG, "--readTemp length" + readTemp.length);
-                                        readTemp = ByteUtil.subBytes(readTemp, i + 8 + len, readTemp.length - (i + 8 + len));//清除已经发送的部分
-                                        Log.i(TAG, "--readTemp length" + readTemp.length);
-                                        break;
-                                    } else {
-                                        //后面缓存的数据不够len的长度，等待
-                                        Log.d(TAG, "--readTemp 等待数据包");
-                                        if (!wait) {
-                                            //不等待了，把前面的头和数据丢掉
-                                            readTemp = null;
-                                            wait = true;
-                                        }
-                                        SystemClock.sleep(3000);
-                                        wait = false;
-                                    }
-
-                                } else {
-                                    Log.d(TAG, "--readTemp 等待数据包");
-                                    //头不够长，等待头
-                                    if (!wait2) {
-                                        //不等待了，把前面的头
-                                        readTemp = null;
-                                        wait2 = true;
-                                    }
-                                    SystemClock.sleep(3000);
-                                    wait2 = false;
-                                }
-                            }
-                        }
-                    }
-                    SystemClock.sleep(100);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    public void writeData(byte[] data) {
+        bluetoothIO.writeRXCharacteristic(data);
     }
 
     public void runOnMainThread(Runnable runnable) {
@@ -662,5 +583,15 @@ public class BikeBleConnector {
 
     private boolean isMainThread() {
         return Looper.myLooper() == Looper.getMainLooper();
+    }
+
+    @Override
+    public void read(byte[] data) {
+        parseReceivedPacket(data);
+    }
+
+    @Override
+    public void write(byte[] data) {
+        writeData(data);
     }
 }

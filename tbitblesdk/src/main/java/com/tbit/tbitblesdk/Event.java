@@ -53,12 +53,12 @@ public class Event {
 //        }
 //    }
 //
-    public static class SendSuccess {
-        public int requestId;
-
-        public SendSuccess(int requestId) {
-            this.requestId = requestId;
-        }
-    }
+//    public static class SendSuccess {
+//        public int requestId;
+//
+//        public SendSuccess(int requestId) {
+//            this.requestId = requestId;
+//        }
+//    }
 
 }

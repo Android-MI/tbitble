@@ -1,7 +1,5 @@
 package com.tbit.tbitblesdk;
 
-import android.bluetooth.BluetoothGattCharacteristic;
-
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
@@ -62,18 +60,46 @@ public class BluEvent {
         String functionName;
         String message;
 
-        public CommonFailedReport(String functionName, String msssage) {
+        public CommonFailedReport(String functionName, String message) {
             this.functionName = functionName;
-            this.message = msssage;
+            this.message = message;
+        }
+    }
+
+    public static class SendSuccess {
+        public int requestId;
+
+        public SendSuccess(int requestId) {
+            this.requestId = requestId;
+        }
+    }
+
+    public static class SendFailed {
+        public int requestId;
+
+        public SendFailed(int requestId) {
+            this.requestId = requestId;
         }
     }
 
     public static class ScanTimeOut {
     }
 
-    public static class VerifySucceed {}
+    public static class VerifySucceed {
+    }
 
-    public static class VerifyFailed {}
+    public static class VerifyFailed {
+        int failCode;
 
-    public static class Ota {}
+        public VerifyFailed() {
+
+        }
+
+        public VerifyFailed(int failCode) {
+            this.failCode = failCode;
+        }
+    }
+
+    public static class Ota {
+    }
 }

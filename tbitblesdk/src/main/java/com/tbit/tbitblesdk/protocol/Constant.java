@@ -42,32 +42,19 @@ public class Constant {
     public static final byte RESP_KEY_RESTART_REASON = (byte) 0x87;
 
     // 0x01 0x01 设防/撤防
-    // 0x02 0x01 寻车功能打开/关闭 0x00 关闭 0x01 打开
-    // 0x03 0x01 控制模式切换 0x00 手机控制模式 0x01 手柄控制模式
-    // 0x04 0x01 设置终端布防 RSSI值 布防位置 RSSI值
-    // 0x05 0x01 震动灵敏度设置 震动灵敏级别（1-5）其中 1 震动最灵敏
-    // 0x06 0x01 回家模式开关 0x00 关闭 0x01 打开
-    // 0x07 0x01 蓝牙设防撤防模式开关 0x00 自动模式 0x01 手动模式
-    // 0x08 0x01 静音设防开关 0x00 关闭 0x01 打开
-    // 0x09 0x01 一键启动开关 0x00 关闭 0x01 打开
-    // 0x0A 0x01 设置终端外接电源电压 外接电源电压值，电压档位分别为 12V、36V、48V、60V、64V、72V
-    public static final byte SEND_KEY_DEFENCE              = 0x01;
-    public static final byte SEND_KEY_FIND                 = 0x02;
-    public static final byte SEND_KEY_CONTROL              = 0x03;
-    public static final byte SEND_KEY_RSSI                 = 0x04;
-    public static final byte SEND_KEY_SENSITIVITY          = 0x05;
-    public static final byte SEND_KEY_HOME_MODE            = 0x06;
-    public static final byte SEND_KEY_AUTO_DEFENCE         = 0x07;
-    public static final byte SEND_KEY_SILENCE              = 0x08;
-    public static final byte SEND_KEY_FAST_START           = 0x09;
-    public static final byte SEND_KEY_TERMINAL_VOLTAGE     = 0x0A;
-    public static final byte SEND_KEY_QUERY_VOLTAGE        = 0x01;
-    public static final byte SEND_KEY_QUERY_WHEEL_TERN     = 0x02;
-    public static final byte SEND_KEY_QUERY_TEMPERATURE    = 0x03;
-    public static final byte SEND_KEY_QUERY_SPEED          = 0x04;
-    public static final byte SEND_KEY_QUERY_TESTED         = 0x05;
-    public static final byte SEND_KEY_QUERY_RESTART_COUNT  = 0x06;
-    public static final byte SEND_KEY_QUERY_RESTART_REASON = 0x07;
+    // 0x02 0x01 电门锁打开/关闭  0x00 关闭 0x01 打开
+    // 0x03 0x01 蓝牙设防撤防模式开关  0x00 自动模式 0x01 手动模式
+    // 0x04 0x01 一键寻车  0x00 关闭 0x01 打开
+    public static final byte SETTING_KEY_DEFENCE              = 0x01;
+    public static final byte SETTING_KEY_LOCK                 = 0x02;
+    public static final byte SETTING_KEY_BLE_DEFENCE_MODE     = 0x03;
+    public static final byte SETTING_KEY_FIND_CAR             = 0x04;
+
+    public static final byte QUERY_BATTERY       = 0x01;
+    public static final byte QUERY_ISTESTED      = 0x02;
+    public static final byte QUERY_RESTART_COUNT = 0x03;
+    public static final byte QUERY_RESTART_RESON = 0x04;
+
 
     public static final int REQUEST_IGNORE = 100;
     public static final int REQUEST_CONNECT = 1;
@@ -94,33 +81,8 @@ public class Constant {
     public static final int REQUEST_HEART_BEAT = 22;
     public static final int REQUEST_MILEAGE_CALIBRATION = 23;
     public static final int REQUEST_LOG = 24;
-
-    public final static String ACTION_UPDATE_VOLTAGE =
-            "com.tbit.ACTION_UPDATE_VOLTAGE";
-    public final static String ACTION_UPDATE_SPEED =
-            "com.tbit.ACTION_UPDATE_SPEED";
-    public final static String ACTION_UPDATE_MILEAGE =
-            "com.tbit.ACTION_UPDATE_MILEAGE";
-    /**
-     * OTA更新
-     */
-    public final static String ACTION_OTA_UPDATE =
-            "com.tbit.ACTION_OTA_UPDATE";
-    /**
-     * 告警
-     */
-    public final static String ACTION_ALARM =
-            "com.tbit.ACTION_ALARM";
-    public final static String EXTRA_DATA =
-            "com.tbit.EXTRA_DATA";
-    public final static String ACTION_SEND_OK = "com.tbit.ACTION_SEND_OK";
-    public final static String ACTION_SEND_FAIL = "com.tbit.ACTION_SEND_FAIL";
-    public final static String ACTION_WRITE_OK = "com.tbit.ACTION_WRITE_OK";
-    public final static String ACTION_DEVICE_CONN_OK = "com.tbit.ACTION_DEVICE_CONN_OK";
-    public final static String ACTION_DEVICE_CONN_PASS = "com.tbit.ACTION_DEVICE_CONN_PASS";
-    public final static String ACTION_DEVICE_CONN_FAIL = "com.tbit.ACTION_DEVICE_CONN_FAIL";
-
-    //***********传输层*****************
+    public static final int REQUEST_UNLOCK = 25;
+    public static final int REQUEST_LOCK = 26;
 
 
     //***************应用层*************
@@ -146,47 +108,5 @@ public class Constant {
             0X4854, 0X59DD, 0X2D62, 0X3CEB, 0X0E70, 0X1FF9, 0XF78F, 0XE606, 0XD49D, 0XC514, 0XB1AB, 0XA022, 0X92B9,
             0X8330, 0X7BC7, 0X6A4E, 0X58D5, 0X495C, 0X3DE3, 0X2C6A, 0X1EF1, 0X0F78,
     };
-    //***********传输层*****************
-    public static String SEND_OUT = "AA00";
-    public static String SEND_RESPONSE = "AA10";
-    public static String RESERVE[] = {"00", "01", "10", "11"};
-    //first for no err,second for err
-    public static String ERR_FLAG[] = {"0", "1"};
-    //first for no response,second for response
-    public static String ACK_FLAG[] = {"0", "1"};
-    //version
-    public static String VERSION[] = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111"};
 
-
-    //***************应用层*************
-    //first for close ,second for open
-    public static String ELECTRIC_DOOR_LOCK[] = {"0", "1"};
-    //Disconnect the power,Vibration,low power,no alarm
-    public static String ALARM_TYPE[] = {"11", "10", "01", "00"};
-    //Silent mode off ,Silent mode on
-    public static String SILENT_MODE[] = {"0", "1"};
-    //Manual mode,Auto mode
-    public static String BLE_BF_CF[] = {"0", "1"};
-    //Phone,Handle
-    public static String CONTROL_MODE[] = {"0", "1"};
-    //CF open,SF open
-    public static String SF_CF_OPEN[] = {"0", "1"};
-    //固件升级命令，连接命令，设置命令，查询命令，绑定命令，工厂测试命令，Dump stack命令，日志命令，心跳包，测试flash读取命令，系统测试命令
-    public static String COMMAND_ID[] = {"01", "02", "03", "04", "05", "06", "07", "08", "09", "FE", "FF"};
-    //进入固件升级模式请求，进入固件升级模式返回
-    public static String UPDATE_KEY[] = {"01", "02"};
-    //用户连接请求，用户连接返回，管理员连接请求，管理员连接返回
-    public static String CONNECT_DEVICE[] = {"01", "02", "03", "04"};
-    //设置命令key列表：设防/撤防，寻车功能打开/关闭，控制模式切换，设置终端布防RSSI值，震动灵敏度设置，回家模式开关，蓝牙设防撤防模式开关，静音设防开关，一键启动开关
-    public static String SETTING_KEY[] = {"01", "02", "03", "04", "05", "06", "07", "08", "09"};
-    //与设置key相对应：{撤防，设防}，{关闭，打开}，{手机控制模式，手柄控制模式}，{}，{}，{关闭，打开}，{自动模式，手动模式}，{关闭，打开}，{关闭，打开}
-    public static String SETTING_KEY_VALUE[][] = {{"00", "01"}, {"00", "01"}, {"00", "01"}, {"", ""}, {"", ""}, {"00", "01"}, {"00", "01"}, {"00", "01"}, {"00", "01"}};
-    //查询命令key列表：查询当前终端电压，查询当前车辆轮子转动数，查询当前终端温度，查询当前终端速度，查询当前终端是否综测过
-    public static String QUERY_KEY[] = {"01", "02", "03", "04", "05"};
-    //查询命令返回的key列表：返回当前终端电压，返回当前车辆轮子转动数，返回当前终端温度，返回当前终端速度，返回当前终端是否综测过
-    public static String RETURN_QUERY_KEY[] = {"81", "82", "83", "84", "85"};
-
-    //****************SharePreferences相关字段名
-    public static String SP_RECENTDEVICE = "recentDevice";
-    public static String SP_HAS_A1_DEVICE = "has_a1";// 拥有A1设备(连接过蓝牙设备)
 }

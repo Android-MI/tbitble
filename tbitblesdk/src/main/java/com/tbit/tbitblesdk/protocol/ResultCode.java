@@ -9,6 +9,8 @@ public class ResultCode {
     public static final int BLE_NOT_OPENED = -1001;
     public static final int BLE_NOT_SUPPORTED = -1002;
     public static final int PERMISSION_DENIED = -1003;
+    public static final int DISCONNECTED = -1004;
+    public static final int PROCESSING = -1004;
     public static final int MAC_ADDRESS_ILLEGAL = -2001;
     public static final int DEVICE_NOT_FOUNDED = -2002;
     public static final int KEY_ILLEGAL = -2003;

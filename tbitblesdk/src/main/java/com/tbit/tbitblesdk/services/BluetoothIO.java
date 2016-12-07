@@ -44,6 +44,9 @@ public class BluetoothIO {
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
     private BikeBleScanner scanner;
+    private String lastConnectedDeviceMac;
+    private boolean isAutoReconnectEnable = true;
+    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
 
     private BluetoothGattCallback coreGattCallback = new BluetoothGattCallback() {
@@ -58,7 +61,7 @@ public class BluetoothIO {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connectionState = STATE_DISCONNECTED;
                 gatt.close();
-                bus.post(new BluEvent.DisConnected());
+                tryAutoReconnect();
             } else if (newState == BluetoothGatt.STATE_CONNECTING) {
                 connectionState = STATE_CONNECTING;
             }
@@ -75,18 +78,15 @@ public class BluetoothIO {
                 bus.post(new BluEvent.CommonFailedReport("onServicesDiscovered",
                         "status : " + status));
             }
-
-            printServices(gatt);
+//            printServices(gatt);
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
             if (BluetoothGatt.GATT_SUCCESS == status) {
-                if (SPS_RX_UUID.equals(characteristic.getUuid())) {
-                    bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.READ,
-                            characteristic.getValue()));
-                }
+                bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.READ,
+                        characteristic.getValue()));
             } else {
                 bus.post(new BluEvent.CommonFailedReport("onCharacteristicRead",
                         "status : " + status));
@@ -137,7 +137,10 @@ public class BluetoothIO {
     }
 
     public void scanAndConnectByMac(String macAddress) {
+        lastConnectedDeviceMac = macAddress;
         connectionState = STATE_SCANNING;
+        stopScan();
+        disconnectInside();
         scanner.start(macAddress, bluetoothAdapter, new BikeBleScanner.ScannerCallback() {
             @Override
             public void onScanTimeout() {
@@ -187,6 +190,11 @@ public class BluetoothIO {
     }
 
     public void disconnect() {
+        isAutoReconnectEnable = false;
+        disconnectInside();
+    }
+
+    private void disconnectInside() {
         if (bluetoothAdapter == null || bluetoothGatt == null) {
             Log.w(TAG, "--BluetoothAdapter not initialized");
             return;
@@ -195,6 +203,48 @@ public class BluetoothIO {
         refreshDeviceCache();
         bluetoothGatt.close();
         bluetoothGatt = null;
+    }
+
+    public void reconnect() {
+        isAutoReconnectEnable = true;
+        scanAndConnectByMac(lastConnectedDeviceMac);
+    }
+
+    public void setHasVerified(boolean hasVerified) {
+        this.hasVerified = hasVerified;
+        if (hasVerified)
+            isAutoReconnectEnable = true;
+    }
+
+    private void tryAutoReconnect() {
+        if (isAutoReconnectEnable && hasVerified) {
+            autoReconnect();
+        } else {
+            bus.post(new BluEvent.DisConnected());
+        }
+    }
+
+    private void autoReconnect() {
+        isAutoReconnectEnable = false;
+        disconnectInside();
+        scanner.start(lastConnectedDeviceMac, bluetoothAdapter, new BikeBleScanner.ScannerCallback() {
+            @Override
+            public void onScanTimeout() {
+                stopScan();
+                isAutoReconnectEnable = true;
+                bus.post(new BluEvent.DisConnected());
+            }
+
+            @Override
+            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+                connect(bluetoothDevice, false, coreGattCallback);
+            }
+        });
+    }
+
+    public void close() {
+        stopScan();
+        disconnectInside();
     }
 
     // Clears the device cache. After uploading new hello4 the DFU target will have other services than before.
@@ -263,6 +313,8 @@ public class BluetoothIO {
      * @param value
      */
     public void writeRXCharacteristic(byte[] value) {
+        if (!isConnected())
+            return;
         Log.d(TAG, "writeRXCharacteristic: " + bluetoothGatt);
         BluetoothGattService Service = bluetoothGatt.getService(SPS_SERVICE_UUID);
         if (Service == null) {

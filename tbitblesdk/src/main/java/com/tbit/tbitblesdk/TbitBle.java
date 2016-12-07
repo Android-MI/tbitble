@@ -19,19 +19,29 @@ public class TbitBle {
         }
     }
 
-    public static void connect(String macAddr, BikeCallback callback) {
+    public static void setListener(TbitListener listener) {
         checkInstanceNotNull();
-        instance.connect(macAddr, callback);
+        instance.setListener(listener);
     }
 
-    public static void verify(String key, BikeCallback callback) {
+    public static void connect(String macAddr) {
         checkInstanceNotNull();
-        instance.verify(key, callback);
+        instance.connect(macAddr);
     }
 
-    public static void disConnect(BikeCallback callback) {
+    public static void verify(String key) {
         checkInstanceNotNull();
-        instance.disConnect(callback);
+        instance.verify(key);
+    }
+
+    public static void unlock() {
+        checkInstanceNotNull();
+        instance.unlock();
+    }
+
+    public static void lock() {
+        checkInstanceNotNull();
+        instance.lock();
     }
 
     public static void disConnect() {

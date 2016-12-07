@@ -5,7 +5,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.Constant;
-import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.services.BluetoothIO;
@@ -23,59 +22,79 @@ class TbitBleInstance {
     private static final String TAG = "TbitBleInstance";
     private Context context;
     private Byte[] key;
+    private boolean hasVerified = false;
     private String macAddr;
-    private BikeState state;
-    private BikeCallback callback;
+    private TbitListener listener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
 
     TbitBleInstance(Context context) {
         this.context = context;
         EventBus.getDefault().register(this);
-        state = new BikeState();
+        key = new Byte[]{};
+        listener = new EmptyListener();
         bluetoothIO = new BluetoothIO(context);
         bikeBleConnector = new BikeBleConnector(bluetoothIO);
         bikeBleConnector.start();
     }
 
-    void connect(String macAddr, BikeCallback callback) {
+    void setListener(TbitListener listener) {
+        if (listener == null)
+            throw new RuntimeException("listener cannot be null");
+        this.listener = listener;
+    }
+
+    void connect(String macAddr) {
         this.macAddr = macAddr;
-        this.callback = callback;
+        key = new Byte[]{};
+        hasVerified = false;
+        bluetoothIO.setHasVerified(false);
 
         if (!isMacAddrLegal()) {
-            if (callback != null)
-                callback.onResponse(ResultCode.MAC_ADDRESS_ILLEGAL, state);
+            listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL, getState());
             return;
         }
 
         scan();
     }
 
-    void verify(String keyStr, BikeCallback callback) {
-        this.callback = callback;
+    void verify(String keyStr) {
         this.key = resolve(keyStr);
         if (!isKeyLegal()) {
-            if (callback != null)
-                callback.onResponse(ResultCode.KEY_ILLEGAL, state);
+            listener.onVerifyResponse(ResultCode.KEY_ILLEGAL, getState());
             return;
         }
+        boolean result = bikeBleConnector.connect(key);
+        if (!result)
+            listener.onVerifyResponse(ResultCode.PROCESSING, getState());
+    }
 
+    private void verify() {
         bikeBleConnector.connect(key);
     }
 
-    void connect() {
-        if (isBluetoothOpened())
-            return;
+    void unlock() {
+        boolean result = bikeBleConnector.unlock();
+        if (!result)
+            listener.onUnlockResponse(ResultCode.PROCESSING, getState());
     }
 
-    void disConnect(BikeCallback callback) {
-        if (callback != null)
-            this.callback = callback;
-        bluetoothIO.disconnect();
+    void lock() {
+        boolean result = bikeBleConnector.lock();
+        if (!result)
+            listener.onLockResponse(ResultCode.PROCESSING, getState());
+    }
+
+    void reConnect() {
+        if (isBluetoothOpened()) {
+            listener.onConnectResponse(ResultCode.BLE_NOT_OPENED, getState());
+            return;
+        }
+        bluetoothIO.reconnect();
     }
 
     void disConnect() {
-        disConnect(null);
+        bluetoothIO.disconnect();
     }
 
     void scan() {
@@ -92,13 +111,18 @@ class TbitBleInstance {
 
     void destroy() {
         bikeBleConnector.stop();
+        bluetoothIO.close();
         EventBus.getDefault().unregister(this);
     }
 
+    private BikeState getState() {
+        return bikeBleConnector.getState();
+    }
+
     private boolean isBluetoothOpened() {
-        boolean isOpened = bluetoothIO.isBlueEnable();;
-        if (!isOpened && callback != null)
-            callback.onResponse(ResultCode.BLE_NOT_OPENED, state);
+        boolean isOpened = bluetoothIO.isBlueEnable();
+        if (!isOpened && listener != null)
+            listener.onConnectResponse(ResultCode.BLE_NOT_OPENED, getState());
         return isOpened;
     }
 
@@ -124,8 +148,7 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onScanTimeOut(BluEvent.ScanTimeOut event) {
-        if (callback != null)
-            callback.onResponse(ResultCode.DEVICE_NOT_FOUNDED, state);
+        listener.onConnectResponse(ResultCode.DEVICE_NOT_FOUNDED, getState());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -136,36 +159,35 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
-        if (callback != null)
-            callback.onResponse(ResultCode.SUCCEED, state);
+        listener.onDisconnected(ResultCode.DISCONNECTED, getState());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCommonFailedOccurred(BluEvent.CommonFailedReport report) {
         Log.i(TAG, "onCommonFailedOccurred: " + "\nname: " + report.functionName
-            + "\nmessage: " + report.message);
+                + "\nmessage: " + report.message);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDescovered(BluEvent.DiscoveredSucceed event) {
-        Log.i(TAG, "onDescovered: ");
+    public void onDiscovered(BluEvent.DiscoveredSucceed event) {
+        Log.i(TAG, "onDiscovered: ");
         bluetoothIO.enableTXNotification();
-        if (callback != null)
-            callback.onResponse(ResultCode.SUCCEED, state);
+        if (hasVerified)
+            verify();
+        listener.onConnectResponse(ResultCode.SUCCEED, getState());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCharacteristicChanged(BluEvent.ChangeCharacteristic event) {
+        Log.d(TAG, "onCharacteristicChanged: " + event.state.name() + "\n" +
+                ByteUtil.bytesToHexString(event.value));
         switch (event.state) {
             case WRITE:
                 bikeBleConnector.onUpdateStatus(true);
                 break;
             case READ:
-                final byte[] rxValue = event.value;
-                bikeBleConnector.setReadTemp(rxValue);
-                break;
             case CHANGE:
-
+                bikeBleConnector.setReadTemp(event.value);
                 break;
         }
     }
@@ -184,15 +206,53 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onVerifySucceed(BluEvent.VerifySucceed event) {
         Log.i(TAG, "onVerifySucceed: ");
+        hasVerified = true;
+        bluetoothIO.setHasVerified(true);
+        listener.onVerifyResponse(ResultCode.SUCCEED, getState());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onVerifyFailed(BluEvent.VerifyFailed event) {
         Log.i(TAG, "onVerifyFailed: ");
+        listener.onVerifyResponse(ResultCode.KEY_ILLEGAL, getState());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOta(BluEvent.Ota event) {
-        
+
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSendSucceed(BluEvent.SendSuccess event) {
+        if (listener == null)
+            return;
+        if (!bikeBleConnector.removeFromQueue(event.requestId)) {
+            return;
+        }
+        switch (event.requestId) {
+            case Constant.REQUEST_UNLOCK:
+                listener.onUnlockResponse(ResultCode.SUCCEED, getState());
+                break;
+            case Constant.REQUEST_LOCK:
+                listener.onLockResponse(ResultCode.SUCCEED, getState());
+                break;
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSendFailed(BluEvent.SendFailed event) {
+        if (listener == null)
+            return;
+        if (!bikeBleConnector.removeFromQueue(event.requestId)) {
+            return;
+        }
+        switch (event.requestId) {
+            case Constant.REQUEST_UNLOCK:
+                listener.onUnlockResponse(ResultCode.UNLOCK_FAILED, getState());
+                break;
+            case Constant.REQUEST_LOCK:
+                listener.onLockResponse(ResultCode.LOCK_FAILED, getState());
+                break;
+        }
     }
 }

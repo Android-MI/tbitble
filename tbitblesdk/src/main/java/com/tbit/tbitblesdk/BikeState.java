@@ -11,6 +11,8 @@ public class BikeState implements Parcelable {
     private float battery;
     private boolean isLocked;
     private double[] location;
+    private int verifyFailedCode;
+    private int deviceFaltCode;
 
     public float getBattery() {
         return battery;
@@ -36,6 +38,22 @@ public class BikeState implements Parcelable {
         this.location = location;
     }
 
+    public int getVerifyFailedCode() {
+        return verifyFailedCode;
+    }
+
+    public void setVerifyFailedCode(int verifyFailedCode) {
+        this.verifyFailedCode = verifyFailedCode;
+    }
+
+    public int getDeviceFaltCode() {
+        return deviceFaltCode;
+    }
+
+    public void setDeviceFaltCode(int deviceFaltCode) {
+        this.deviceFaltCode = deviceFaltCode;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -46,6 +64,8 @@ public class BikeState implements Parcelable {
         dest.writeFloat(this.battery);
         dest.writeByte(this.isLocked ? (byte) 1 : (byte) 0);
         dest.writeDoubleArray(this.location);
+        dest.writeInt(this.verifyFailedCode);
+        dest.writeInt(this.deviceFaltCode);
     }
 
     public BikeState() {
@@ -55,6 +75,8 @@ public class BikeState implements Parcelable {
         this.battery = in.readFloat();
         this.isLocked = in.readByte() != 0;
         this.location = in.createDoubleArray();
+        this.verifyFailedCode = in.readInt();
+        this.deviceFaltCode = in.readInt();
     }
 
     public static final Parcelable.Creator<BikeState> CREATOR = new Parcelable.Creator<BikeState>() {
