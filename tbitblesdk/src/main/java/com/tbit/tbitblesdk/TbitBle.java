@@ -34,6 +34,11 @@ public class TbitBle {
         instance.verify(key);
     }
 
+    public static void commonCommand(byte commandId, byte key, Byte[] value) {
+        checkInstanceNotNull();
+        instance.common(commandId, key, value);
+    }
+
     public static void unlock() {
         checkInstanceNotNull();
         instance.unlock();

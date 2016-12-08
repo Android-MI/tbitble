@@ -10,14 +10,14 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.tbit.tbitblesdksample.MainActivity">
 
-
     <Button
         android:id="@+id/button_verify"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
         android:onClick="verify"
-        android:text="verify"/>
+        android:text="verify"
+        android:layout_centerVertical="true"
+        android:layout_alignStart="@+id/button_unlock" />
 
     <Button
         android:id="@+id/button_unlock"
@@ -38,4 +38,26 @@
         android:layout_marginTop="10dp"
         android:onClick="lock"
         android:text="lock"/>
+
+    <Button
+        android:id="@+id/button_common"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/button_lock"
+        android:layout_marginTop="10dp"
+        android:onClick="common"
+        android:text="common"/>
+
+    <Button
+        android:id="@+id/button_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/button_verify"
+        android:layout_marginBottom="10dp"
+        android:onClick="connect"
+        android:text="connect"/>
+
+
 </RelativeLayout>

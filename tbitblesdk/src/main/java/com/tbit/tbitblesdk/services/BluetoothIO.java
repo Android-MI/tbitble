@@ -14,7 +14,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.tbit.tbitblesdk.BluEvent;
+import com.tbit.tbitblesdk.protocol.BluEvent;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -46,7 +46,7 @@ public class BluetoothIO {
     private BikeBleScanner scanner;
     private String lastConnectedDeviceMac;
     private boolean isAutoReconnectEnable = true;
-    private boolean hasVerified = false;
+//    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
 
     private BluetoothGattCallback coreGattCallback = new BluetoothGattCallback() {
@@ -137,6 +137,7 @@ public class BluetoothIO {
     }
 
     public void scanAndConnectByMac(String macAddress) {
+        isAutoReconnectEnable = true;
         lastConnectedDeviceMac = macAddress;
         connectionState = STATE_SCANNING;
         stopScan();
@@ -210,14 +211,14 @@ public class BluetoothIO {
         scanAndConnectByMac(lastConnectedDeviceMac);
     }
 
-    public void setHasVerified(boolean hasVerified) {
-        this.hasVerified = hasVerified;
-        if (hasVerified)
-            isAutoReconnectEnable = true;
-    }
+//    public void setHasVerified(boolean hasVerified) {
+//        this.hasVerified = hasVerified;
+//        if (hasVerified)
+//            isAutoReconnectEnable = true;
+//    }
 
     private void tryAutoReconnect() {
-        if (isAutoReconnectEnable && hasVerified) {
+        if (isAutoReconnectEnable /*&& hasVerified*/) {
             autoReconnect();
         } else {
             bus.post(new BluEvent.DisConnected());
@@ -312,19 +313,19 @@ public class BluetoothIO {
      *
      * @param value
      */
-    public void writeRXCharacteristic(byte[] value) {
+    public boolean writeRXCharacteristic(byte[] value) {
         if (!isConnected())
-            return;
+            return false;
         Log.d(TAG, "writeRXCharacteristic: " + bluetoothGatt);
         BluetoothGattService Service = bluetoothGatt.getService(SPS_SERVICE_UUID);
         if (Service == null) {
             bus.post(new BluEvent.DeviceUartNotSupported());
-            return;
+            return false;
         }
         BluetoothGattCharacteristic TxChar = Service.getCharacteristic(SPS_TX_UUID);
         if (TxChar == null) {
             bus.post(new BluEvent.DeviceUartNotSupported());
-            return;
+            return false;
         }
         TxChar.setValue(value);
         boolean status = bluetoothGatt.writeCharacteristic(TxChar);
@@ -333,6 +334,7 @@ public class BluetoothIO {
         } else {
             Log.d(TAG, "--指令下发失败！");
         }
+        return status;
     }
 
     private void printServices(BluetoothGatt gatt) {

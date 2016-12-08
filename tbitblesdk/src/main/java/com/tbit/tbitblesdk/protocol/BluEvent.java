@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk;
+package com.tbit.tbitblesdk.protocol;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
@@ -10,9 +10,13 @@ public class BluEvent {
         CHANGE, READ, WRITE
     }
 
+    public enum State {
+        SUCCEED, FAILED
+    }
+
     public static class ConnectionStateChange {
-        int status;
-        int newState;
+        public int status;
+        public int newState;
 
         public ConnectionStateChange(int status, int newState) {
             this.status = status;
@@ -27,8 +31,8 @@ public class BluEvent {
     }
 
     public static class ChangeCharacteristic {
-        byte[] value;
-        CharState state;
+        public byte[] value;
+        public CharState state;
 
         public ChangeCharacteristic(CharState state,
                                     byte[] value) {
@@ -38,7 +42,7 @@ public class BluEvent {
     }
 
     public static class ReadRssi {
-        int rssi;
+        public int rssi;
 
         public ReadRssi(int rssi) {
             this.rssi = rssi;
@@ -46,7 +50,7 @@ public class BluEvent {
     }
 
     public static class DeviceUartNotSupported {
-        String message;
+        public String message;
 
         public DeviceUartNotSupported() {
         }
@@ -57,8 +61,8 @@ public class BluEvent {
     }
 
     public static class CommonFailedReport {
-        String functionName;
-        String message;
+        public String functionName;
+        public String message;
 
         public CommonFailedReport(String functionName, String message) {
             this.functionName = functionName;
@@ -66,19 +70,13 @@ public class BluEvent {
         }
     }
 
-    public static class SendSuccess {
+    public static class WriteData {
         public int requestId;
+        public State state;
 
-        public SendSuccess(int requestId) {
+        public WriteData(int requestId, State state) {
             this.requestId = requestId;
-        }
-    }
-
-    public static class SendFailed {
-        public int requestId;
-
-        public SendFailed(int requestId) {
-            this.requestId = requestId;
+            this.state = state;
         }
     }
 
@@ -89,7 +87,7 @@ public class BluEvent {
     }
 
     public static class VerifyFailed {
-        int failCode;
+        public int failCode;
 
         public VerifyFailed() {
 

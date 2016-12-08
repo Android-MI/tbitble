@@ -6,4 +6,5 @@ package com.tbit.tbitblesdk.listener;
 
 public interface Writer {
     void write(byte[] data);
+    void onWriteAckTimeout(int sequenceId);
 }

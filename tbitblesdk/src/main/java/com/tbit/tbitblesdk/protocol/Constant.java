@@ -83,6 +83,7 @@ public class Constant {
     public static final int REQUEST_LOG = 24;
     public static final int REQUEST_UNLOCK = 25;
     public static final int REQUEST_LOCK = 26;
+    public static final int REQUEST_COMMON = 27;
 
 
     //***************应用层*************

@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk;
+package com.tbit.tbitblesdk.services;
 
 import android.os.AsyncTask;
 import android.os.SystemClock;
@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.listener.Writer;
 import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,11 +18,12 @@ import java.util.List;
 
 public class WriteTask extends AsyncTask<Void, byte[], Void> {
     private static final String TAG = "WriteTask";
-    private static final int packLength = 20;//每个数据包的长度最长为20字节
+    private static final int MAX_PACKAGE_LENGTH = 20;//每个数据包的长度最长为20字节
     private Packet currentData;
     private List<Packet> dataQueue = new ArrayList<>();
-    private boolean SEND_OVER = true;//发送完全标志位，存在拆包问题
+    private boolean isWriteSucceed = true;//发送完全标志位，存在拆包问题
     private Writer writer;
+    private int currentSequenceId = -1;
 
     public WriteTask(Writer writer) {
         this.writer = writer;
@@ -31,8 +33,12 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
         dataQueue.add(data);
     }
 
-    public void updateStatus(boolean status) {
-        SEND_OVER = status;
+    public void setWriteStatus(boolean status) {
+        isWriteSucceed = status;
+    }
+
+    public void setAck(int sequenceId) {
+        currentSequenceId = sequenceId;
     }
 
     @Override
@@ -43,7 +49,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             if (dataQueue.size() == 0)
                 continue;
             currentData = dataQueue.remove(0);
-            processData();
+            process();
         }
 
         return null;
@@ -51,12 +57,32 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
 
     @Override
     protected void onProgressUpdate(byte[]... values) {
-        writer.write(values[0]);
+        if (values != null && values[0] != null)
+            writer.write(values[0]);
+        else
+            writer.onWriteAckTimeout(currentData.getL1Header().getSequenceId());
     }
 
-    private void processData() {
+    private void process() {
         if (currentData == null)
             return;
+        for (int i = 0; i < 3; i++) {
+            if (isAcked())
+                break;
+            doWrite();
+            for (int j = 0; j < 25; j++) {
+                if (isAcked())
+                    break;
+                SystemClock.sleep(100);
+            }
+        }
+        if (!isAcked()) {
+            publishProgress(new byte[]{});
+        }
+        currentSequenceId = -1;
+    }
+
+    private void doWrite() {
         byte[] realData = currentData.toByteArray();
         int lastLength = realData.length;//数据的总长度
         Log.d(TAG, "--send_data_total_size: " + lastLength);
@@ -65,7 +91,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
         SystemClock.sleep(100l);
         while (lastLength > 0) {
             //此包的长度小于20字节，不用拆包，直接发送
-            if (lastLength <= packLength) {
+            if (lastLength <= MAX_PACKAGE_LENGTH) {
                 Log.i(TAG, "--不用拆包" + lastLength);
                 sendData = Arrays.copyOfRange(realData, sendIndex, sendIndex + lastLength);
                 sendIndex += lastLength;
@@ -73,9 +99,9 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
 //                    SEND_OVER = true;
             } else {
                 //拆包发送
-                sendData = Arrays.copyOfRange(realData, sendIndex, sendIndex + packLength);
-                sendIndex += packLength;
-                lastLength -= packLength;
+                sendData = Arrays.copyOfRange(realData, sendIndex, sendIndex + MAX_PACKAGE_LENGTH);
+                sendIndex += MAX_PACKAGE_LENGTH;
+                lastLength -= MAX_PACKAGE_LENGTH;
                 Log.i(TAG, "--拆包" + lastLength);
             }
 
@@ -83,20 +109,18 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             do {
                 count++;
                 SystemClock.sleep(500l);
-                Log.i(TAG, "--do while 循环还在");
-            } while (!SEND_OVER && count < 5);
+            } while (!isWriteSucceed && count < 5);
             if (count >= 5) {
                 break;
             }
             //向蓝牙终端发送数据
-            StringBuilder builder = new StringBuilder();
-            for (byte b : sendData) {
-                builder.append(String.format("%02X ", b));
-            }
-            Log.i(TAG, "--sendData= " + builder.toString());
-            final byte[] resultData = sendData;
-            publishProgress(resultData);
-            SEND_OVER = false;
+            Log.i(TAG, "--sendData= " + ByteUtil.bytesToHexString(sendData));
+            publishProgress(sendData);
+            isWriteSucceed = false;
         }
+    }
+
+    private boolean isAcked() {
+        return currentData.getL1Header().getSequenceId() == currentSequenceId;
     }
 }

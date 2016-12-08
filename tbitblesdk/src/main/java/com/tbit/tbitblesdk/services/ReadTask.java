@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk;
+package com.tbit.tbitblesdk.services;
 
 import android.os.AsyncTask;
 import android.os.SystemClock;
@@ -24,7 +24,7 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     }
 
     public void setData(byte[] data) {
-        this.readTemp = data;
+        this.readTemp = ByteUtil.byteMerger(readTemp, data);//拼接缓存
     }
 
     @Override
@@ -54,18 +54,15 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     private void process() {
         for (int i = 0; i < readTemp.length; i++) {
             if (readTemp[i] == (byte) 0xAA) {
-                Log.i(TAG, "--找到头");
+                Log.i(TAG, "-- HEAD");
                 if (readTemp.length - i >= 8) {
-                    Log.i(TAG, "--头的长度够了");
+                    Log.i(TAG, "-- Head length legal");
                     //可以拼接头
                     System.arraycopy(readTemp, i, head, 0, 8);//把数据复制到head
                     int len = head[5] & 0xFF;  //4 5角标为数据长度  这里存在小问题，后面研究
                     if (len <= readTemp.length - 8) {
                         //后面接着的数据达到len的长度，直接取出来
                         byte[] receiveData = ByteUtil.subBytes(readTemp, i, i + 8 + len);//将完整的数据包截取出来
-                        for (byte b : receiveData) {
-                            Log.i(TAG, "--receiveData: " + b);
-                        }
                         publishProgress(receiveData);
                         Log.i(TAG, "--readTemp length" + readTemp.length);
                         readTemp = ByteUtil.subBytes(readTemp, i + 8 + len, readTemp.length - (i + 8 + len));//清除已经发送的部分
@@ -100,10 +97,6 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     }
 
     private void print(byte[] data) {
-        StringBuilder builder = new StringBuilder();
-        for (byte b : data) {
-            builder.append(String.format("%02X ", b));
-        }
-        Log.i(TAG, "--receiveData= " + builder.toString());
+        Log.i(TAG, "--receiveData= " + ByteUtil.bytesToHexString(data));
     }
 }

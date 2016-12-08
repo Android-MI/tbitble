@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -159,15 +160,63 @@ public class ByteUtil {
         return null;
     }
 
-    public static String bytesToHexString(byte[] bArray) {
-        StringBuffer sb = new StringBuffer(bArray.length);
-        String sTemp;
-        for (int i = 0; i < bArray.length; i++) {
-            sTemp = Integer.toHexString(0xFF & bArray[i]);
-            if (sTemp.length() < 2)
-                sb.append(0);
-            sb.append(sTemp.toUpperCase());
+//    public static String bytesToHexString(byte[] bArray) {
+//        StringBuffer sb = new StringBuffer(bArray.length);
+//        String sTemp;
+//        for (int i = 0; i < bArray.length; i++) {
+//            sTemp = Integer.toHexString(0xFF & bArray[i]);
+//            if (sTemp.length() < 2)
+//                sb.append(0);
+//            sb.append(sTemp.toUpperCase());
+//        }
+//        return sb.toString();
+//    }
+
+    public static String bytesToHexString(byte[] bytes) {
+        if (bytes == null)
+            return "";
+        StringBuilder builder = new StringBuilder();
+        for (byte b : bytes) {
+            builder.append(String.format("%02X ", b));
         }
-        return sb.toString();
+        return builder.toString();
+    }
+
+    public static String bytesToHexString(Byte[] bytes) {
+        byte[] array = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            array[i] = bytes[i];
+        }
+        return bytesToHexString(array);
+    }
+    /**
+     * 获取经纬度
+     */
+    public static double[] getPoint(Byte[] data) {
+        double[] result = new double[]{0, 0};
+        if (data == null)
+            return result;
+        byte[] converted = new byte[data.length];
+        int length = data.length;
+        for (int i = 0; i < length; i++) {
+            converted[i] = data[i];
+        }
+        try {
+            result[0] = ParseUInt32(Arrays.copyOfRange(converted, 4, 8)) / 1800000.0;
+            result[1] = ParseUInt32(Arrays.copyOfRange(converted, 0, 4)) / 1800000.0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static long ParseUInt32(byte[] data) {
+        int i = 0;
+        long l = 0;
+        l |= ((data[i++] & 0xff) << 24);
+        l |= ((data[i++] & 0xff) << 16);
+        l |= ((data[i++] & 0xff) << 8);
+        l |= (data[i++] & 0xff);
+        return l;
     }
 }

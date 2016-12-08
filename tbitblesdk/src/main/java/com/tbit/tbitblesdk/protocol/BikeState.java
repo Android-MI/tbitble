@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk;
+package com.tbit.tbitblesdk.protocol;
 
 import android.os.Parcel;
 import android.os.Parcelable;

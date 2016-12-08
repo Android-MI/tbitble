@@ -4,9 +4,11 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
+import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.services.BluetoothIO;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
@@ -35,7 +37,6 @@ class TbitBleInstance {
         listener = new EmptyListener();
         bluetoothIO = new BluetoothIO(context);
         bikeBleConnector = new BikeBleConnector(bluetoothIO);
-        bikeBleConnector.start();
     }
 
     void setListener(TbitListener listener) {
@@ -48,7 +49,7 @@ class TbitBleInstance {
         this.macAddr = macAddr;
         key = new Byte[]{};
         hasVerified = false;
-        bluetoothIO.setHasVerified(false);
+//        bluetoothIO.setHasVerified(false);
 
         if (!isMacAddrLegal()) {
             listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL, getState());
@@ -85,6 +86,12 @@ class TbitBleInstance {
             listener.onLockResponse(ResultCode.PROCESSING, getState());
     }
 
+    void common(byte commandId, byte key, Byte[] value) {
+        boolean result = bikeBleConnector.common(commandId, key, value);
+        if (!result)
+            listener.onCommonCommandResponse(ResultCode.PROCESSING, getState());
+    }
+
     void reConnect() {
         if (isBluetoothOpened()) {
             listener.onConnectResponse(ResultCode.BLE_NOT_OPENED, getState());
@@ -110,7 +117,7 @@ class TbitBleInstance {
     }
 
     void destroy() {
-        bikeBleConnector.stop();
+        bikeBleConnector.destrop();
         bluetoothIO.close();
         EventBus.getDefault().unregister(this);
     }
@@ -178,21 +185,6 @@ class TbitBleInstance {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onCharacteristicChanged(BluEvent.ChangeCharacteristic event) {
-        Log.d(TAG, "onCharacteristicChanged: " + event.state.name() + "\n" +
-                ByteUtil.bytesToHexString(event.value));
-        switch (event.state) {
-            case WRITE:
-                bikeBleConnector.onUpdateStatus(true);
-                break;
-            case READ:
-            case CHANGE:
-                bikeBleConnector.setReadTemp(event.value);
-                break;
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onRssiRead(BluEvent.ReadRssi event) {
         Log.i(TAG, "onRssiRead: ");
     }
@@ -207,7 +199,7 @@ class TbitBleInstance {
     public void onVerifySucceed(BluEvent.VerifySucceed event) {
         Log.i(TAG, "onVerifySucceed: ");
         hasVerified = true;
-        bluetoothIO.setHasVerified(true);
+//        bluetoothIO.setHasVerified(true);
         listener.onVerifyResponse(ResultCode.SUCCEED, getState());
     }
 
@@ -223,36 +215,30 @@ class TbitBleInstance {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSendSucceed(BluEvent.SendSuccess event) {
+    public void onSendSucceed(BluEvent.WriteData event) {
         if (listener == null)
             return;
         if (!bikeBleConnector.removeFromQueue(event.requestId)) {
             return;
         }
-        switch (event.requestId) {
-            case Constant.REQUEST_UNLOCK:
-                listener.onUnlockResponse(ResultCode.SUCCEED, getState());
-                break;
-            case Constant.REQUEST_LOCK:
-                listener.onLockResponse(ResultCode.SUCCEED, getState());
-                break;
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSendFailed(BluEvent.SendFailed event) {
-        if (listener == null)
-            return;
-        if (!bikeBleConnector.removeFromQueue(event.requestId)) {
-            return;
-        }
-        switch (event.requestId) {
-            case Constant.REQUEST_UNLOCK:
-                listener.onUnlockResponse(ResultCode.UNLOCK_FAILED, getState());
-                break;
-            case Constant.REQUEST_LOCK:
-                listener.onLockResponse(ResultCode.LOCK_FAILED, getState());
-                break;
+        if (event.state == BluEvent.State.SUCCEED) {
+            switch (event.requestId) {
+                case Constant.REQUEST_UNLOCK:
+                    listener.onUnlockResponse(ResultCode.SUCCEED, getState());
+                    break;
+                case Constant.REQUEST_LOCK:
+                    listener.onLockResponse(ResultCode.SUCCEED, getState());
+                    break;
+            }
+        } else {
+            switch (event.requestId) {
+                case Constant.REQUEST_UNLOCK:
+                    listener.onUnlockResponse(ResultCode.UNLOCK_FAILED, getState());
+                    break;
+                case Constant.REQUEST_LOCK:
+                    listener.onLockResponse(ResultCode.LOCK_FAILED, getState());
+                    break;
+            }
         }
     }
 }

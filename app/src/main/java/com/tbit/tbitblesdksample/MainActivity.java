@@ -5,12 +5,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 
-import com.tbit.tbitblesdk.BikeState;
+import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitListener;
+import com.tbit.tbitblesdk.util.ByteUtil;
 
 import java.util.List;
 
@@ -51,13 +54,24 @@ public class MainActivity extends AppCompatActivity {
         public void onDisconnected(int resultCode, BikeState state) {
             Log.d(TAG, "onDisconnected: " + resultCode);
         }
+
+        @Override
+        public void onCommonCommandResponse(int resultCode, BikeState state) {
+            Log.d(TAG, "onCommonCommandResponse: " + resultCode);
+        }
     };
     private Handler handler = new Handler(Looper.getMainLooper());
+
+    private EditText editId, editKey, editValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+//        editId = (EditText) findViewById(R.id.edit_id);
+//        editKey = (EditText) findViewById(R.id.edit_key);
+//        editValue = (EditText) findViewById(R.id.edit_value);
 
         EasyPermission.initialize(this);
         EasyPermission.checkPermissions(new PermissionListener() {
@@ -66,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
                                                 handler.post(new Runnable() {
                                                     @Override
                                                     public void run() {
-                                                        testBle();
                                                     }
                                                 });
                                             }
@@ -77,13 +90,16 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                         }, Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION);
-
     }
 
     private void testBle() {
         TbitBle.initialize(this);
         TbitBle.setListener(listener);
         TbitBle.connect("EE:AA:FF:AA:AA:FF");
+    }
+
+    public void connect(View view) {
+        testBle();
     }
 
     public void verify(View view) {
@@ -96,5 +112,26 @@ public class MainActivity extends AppCompatActivity {
 
     public void lock(View view) {
         TbitBle.lock();
+    }
+
+    public void common(View view) {
+//        String idStr = editId.getText().toString();
+//        String keyStr = editKey.getText().toString();
+//        String valueStr = editValue.getText().toString();
+//        if (TextUtils.isEmpty(idStr) || TextUtils.isEmpty(keyStr) ||
+//                TextUtils.isEmpty(valueStr))
+//            return;
+//        byte id;
+//        byte key;
+//        Byte[] value;
+//        try {
+//            id = (byte) Integer.parseInt(idStr, 16);
+//            key = (byte) Integer.parseInt(keyStr, 16);
+//            value = ByteUtil.stringToBytes(valueStr);
+//        } catch (NumberFormatException e) {
+//            e.printStackTrace();
+//            return;
+//        }
+//        TbitBle.commonCommand(id, key, value);
     }
 }
