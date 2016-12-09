@@ -83,21 +83,18 @@ public class BluEvent {
     public static class ScanTimeOut {
     }
 
-    public static class VerifySucceed {
-    }
+    public static class Verified {
+        public State state;
 
-    public static class VerifyFailed {
-        public int failCode;
-
-        public VerifyFailed() {
-
-        }
-
-        public VerifyFailed(int failCode) {
-            this.failCode = failCode;
+        public Verified(State state) {
+            this.state = state;
         }
     }
 
     public static class Ota {
+    }
+
+    public static class UpdateBikeState {
+
     }
 }

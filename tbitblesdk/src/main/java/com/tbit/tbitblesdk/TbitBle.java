@@ -2,6 +2,8 @@ package com.tbit.tbitblesdk;
 
 import android.content.Context;
 
+import com.tbit.tbitblesdk.protocol.BikeState;
+
 /**
  * Created by Salmon on 2016/12/5 0005.
  */
@@ -24,14 +26,9 @@ public class TbitBle {
         instance.setListener(listener);
     }
 
-    public static void connect(String macAddr) {
+    public static void connect(String macAddr, String key) {
         checkInstanceNotNull();
-        instance.connect(macAddr);
-    }
-
-    public static void verify(String key) {
-        checkInstanceNotNull();
-        instance.verify(key);
+        instance.connect(macAddr, key);
     }
 
     public static void commonCommand(byte commandId, byte key, Byte[] value) {
@@ -47,6 +44,26 @@ public class TbitBle {
     public static void lock() {
         checkInstanceNotNull();
         instance.lock();
+    }
+
+    public static void update() {
+        checkInstanceNotNull();
+        instance.update();
+    }
+
+    public static void reconnect() {
+        checkInstanceNotNull();
+        instance.reConnect();
+    }
+
+    public static int getBleConnectionState() {
+        checkInstanceNotNull();
+        return instance.getBleConnectionState();
+    }
+
+    public static BikeState getState() {
+        checkInstanceNotNull();
+        return instance.getState();
     }
 
     public static void disConnect() {

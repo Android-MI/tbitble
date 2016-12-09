@@ -3,16 +3,20 @@ package com.tbit.tbitblesdk.protocol;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.Arrays;
+
 /**
  * Created by Salmon on 2016/12/5 0005.
  */
 
 public class BikeState implements Parcelable {
+
     private float battery;
     private boolean isLocked;
-    private double[] location;
+    private double[] location = new double[]{0, 0};
     private int verifyFailedCode;
     private int deviceFaltCode;
+    private int[] signal = new int[]{0, 0, 0};
 
     public float getBattery() {
         return battery;
@@ -54,6 +58,14 @@ public class BikeState implements Parcelable {
         this.deviceFaltCode = deviceFaltCode;
     }
 
+    public int[] getSignal() {
+        return signal;
+    }
+
+    public void setSignal(int[] signal) {
+        this.signal = signal;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -66,6 +78,7 @@ public class BikeState implements Parcelable {
         dest.writeDoubleArray(this.location);
         dest.writeInt(this.verifyFailedCode);
         dest.writeInt(this.deviceFaltCode);
+        dest.writeIntArray(this.signal);
     }
 
     public BikeState() {
@@ -77,6 +90,7 @@ public class BikeState implements Parcelable {
         this.location = in.createDoubleArray();
         this.verifyFailedCode = in.readInt();
         this.deviceFaltCode = in.readInt();
+        this.signal = in.createIntArray();
     }
 
     public static final Parcelable.Creator<BikeState> CREATOR = new Parcelable.Creator<BikeState>() {
@@ -90,4 +104,16 @@ public class BikeState implements Parcelable {
             return new BikeState[size];
         }
     };
+
+    @Override
+    public String toString() {
+        return "BikeState{" +
+                "battery=" + battery +
+                ", isLocked=" + isLocked +
+                ", location=" + Arrays.toString(location) +
+                ", verifyFailedCode=" + verifyFailedCode +
+                ", deviceFaltCode=" + deviceFaltCode +
+                ", signal=" + Arrays.toString(signal) +
+                '}';
+    }
 }

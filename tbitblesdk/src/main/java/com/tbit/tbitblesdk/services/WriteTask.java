@@ -70,7 +70,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             if (isAcked())
                 break;
             doWrite();
-            for (int j = 0; j < 25; j++) {
+            for (int j = 0; j < 30; j++) {
                 if (isAcked())
                     break;
                 SystemClock.sleep(100);

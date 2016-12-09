@@ -7,38 +7,39 @@ import com.tbit.tbitblesdk.protocol.BikeState;
  */
 
 public class EmptyListener implements TbitListener {
+
     @Override
-    public void onConnectResponse(int resultCode, BikeState state) {
+    public void onConnectResponse(int resultCode) {
 
     }
 
     @Override
-    public void onVerifyResponse(int resultCode, BikeState state) {
+    public void onUnlockResponse(int resultCode) {
 
     }
 
     @Override
-    public void onUnlockResponse(int resultCode, BikeState state) {
+    public void onLockResponse(int resultCode) {
 
     }
 
     @Override
-    public void onLockResponse(int resultCode, BikeState state) {
+    public void onUpdateResponse(int resultCode) {
 
     }
 
     @Override
-    public void onStateUpdated(int resultCode, BikeState state) {
+    public void onStateUpdated(BikeState state) {
 
     }
 
     @Override
-    public void onDisconnected(int resultCode, BikeState state) {
+    public void onDisconnected(int resultCode) {
 
     }
 
     @Override
-    public void onCommonCommandResponse(int resultCode, BikeState state) {
+    public void onCommonCommandResponse(int resultCode) {
 
     }
 }

@@ -33,7 +33,6 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
             try {
                 if (readTemp != null && readTemp.length != 0) {
                     print(readTemp);
-
                     process();
                 }
                 SystemClock.sleep(300L);

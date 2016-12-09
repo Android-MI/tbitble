@@ -7,11 +7,11 @@ import com.tbit.tbitblesdk.protocol.BikeState;
  */
 
 public interface TbitListener {
-    void onConnectResponse(int resultCode, BikeState state);
-    void onVerifyResponse(int resultCode, BikeState state);
-    void onUnlockResponse(int resultCode, BikeState state);
-    void onLockResponse(int resultCode, BikeState state);
-    void onStateUpdated(int resultCode, BikeState state);
-    void onDisconnected(int resultCode, BikeState state);
-    void onCommonCommandResponse(int resultCode, BikeState state);
+    void onConnectResponse(int resultCode);
+    void onUnlockResponse(int resultCode);
+    void onLockResponse(int resultCode);
+    void onUpdateResponse(int resultCode);
+    void onStateUpdated(BikeState state);
+    void onDisconnected(int resultCode);
+    void onCommonCommandResponse(int resultCode);
 }

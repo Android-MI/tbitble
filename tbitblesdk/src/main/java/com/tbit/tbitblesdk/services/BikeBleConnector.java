@@ -66,7 +66,7 @@ public class BikeBleConnector implements Reader, Writer {
         writeTask.cancel(true);
     }
 
-    public void destrop() {
+    public void destroy() {
         stop();
         bus.unregister(this);
     }
@@ -204,10 +204,17 @@ public class BikeBleConnector implements Reader, Writer {
         return true;
     }
 
+    public boolean update() {
+        if (requestQueue.contains(Constant.REQUEST_UPDATE))
+            return false;
+        send(Constant.REQUEST_UPDATE, Constant.COMMAND_QUERY, Constant.QUERY_ALL, null);
+        return true;
+    }
+
     public boolean common(byte commandId, byte key, Byte[] value) {
         if (requestQueue.contains(Constant.REQUEST_COMMON))
             return false;
-        send(Constant.REQUEST_LOCK, commandId, key, value);
+        send(Constant.REQUEST_COMMON, commandId, key, value);
         return true;
     }
 
@@ -243,9 +250,7 @@ public class BikeBleConnector implements Reader, Writer {
         else if (checkResult == 0x10) {
             Log.d(TAG, "parseReceivedPacket: " +
                     "checkResult == 0x10  Receive ACK:" + receive_packet.toString());
-//            if (BluetoothControlFragment.isStateRefreshNeeded) {
-//                parseSysState(data[2]);/*解析系统状态**/
-//            }
+            parseSysState(data[2]);/*解析系统状态**/
             int sequenceId = receive_packet.getL1Header().getSequenceId();
             bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.SUCCEED));
             writeTask.setAck(sequenceId);
@@ -253,27 +258,12 @@ public class BikeBleConnector implements Reader, Writer {
         }
         //ACK错误，需要重发
         else if (checkResult == 0x30) {
-//            sendTimerThread.setStatus(TimerThread.STOP);
-//            receiveTimerThread.setStatus(TimerThread.STOP);
             Log.i(TAG, "checkResult == 0x30  Receive ACK:" + receive_packet.toString());
             int sequenceId = receive_packet.getL1Header().getSequenceId();
             bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
-//            if (0 < resent_cnt--) {
-//                Log.i(TAG, "checkResult == 0x30  Resent Packet!");
-//                send(send_packet);
-//            } else {
-//                if (mPacketCallBack != null) {
-//                    mPacketCallBack.onSendFailure();
-//                }
-//            }
-//            receive_packet.clear();
         }
         //接收数据包校验正确
         else if (checkResult == 0) {
-//            receiveTimerThread.setStatus(TimerThread.STOP);
-//            if (BluetoothControlFragment.isStateRefreshNeeded) {
-//                parseSysState(data[2]);/*解析系统状态**/
-//            }
             try {
                 //获取数据包
                 PacketValue packetValue = (PacketValue) receive_packet.getPacketValue().clone();
@@ -286,11 +276,11 @@ public class BikeBleConnector implements Reader, Writer {
             Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Receive Packet:" + receive_packet.toString());
 
             sendACK(receive_packet, false);
+            bus.post(new BluEvent.UpdateBikeState());
             receive_packet.clear();
         }
         //接收数据包校验错误
         else if (checkResult == 0x0b) {
-//            receiveTimerThread.setStatus(TimerThread.STOP);
             Log.i(TAG, "checkResult == 0x0b  Receive ACK:" + receive_packet.toString());
             sendACK(receive_packet, true);
             receive_packet.clear();
@@ -381,8 +371,9 @@ public class BikeBleConnector implements Reader, Writer {
                         case 0x84: // 84 当前速度
                             parseLocation(value);
                             break;
-                        case 0x85: // 85 小区基站信息相关
-//                            parseIsTested(value);
+                        case 0x85: // 85 解析全部状态
+                            Log.d(TAG, "resolve: 解析全部状态");
+                            parseAll(value);
                             break;
                         case 0x86: // 86 GPS+GSM+BAT
 
@@ -418,6 +409,7 @@ public class BikeBleConnector implements Reader, Writer {
                             break;
                         case 0x86:
                             Log.i(TAG, "--GPS+GSM+BAT");
+                            parseSignal(value);
                             break;
                         case 0xff:
                             Log.i(TAG, "--终端重启原因");
@@ -476,35 +468,17 @@ public class BikeBleConnector implements Reader, Writer {
      */
     private void isConnSuccessfulUser(Byte[] data) {
         if (data[0] == (byte) 0x01) {
-            bus.post(new BluEvent.VerifySucceed());
+            bus.post(new BluEvent.Verified(BluEvent.State.SUCCEED));
 
         } else if (data[0] == (byte) 0x00) {
-            bus.post(new BluEvent.VerifyFailed());
+            bus.post(new BluEvent.Verified(BluEvent.State.FAILED));
         }
-
     }
 
     private void parseVerifyFailed(Byte[] data) {
-        if (data.length == 0)
+        if (data == null || data.length == 0)
             return;
         bikeState.setVerifyFailedCode(data[data.length - 1]);
-    }
-
-    private void parseWheelSpeed(Byte[] data) {
-        //只返回一个字节的数据
-        Log.i(TAG, "-->>parseWheelSpeed 轮子转数：" + data[data.length - 1]);
-//        EventBus.getDefault().post(new Event.BleMileageUpdate(data[data.length - 1]));
-    }
-
-    private void parseIsTested(Byte[] data) {
-        //只返回一个字节的数据
-        Log.i(TAG, "-->>parseIsTested 是否终测过：" + ((1 == data[data.length - 1]) ? "终测过" : "未终测过"));
-    }
-
-    private void parseSpeed(Byte[] data) {
-        //只返回一个字节的数据
-        Log.i(TAG, "-->>parseSpeed 速度为：" + data[data.length - 1] + "km/h");
-//        EventBus.getDefault().post(new Event.BleSpeedUpdate(data[data.length - 1]));
     }
 
     private void parseLocation(Byte[] data) {
@@ -513,14 +487,46 @@ public class BikeBleConnector implements Reader, Writer {
         Log.i(TAG, "经纬度：" + result[0] + " | " + result[1]);
     }
 
-    private void parseDeviceFault(Byte[] data) {
-        // TODO: 2016/12/7 0007 byte[] to int
-        bikeState.setDeviceFaltCode(0);
+    private void parseAll(Byte[] data) {
+        if (data == null || data.length < 15)
+            return;
+        Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
+        Byte[] signalData = Arrays.copyOfRange(data, 11, 13);
+        Byte[] batteryData = Arrays.copyOfRange(data, 14, 15);
+
+        parseLocation(locationData);
+        parseVoltage(batteryData);
+        parseSignal(signalData);
+
+        bus.post(new BluEvent.UpdateBikeState());
     }
 
-    private void parseTemperature(Byte[] data) {
-        //只返回一个字节的数据
-        Log.i(TAG, "-->>parseTemperature 终端温度为：" + data[data.length - 1] + "℃");
+    private void parseSignal(Byte[] data) {
+        if (data == null || data.length != 3)
+            return;
+        int[] result = new int[3];
+        try {
+            for (int i = 0; i < data.length; i++) {
+                result[0] = Integer.valueOf(data[i]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        bikeState.setSignal(result);
+    }
+
+    private void parseDeviceFault(Byte[] data) {
+        int result = 0;
+        try {
+            String s = ByteUtil.bytesToHexString(data);
+            s = s.replace(" ", "");
+            result = Integer.parseInt(s, 16);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.i(TAG, "-->>DeviceFault：" + result);
+        bikeState.setDeviceFaltCode(result);
     }
 
     private void parseVoltage(Byte[] data) {
@@ -536,14 +542,7 @@ public class BikeBleConnector implements Reader, Writer {
         bikeState.setBattery(result);
     }
 
-    /**
-     * 日志输出
-     *
-     * @param data
-     */
     private void parseLog(Byte[] data) {
-//        LogUtil.getInstance().info(TAG, "--收到的日志信息" + new String(data));
-//        MobclickAgent.reportError(getApplicationContext(), "--终端发送的数据：" + new String(data));
     }
 
     /**
@@ -552,7 +551,7 @@ public class BikeBleConnector implements Reader, Writer {
      * @param state
      */
     private void parseSysState(Byte state) {
-        String alarm = "";
+        /*String alarm = "";
 
         if ((byte) 0xC0 == (byte) ((byte) 0xC0 & state)) {
             Log.d(TAG, "parseSysState: " + "断电告警");
@@ -569,7 +568,9 @@ public class BikeBleConnector implements Reader, Writer {
         if ((byte) 0x00 == (byte) ((byte) 0xC0 & state)) {
             Log.d(TAG, "parseSysState: " + "无告警信息");
             alarm = "";
-        }
+        }*/
+        boolean isLocked = (byte) 0x01 == (byte) ((byte) 0x01 & state);
+        bikeState.setLocked(isLocked);
     }
 
     private void sendACK(Packet rPacket, boolean error) {

@@ -177,6 +177,10 @@ public class BluetoothIO {
         return connectionState >= STATE_CONNECTED;
     }
 
+    public int getConnectionState() {
+        return connectionState;
+    }
+
     public boolean isServiceDiscovered() {
         return connectionState == STATE_SERVICES_DISCOVERED;
     }
@@ -201,7 +205,6 @@ public class BluetoothIO {
             return;
         }
         bluetoothGatt.disconnect();
-        refreshDeviceCache();
         bluetoothGatt.close();
         bluetoothGatt = null;
     }

@@ -54,6 +54,7 @@ public class Constant {
     public static final byte QUERY_ISTESTED      = 0x02;
     public static final byte QUERY_RESTART_COUNT = 0x03;
     public static final byte QUERY_RESTART_RESON = 0x04;
+    public static final byte QUERY_ALL           = 0x05;
 
 
     public static final int REQUEST_IGNORE = 100;

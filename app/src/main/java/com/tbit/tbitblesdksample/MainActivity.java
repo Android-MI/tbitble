@@ -1,19 +1,19 @@
 package com.tbit.tbitblesdksample;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
-import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitListener;
-import com.tbit.tbitblesdk.util.ByteUtil;
+import com.tbit.tbitblesdk.protocol.BikeState;
 
 import java.util.List;
 
@@ -22,41 +22,44 @@ import me.salmonzhg.easypermission.PermissionListener;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "asd";
+    private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
     TbitListener listener = new TbitListener() {
         @Override
-        public void onConnectResponse(int resultCode, BikeState state) {
+        public void onConnectResponse(int resultCode) {
             Log.d(TAG, "onConnectResponse: " + resultCode);
         }
 
         @Override
-        public void onVerifyResponse(int resultCode, BikeState state) {
-            Log.d(TAG, "onVerifyResponse: " + resultCode);
-        }
-
-        @Override
-        public void onUnlockResponse(int resultCode, BikeState state) {
+        public void onUnlockResponse(int resultCode) {
             Log.d(TAG, "onUnlockResponse: " + resultCode);
         }
 
         @Override
-        public void onLockResponse(int resultCode, BikeState state) {
+        public void onLockResponse(int resultCode) {
             Log.d(TAG, "onLockResponse: " + resultCode);
         }
 
         @Override
-        public void onStateUpdated(int resultCode, BikeState state) {
-            Log.d(TAG, "onStateUpdated: " + resultCode);
+        public void onUpdateResponse(int resultCode) {
+            Log.d(TAG, "onUpdateResponse: " + resultCode);
         }
 
         @Override
-        public void onDisconnected(int resultCode, BikeState state) {
+        public void onStateUpdated(BikeState state) {
+            Log.d(TAG, "onStateUpdated: " + state.toString());
+
+            //也可以这样
+            //Log.d(TAG, "onStateUpdated: " + TbitBle.getState());
+        }
+
+        @Override
+        public void onDisconnected(int resultCode) {
             Log.d(TAG, "onDisconnected: " + resultCode);
         }
 
         @Override
-        public void onCommonCommandResponse(int resultCode, BikeState state) {
+        public void onCommonCommandResponse(int resultCode) {
             Log.d(TAG, "onCommonCommandResponse: " + resultCode);
         }
     };
@@ -80,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
                                                 handler.post(new Runnable() {
                                                     @Override
                                                     public void run() {
+                                                        showSetting();
+                                                        TbitBle.initialize(MainActivity.this);
+                                                        TbitBle.setListener(listener);
                                                     }
                                                 });
                                             }
@@ -92,18 +98,15 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_COARSE_LOCATION);
     }
 
-    private void testBle() {
-        TbitBle.initialize(this);
-        TbitBle.setListener(listener);
-        TbitBle.connect("EE:AA:FF:AA:AA:FF");
+    private void showSetting() {
+        Intent intent = new Intent();
+        intent.setAction(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        MainActivity.this.startActivity(intent);
+        Toast.makeText(MainActivity.this, "请开启", Toast.LENGTH_LONG).show();
     }
 
     public void connect(View view) {
-        testBle();
-    }
-
-    public void verify(View view) {
-        TbitBle.verify(KEY);
+        TbitBle.connect("EE:AA:FF:AA:AA:FF", KEY);
     }
 
     public void unlock(View view) {
@@ -133,5 +136,19 @@ public class MainActivity extends AppCompatActivity {
 //            return;
 //        }
 //        TbitBle.commonCommand(id, key, value);
+    }
+
+    public void reconnect(View view) {
+        TbitBle.reconnect();
+    }
+
+    public void update(View view) {
+        TbitBle.update();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        TbitBle.destroy();
     }
 }
