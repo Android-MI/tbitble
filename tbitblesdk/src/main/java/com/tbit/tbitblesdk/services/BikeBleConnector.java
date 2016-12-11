@@ -32,8 +32,7 @@ import java.util.Set;
 
 public class BikeBleConnector implements Reader, Writer {
     private static final String TAG = "BikeBleConnector";
-    private static final int DEFAULT_TIME_OUT = 5 * 1000;
-    private Packet send_packet = new Packet();
+    private static final int DEFAULT_TIME_OUT = 9 * 1000;
     private Packet receive_packet = new Packet();
     private EventBus bus;
     private BluetoothIO bluetoothIO;
@@ -81,15 +80,14 @@ public class BikeBleConnector implements Reader, Writer {
      * @param packet
      */
     private void send(Packet packet) {
-        int sequenceId = packet.getL1Header().getSequenceId();
+        final int sequenceId = packet.getL1Header().getSequenceId();
         requestQueue.add(Integer.valueOf(sequenceId));
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                bus.post(new BluEvent.SendFailed(sequenceId));
-//            }
-//        }, timeout);
-//        final byte[] data = packet.toByteArray();//获得发送的数据包
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
+            }
+        }, timeout);
         writeTask.addData(packet);
     }
 
@@ -104,8 +102,8 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private void onUpdateStatus(boolean status) {
-        if (writeTask != null)
-            writeTask.setWriteStatus(status);
+//        if (writeTask != null)
+//            writeTask.setWriteStatus(status);
     }
 
     /**
@@ -132,7 +130,7 @@ public class BikeBleConnector implements Reader, Writer {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId((byte) (0x02));
         packetValue.addData(new PacketValue.DataBean((byte) 0x01, value));
-
+        Packet send_packet = new Packet();
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
         send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, value);
@@ -168,6 +166,7 @@ public class BikeBleConnector implements Reader, Writer {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId(commandId);
         packetValue.addData(dataBeans);
+        Packet send_packet = new Packet();
         send_packet.setHeadSerialNo(requestCode);
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
@@ -181,7 +180,7 @@ public class BikeBleConnector implements Reader, Writer {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId((byte) (0x02));
         packetValue.addData(new PacketValue.DataBean((byte) 0x01, key));
-
+        Packet send_packet = new Packet();
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
         send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, key);
@@ -191,7 +190,7 @@ public class BikeBleConnector implements Reader, Writer {
     public boolean unlock() {
         if (requestQueue.contains(Constant.REQUEST_UNLOCK))
             return false;
-        send(Constant.REQUEST_UNLOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_DEFENCE,
+        send(Constant.REQUEST_UNLOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_LOCK,
                 new Byte[]{Constant.VALUE_OFF});
         return true;
     }
@@ -272,8 +271,7 @@ public class BikeBleConnector implements Reader, Writer {
                 Log.d(TAG, "parseReceivedPacket: " + "PacketValue:CloneNotSupportedException");
             }
             //接收终端的消息校验正确，给终端一个反馈
-            Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Send ACK!");
-            Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Receive Packet:" + receive_packet.toString());
+            Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Send ACK! Receive Packet:" + receive_packet.toString());
 
             sendACK(receive_packet, false);
             bus.post(new BluEvent.UpdateBikeState());
@@ -580,6 +578,7 @@ public class BikeBleConnector implements Reader, Writer {
         l1Header.setError(error);
         l1Header.setSequenceId(rPacket.getL1Header().getSequenceId());
         l1Header.setCRC16((short) 0);
+        Packet send_packet = new Packet();
         send_packet.setL1Header(l1Header);
         send_packet.setPacketValue(null, false);
         send_packet.print();

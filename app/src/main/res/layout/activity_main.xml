@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -8,8 +8,22 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
     tools:context="com.tbit.tbitblesdksample.MainActivity">
 
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#e0e0e0">
+
+        <TextView
+            android:id="@+id/text_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"/>
+    </ScrollView>
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -18,21 +32,19 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_bind_input"/>
+
         <Button
             android:id="@+id/button_connect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="connect"
-            android:text="connect" />
+            android:text="scan" />
 
-        <Button
-            android:id="@+id/button_update"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginTop="10dp"
-            android:onClick="update"
-            android:text="update" />
+
 
         <Button
             android:id="@+id/button_unlock"
@@ -50,13 +62,6 @@
             android:onClick="lock"
             android:text="lock" />
 
-        <Button
-            android:id="@+id/button_reconnect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="reconnect"
-            android:text="reconnect" />
 
         <Button
             android:id="@+id/button_common"
@@ -69,4 +74,28 @@
 
     </LinearLayout>
 
-</FrameLayout>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom">
+        <Button
+            android:id="@+id/button_update"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:onClick="update"
+            android:layout_gravity="right"
+            android:text="connect" />
+
+        <Button
+            android:id="@+id/button_reconnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="reconnect"
+            android:layout_gravity="left"
+            android:text="update" />
+
+    </FrameLayout>
+
+
+</LinearLayout>

@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -83,7 +84,10 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
         if (bluetoothDevice == null)
             return;
 
-        if (TextUtils.equals(macAddress, bluetoothDevice.getAddress())) {
+        String dataStr = bytesToHexString(bytes);
+        Log.d("asd", "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac" + bluetoothDevice.getAddress());
+
+        if (dataStr.contains(macAddress)) {
             needProcessScan.set(false);
             removeHandlerMsg();
             stop();
@@ -95,13 +99,12 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
                     }
                 });
             }
-
         }
     }
 
     public void reset() {
         removeHandlerMsg();
-        handler.removeCallbacksAndMessages(null);
+        needProcessScan.set(true);
     }
 
     public void removeHandlerMsg() {
@@ -109,20 +112,24 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
     }
 
     private void runOnMainThread(Runnable runnable) {
-        if (isMainThread()) {
-            runnable.run();
-        } else {
-            handler.post(runnable);
-        }
-    }
-
-    private boolean isMainThread() {
-        return Looper.myLooper() == Looper.getMainLooper();
+        handler.post(runnable);
     }
 
     public interface ScannerCallback {
         void onScanTimeout();
 
         void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes);
+    }
+
+    private String bytesToHexString(byte[] bArray) {
+        StringBuffer sb = new StringBuffer(bArray.length);
+        String sTemp;
+        for (int i = 0; i < bArray.length; i++) {
+            sTemp = Integer.toHexString(0xFF & bArray[i]);
+            if (sTemp.length() < 2)
+                sb.append(0);
+            sb.append(sTemp.toUpperCase());
+        }
+        return sb.toString();
     }
 }

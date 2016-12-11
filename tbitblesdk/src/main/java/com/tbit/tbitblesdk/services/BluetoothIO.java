@@ -205,6 +205,7 @@ public class BluetoothIO {
             return;
         }
         bluetoothGatt.disconnect();
+        refreshDeviceCache();
         bluetoothGatt.close();
         bluetoothGatt = null;
     }

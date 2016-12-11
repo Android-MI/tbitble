@@ -223,7 +223,7 @@ public class Packet {
             strBuilder.append(String.format("%02X ", bb));
         }
         strBuilder.append("\n");
-        Log.i(TAG, strBuilder.toString());
+//        Log.i(TAG, strBuilder.toString());
     }
 
     @Override

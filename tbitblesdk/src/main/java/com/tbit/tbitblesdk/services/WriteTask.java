@@ -10,6 +10,7 @@ import com.tbit.tbitblesdk.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,8 +21,8 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     private static final String TAG = "WriteTask";
     private static final int MAX_PACKAGE_LENGTH = 20;//每个数据包的长度最长为20字节
     private Packet currentData;
-    private List<Packet> dataQueue = new ArrayList<>();
-    private boolean isWriteSucceed = true;//发送完全标志位，存在拆包问题
+    private List<Packet> dataQueue = Collections.synchronizedList(new ArrayList<Packet>());
+    private boolean isWriteProceed = true;//发送完全标志位，存在拆包问题
     private Writer writer;
     private int currentSequenceId = -1;
 
@@ -34,7 +35,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     }
 
     public void setWriteStatus(boolean status) {
-        isWriteSucceed = status;
+        isWriteProceed = status;
     }
 
     public void setAck(int sequenceId) {
@@ -45,7 +46,6 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     protected Void doInBackground(Void... voids) {
 
         while (!isCancelled()) {
-            SystemClock.sleep(500l);
             if (dataQueue.size() == 0)
                 continue;
             currentData = dataQueue.remove(0);
@@ -66,6 +66,8 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     private void process() {
         if (currentData == null)
             return;
+        Log.d(TAG, "process: now processing " +
+                ByteUtil.bytesToHexString(currentData.toByteArray()));
         for (int i = 0; i < 3; i++) {
             if (isAcked())
                 break;
@@ -109,14 +111,15 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             do {
                 count++;
                 SystemClock.sleep(500l);
-            } while (!isWriteSucceed && count < 5);
+            } while (!isWriteProceed && count < 5);
             if (count >= 5) {
                 break;
             }
+
             //向蓝牙终端发送数据
             Log.i(TAG, "--sendData= " + ByteUtil.bytesToHexString(sendData));
             publishProgress(sendData);
-            isWriteSucceed = false;
+            isWriteProceed = false;
         }
     }
 

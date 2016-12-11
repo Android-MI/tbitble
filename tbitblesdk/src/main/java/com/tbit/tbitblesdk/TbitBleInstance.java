@@ -214,7 +214,7 @@ class TbitBleInstance {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onSendSucceed(BluEvent.WriteData event) {
+    public void onWriteDone(BluEvent.WriteData event) {
         if (!bikeBleConnector.removeFromQueue(event.requestId)) {
             return;
         }
