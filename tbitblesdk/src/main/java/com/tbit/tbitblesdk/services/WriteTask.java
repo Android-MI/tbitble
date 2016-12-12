@@ -118,8 +118,8 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
 
             //向蓝牙终端发送数据
             Log.i(TAG, "--sendData= " + ByteUtil.bytesToHexString(sendData));
-            publishProgress(sendData);
             isWriteProceed = false;
+            publishProgress(sendData);
         }
     }
 

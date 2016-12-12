@@ -192,8 +192,9 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDiscovered(BluEvent.DiscoveredSucceed event) {
         Log.i(TAG, "onDiscovered: ");
-        bluetoothIO.enableTXNotification();
-        verify();
+        boolean result = bluetoothIO.enableTXNotification();
+        if (result)
+            verify();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

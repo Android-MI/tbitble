@@ -15,6 +15,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -204,10 +205,13 @@ public class BluetoothIO {
             Log.w(TAG, "--BluetoothAdapter not initialized");
             return;
         }
-        bluetoothGatt.disconnect();
-        refreshDeviceCache();
-        bluetoothGatt.close();
-        bluetoothGatt = null;
+        try {
+            bluetoothGatt.disconnect();
+            bluetoothGatt.close();
+            bluetoothGatt = null;
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
     }
 
     public void reconnect() {
@@ -283,21 +287,21 @@ public class BluetoothIO {
     /**
      * Enable TXNotification
      */
-    public void enableTXNotification() {
+    public boolean enableTXNotification() {
         Log.d(TAG, "enableTXNotification: ");
         if (bluetoothGatt == null) {
             bus.post(new BluEvent.DeviceUartNotSupported("bluetoothGatt == null"));
-            return;
+            return false;
         }
         BluetoothGattService RxService = bluetoothGatt.getService(SPS_SERVICE_UUID);
         if (RxService == null) {
             bus.post(new BluEvent.DeviceUartNotSupported("Service"));
-            return;
+            return false;
         }
         BluetoothGattCharacteristic RxChar = RxService.getCharacteristic(SPS_RX_UUID);
         if (RxChar == null) {
             bus.post(new BluEvent.DeviceUartNotSupported("rx"));
-            return;
+            return false;
         }
         bluetoothGatt.setCharacteristicNotification(RxChar, true);
 
@@ -305,11 +309,12 @@ public class BluetoothIO {
         if (descriptor == null) {
             bus.post(new BluEvent.CommonFailedReport("enableTXNotification",
                     "--descriptor not found"));
-            return;
+            return false;
         }
 
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         bluetoothGatt.writeDescriptor(descriptor);
+        return true;
     }
 
     /**
@@ -318,9 +323,11 @@ public class BluetoothIO {
      * @param value
      */
     public boolean writeRXCharacteristic(byte[] value) {
-        if (!isConnected())
+        Log.d(TAG, "writeRXCharacteristic: " + ByteUtil.bytesToHexString(value));
+        if (!isConnected()) {
+            Log.d(TAG, "writeRXCharacteristic: no connected!");
             return false;
-        Log.d(TAG, "writeRXCharacteristic: " + bluetoothGatt);
+        }
         BluetoothGattService Service = bluetoothGatt.getService(SPS_SERVICE_UUID);
         if (Service == null) {
             bus.post(new BluEvent.DeviceUartNotSupported());

@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         keyMap.put("022009026", "59 65 83 A5 0E C4 23 F7 40 39 E6 CA EA 40 82 4E 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
         keyMap.put("022009025", "A3 D1 80 97 93 7C 3E 15 A5 55 22 10 0D 4A 31 B6 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
         keyMap.put("135790246", "D6 15 61 BC 02 4E 33 70 B1 7B 57 24 60 83 25 81 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
+        keyMap.put("022009021", "18 1B E3 4F BE 0B A3 39 06 4D 6B 9A 8E 73 F8 46 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
     }
 
     private void showSetting() {
