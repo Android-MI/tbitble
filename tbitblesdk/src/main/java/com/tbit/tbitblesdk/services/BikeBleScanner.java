@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 
 public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
-
+    private static final String TAG = "BikeBleScanner";
     private Handler handler = new Handler(Looper.getMainLooper());
     private long timeoutMillis = 10000;
     private String macAddress;
@@ -85,7 +85,7 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
             return;
 
         String dataStr = bytesToHexString(bytes);
-        Log.d("asd", "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
+        Log.d(TAG, "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
             "\nrssi: " + i);
 
         if (dataStr.contains(macAddress)) {
