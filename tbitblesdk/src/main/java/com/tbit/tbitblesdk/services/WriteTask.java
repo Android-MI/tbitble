@@ -57,7 +57,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
 
     @Override
     protected void onProgressUpdate(byte[]... values) {
-        if (values != null && values[0] != null)
+        if (values != null && values[0] != null && values[0].length != 0)
             writer.write(values[0]);
         else
             writer.onWriteAckTimeout(currentData.getL1Header().getSequenceId());
@@ -85,6 +85,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     }
 
     private void doWrite() {
+        isWriteProceed = true;
         byte[] realData = currentData.toByteArray();
         int lastLength = realData.length;//数据的总长度
         Log.d(TAG, "--send_data_total_size: " + lastLength);
@@ -110,8 +111,8 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             int count = 0;
             do {
                 count++;
-                SystemClock.sleep(500l);
-            } while (!isWriteProceed && count < 5);
+                SystemClock.sleep(100l);
+            } while (!isWriteProceed && count < 10);
             if (count >= 5) {
                 break;
             }

@@ -85,7 +85,8 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
             return;
 
         String dataStr = bytesToHexString(bytes);
-        Log.d("asd", "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac" + bluetoothDevice.getAddress());
+        Log.d("asd", "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
+            "\nrssi: " + i);
 
         if (dataStr.contains(macAddress)) {
             needProcessScan.set(false);

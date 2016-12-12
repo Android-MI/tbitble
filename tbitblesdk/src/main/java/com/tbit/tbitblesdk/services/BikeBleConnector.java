@@ -82,12 +82,12 @@ public class BikeBleConnector implements Reader, Writer {
     private void send(Packet packet) {
         final int sequenceId = packet.getL1Header().getSequenceId();
         requestQueue.add(Integer.valueOf(sequenceId));
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
-            }
-        }, timeout);
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
+//            }
+//        }, timeout);
         writeTask.addData(packet);
     }
 

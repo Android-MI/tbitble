@@ -193,6 +193,11 @@ public class MainActivity extends AppCompatActivity {
         showInputDialog();
     }
 
+
+    public void disconnect(View view) {
+        TbitBle.disConnect();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
