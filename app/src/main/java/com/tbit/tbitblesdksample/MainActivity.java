@@ -183,14 +183,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void reconnect(View view) {
-        showLog("更新状态按下");
-        TbitBle.update();
+        showLog("重新连接状态按下");
+        TbitBle.reconnect();
+    }
+
+
+    public void manualConnect(View view) {
+        showInputDialog();
     }
 
     public void update(View view) {
-//        TbitBle.update()
-//        TbitBle.disConnect();
-        showInputDialog();
+        showLog("更新状态按下");
+        TbitBle.update();
     }
 
 

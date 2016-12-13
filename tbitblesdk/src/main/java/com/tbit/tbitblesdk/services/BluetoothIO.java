@@ -234,13 +234,12 @@ public class BluetoothIO {
     }
 
     private void autoReconnect() {
-        isAutoReconnectEnable = false;
+        isAutoReconnectEnable = true;
         disconnectInside();
         scanner.start(lastConnectedDeviceMac, bluetoothAdapter, new BikeBleScanner.ScannerCallback() {
             @Override
             public void onScanTimeout() {
                 stopScan();
-                isAutoReconnectEnable = true;
                 bus.post(new BluEvent.DisConnected());
             }
 
@@ -326,6 +325,10 @@ public class BluetoothIO {
         Log.d(TAG, "writeRXCharacteristic: " + ByteUtil.bytesToHexString(value));
         if (!isConnected()) {
             Log.d(TAG, "writeRXCharacteristic: no connected!");
+            return false;
+        }
+        if (bluetoothGatt == null) {
+            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
             return false;
         }
         BluetoothGattService Service = bluetoothGatt.getService(SPS_SERVICE_UUID);

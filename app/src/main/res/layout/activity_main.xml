@@ -83,7 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:onClick="update"
+            android:onClick="manualConnect"
             android:layout_gravity="right"
             android:text="connect" />
 
@@ -91,15 +91,15 @@
             android:id="@+id/button_disconnect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="disconnect"
-            android:text="disconnect"
+            android:onClick="reconnect"
+            android:text="reconnect"
             android:layout_gravity="center_horizontal"/>
 
         <Button
             android:id="@+id/button_reconnect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="reconnect"
+            android:onClick="update"
             android:layout_gravity="left"
             android:text="update" />
 
