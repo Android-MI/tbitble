@@ -50,9 +50,9 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                needProcessScan.set(false);
                 if (needProcessScan.get() && callback != null)
                     callback.onScanTimeout();
+                needProcessScan.set(false);
             }
         }, timeoutMillis);
         bluetoothAdapter.startLeScan(this);
