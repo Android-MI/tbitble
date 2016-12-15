@@ -13,7 +13,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewStub;
 import android.widget.Button;
@@ -52,10 +51,6 @@ public class MainActivity extends AppCompatActivity {
     private EasyPermissionHelper helper;
     private EditTextDialog editTextDialog;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
-    private View facView, originView;
-    private CheckBox facCheckBox;
-    private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
-    private View.OnClickListener facButtonListener;
     TbitListener listener = new TbitListener() {
         @Override
         public void onConnectResponse(int resultCode) {
@@ -93,6 +88,11 @@ public class MainActivity extends AppCompatActivity {
         public void onCommonCommandResponse(int resultCode) {
         }
     };
+    private View facView, originView;
+    private CheckBox facCheckBox;
+    private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
+    private View.OnClickListener facButtonListener;
+    private AutoTask autoTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
         TbitBle.reconnect();
     }
 
-
     public void manualConnect(View view) {
         showInputDialog();
     }
@@ -282,7 +281,6 @@ public class MainActivity extends AppCompatActivity {
         originView.setVisibility(View.VISIBLE);
     }
 
-    private AutoTask autoTask;
     private void initFacButtonListener() {
         facButtonListener = new View.OnClickListener() {
             @Override
@@ -315,26 +313,26 @@ public class MainActivity extends AppCompatActivity {
     private void showInputDialog() {
         if (editValue == null) {
             editTextDialog = new EditTextDialog();
-            editTextDialog.setTitle("设置设备编号");
-            editTextDialog.setInputType(InputType.TYPE_CLASS_NUMBER);
-            editTextDialog.setEditTextListener(new EditTextDialog.EditTextListener() {
-                @Override
-                public void onConfirm(String editString) {
-                    connectInside(editString);
-                    editTextDialog.dismissAllowingStateLoss();
-                }
+            editTextDialog.setTitle("设置设备编号")
+                    .setInputType(InputType.TYPE_CLASS_NUMBER)
+                    .setEditTextListener(new EditTextDialog.EditTextListener() {
+                        @Override
+                        public void onConfirm(String editString) {
+                            connectInside(editString);
+                            editTextDialog.dismissAllowingStateLoss();
+                        }
 
-                @Override
-                public void onCancel() {
-                    editTextDialog.dismissAllowingStateLoss();
-                }
+                        @Override
+                        public void onCancel() {
+                            editTextDialog.dismissAllowingStateLoss();
+                        }
 
-                @Override
-                public void onNeutral() {
-                    editTextDialog.dismissAllowingStateLoss();
-                }
-            });
-            editTextDialog.setCancelable(false);
+                        @Override
+                        public void onNeutral() {
+                            editTextDialog.dismissAllowingStateLoss();
+                        }
+                    })
+                    .setCancelable(false);
         }
 
         editTextDialog.show(getSupportFragmentManager(), null);
@@ -352,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
         CONNECT, LOCK, UNLOCK, UPDATE
     }
 
-    class AutoTask extends AsyncTask<Void, Void,Void> {
+    class AutoTask extends AsyncTask<Void, Void, Void> {
         private Action action;
 
         public AutoTask(Action action) {
