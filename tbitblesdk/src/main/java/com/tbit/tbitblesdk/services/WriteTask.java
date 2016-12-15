@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Salmon on 2016/12/7 0007.
@@ -22,9 +24,9 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     private static final int MAX_PACKAGE_LENGTH = 20;//每个数据包的长度最长为20字节
     private Packet currentData;
     private List<Packet> dataQueue = Collections.synchronizedList(new ArrayList<Packet>());
-    private boolean isWriteProceed = true;//发送完全标志位，存在拆包问题
+    private AtomicBoolean isWriteProceed = new AtomicBoolean(true);//发送完全标志位，存在拆包问题
+    private AtomicInteger currentSequenceId = new AtomicInteger(-1);
     private Writer writer;
-    private int currentSequenceId = -1;
 
     public WriteTask(Writer writer) {
         this.writer = writer;
@@ -35,11 +37,11 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     }
 
     public void setWriteStatus(boolean status) {
-        isWriteProceed = status;
+        isWriteProceed.set(status);
     }
 
     public void setAck(int sequenceId) {
-        currentSequenceId = sequenceId;
+        currentSequenceId.set(sequenceId);
     }
 
     @Override
@@ -75,23 +77,23 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             for (int j = 0; j < 30; j++) {
                 if (isAcked())
                     break;
-                SystemClock.sleep(100);
+                SystemClock.sleep(100L);
             }
         }
         if (!isAcked()) {
             publishProgress(new byte[]{});
         }
-        currentSequenceId = -1;
+        currentSequenceId.set(-1);
     }
 
     private void doWrite() {
-        isWriteProceed = true;
+        isWriteProceed.set(true);
         byte[] realData = currentData.toByteArray();
         int lastLength = realData.length;//数据的总长度
         Log.d(TAG, "--send_data_total_size: " + lastLength);
         byte[] sendData;
         int sendIndex = 0;
-        SystemClock.sleep(100l);
+        SystemClock.sleep(100L);
         while (lastLength > 0) {
             //此包的长度小于20字节，不用拆包，直接发送
             if (lastLength <= MAX_PACKAGE_LENGTH) {
@@ -111,20 +113,20 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
             int count = 0;
             do {
                 count++;
-                SystemClock.sleep(100l);
-            } while (!isWriteProceed && count < 10);
-            if (count >= 5) {
+                SystemClock.sleep(100L);
+            } while (!isWriteProceed.get() && count < 10);
+            if (count >= 10) {
                 break;
             }
 
             //向蓝牙终端发送数据
             Log.i(TAG, "--sendData= " + ByteUtil.bytesToHexString(sendData));
-            isWriteProceed = false;
+            isWriteProceed.set(false);
             publishProgress(sendData);
         }
     }
 
     private boolean isAcked() {
-        return currentData.getL1Header().getSequenceId() == currentSequenceId;
+        return currentData.getL1Header().getSequenceId() == currentSequenceId.get();
     }
 }

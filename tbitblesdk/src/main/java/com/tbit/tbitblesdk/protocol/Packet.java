@@ -22,7 +22,7 @@ public class Packet {
     private int mPacketError;
 
     public Packet(byte[] value) {
-
+        append(value);
     }
 
     public Packet() {
@@ -192,13 +192,10 @@ public class Packet {
             sb.append(b[i]);
             sb.append(" ");
         }
-        /////////////////////
-//        short crc = crc16.getCrc(aPacketValueBytes);
+
         int tempcrc = crcTable(b);
         short crc = (short) tempcrc;
         Log.i(TAG, "-->>check" + sb.toString() + "--tempcrc" + tempcrc + "--crc" + crc);
-//        Log.i(BluetoothLeService.TAG,"CRC:"+Integer.toHexString(crc));
-//        Log.i(BluetoothLeService.TAG,"L1Header.CRC:"+Integer.toHexString(aL1Header.getCRC16()));
         if (aL1Header.getCRC16() != crc) {
 //            crc
             mPacketError = 0x0B;

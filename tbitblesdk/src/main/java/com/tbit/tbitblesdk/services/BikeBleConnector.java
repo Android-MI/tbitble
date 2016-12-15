@@ -3,6 +3,7 @@ package com.tbit.tbitblesdk.services;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -20,6 +21,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,12 +35,11 @@ import java.util.Set;
 public class BikeBleConnector implements Reader, Writer {
     private static final String TAG = "BikeBleConnector";
     private static final int DEFAULT_TIME_OUT = 9 * 1000;
-    private Packet receive_packet = new Packet();
     private EventBus bus;
     private BluetoothIO bluetoothIO;
-    private Handler handler = new Handler(Looper.getMainLooper());
+    private Handler handler = new TimeoutHandler(Looper.getMainLooper(), this);
     private WriteTask writeTask;
-    private ReadTask readTask;
+    private NewReadTask readTask;
     private int timeout = DEFAULT_TIME_OUT;
     private BikeState bikeState;
     private boolean isRunning = true;
@@ -53,7 +54,7 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private void start() {
-        readTask = new ReadTask(this);
+        readTask = new NewReadTask(this);
         readTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         writeTask = new WriteTask(this);
         writeTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -88,6 +89,8 @@ public class BikeBleConnector implements Reader, Writer {
 //                bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
 //            }
 //        }, timeout);
+        handler.removeMessages(sequenceId);
+        handler.sendEmptyMessageDelayed(sequenceId, timeout);
         writeTask.addData(packet);
     }
 
@@ -153,9 +156,9 @@ public class BikeBleConnector implements Reader, Writer {
 //
 //        LogUtil.getInstance().info(TAG, "--解析出的SN为：" + SN.toString().substring(3));
         //对SN进行加密
-        String Ciphertext = EncryptUtil.encryptStr(tid);
-        Log.d(TAG, "getEncryptSN: --加密后的SN为：" + Ciphertext);
-        return Ciphertext;
+        String cipherText = EncryptUtil.encryptStr(tid);
+        Log.d(TAG, "getEncryptSN: --加密后的SN为：" + cipherText);
+        return cipherText;
     }
 
     public void send(int requestCode, byte commandId, byte key, Byte[] data) {
@@ -236,35 +239,32 @@ public class BikeBleConnector implements Reader, Writer {
      */
     public void parseReceivedPacket(byte[] received) {
         byte[] data = received;
-        receive_packet.append(data);
+        Packet receive_packet = new Packet(data);
         Log.i(TAG, "-->>receive_packet value = " + receive_packet.toString());
         int checkResult = receive_packet.checkPacket();
         Log.i(TAG, "-->>Check:" + Integer.toHexString(checkResult));
         receive_packet.print();
         //数据头错误，清空
         if (checkResult == 0x05) {
-            receive_packet.clear();
+
         }
         //发送成功
         else if (checkResult == 0x10) {
             Log.d(TAG, "parseReceivedPacket: " +
                     "checkResult == 0x10  Receive ACK:" + receive_packet.toString());
-            parseSysState(data[2]);/*解析系统状态**/
             int sequenceId = receive_packet.getL1Header().getSequenceId();
-            bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.SUCCEED));
             writeTask.setAck(sequenceId);
-            receive_packet.clear();
         }
         //ACK错误，需要重发
         else if (checkResult == 0x30) {
             Log.i(TAG, "checkResult == 0x30  Receive ACK:" + receive_packet.toString());
             int sequenceId = receive_packet.getL1Header().getSequenceId();
-            bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
         }
         //接收数据包校验正确
         else if (checkResult == 0) {
             try {
                 //获取数据包
+                parseSysState(data[2]);/*解析系统状态**/
                 PacketValue packetValue = (PacketValue) receive_packet.getPacketValue().clone();
                 resolve(packetValue);
             } catch (CloneNotSupportedException e) {
@@ -272,16 +272,12 @@ public class BikeBleConnector implements Reader, Writer {
             }
             //接收终端的消息校验正确，给终端一个反馈
             Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Send ACK! Receive Packet:" + receive_packet.toString());
-
             sendACK(receive_packet, false);
-            bus.post(new BluEvent.UpdateBikeState());
-            receive_packet.clear();
         }
         //接收数据包校验错误
         else if (checkResult == 0x0b) {
             Log.i(TAG, "checkResult == 0x0b  Receive ACK:" + receive_packet.toString());
             sendACK(receive_packet, true);
-            receive_packet.clear();
         }
     }
 
@@ -315,104 +311,15 @@ public class BikeBleConnector implements Reader, Writer {
                             break;
                     }
                     break;
-                case 2:
-                    switch (key) {
-                        case 0x02:
-                            //用户连接返回
-                            Log.i(TAG, "--用户连接");
-                            isConnSuccessfulUser(value);
-                            break;
-                        case 0x03:
-                            //管理员连接返回
-                            Log.i(TAG, "--用户连接");
-                            break;
-                        case 0x81:
-                            Log.i(TAG, "--电池携带");
-                            parseVoltage(value);
-                            break;
-                        case 0x82:
-                            Log.i(TAG, "--校验失败原因");
-                            parseVerifyFailed(value);
-                            break;
-                        case 0x83:
-                            Log.i(TAG, "--车辆故障");
-                            parseDeviceFault(value);
-                            break;
-                        case 0x84:
-                            Log.i(TAG, "--经纬度");
-                            parseLocation(value);
-                            break;
-                        case 0x85:
-                            Log.i(TAG, "--小区基站信息相关");
-//                            parseIsTested(value);
-                            break;
-                        case 0x86:
-                            Log.i(TAG, "--GPS+GSM+BAT ");
-                            break;
-                    }
-                    break;
                 case 3:
+                    resolveOperationResponse(key, value);
                     break;
                 case 4:
                     //查询指令返回的结果处理
-                    switch (key) {
-                        /**此处待终端,目前测试*/
-                        case 0x81: // 81 电池电压
-                            parseVoltage(value);
-                            break;
-                        case 0x82: // 82 车辆轮子转动数
-                            parseVerifyFailed(value);
-                            break;
-                        case 0x83: // 83 当前温度
-                            parseDeviceFault(value);
-                            break;
-                        case 0x84: // 84 当前速度
-                            parseLocation(value);
-                            break;
-                        case 0x85: // 85 解析全部状态
-                            Log.d(TAG, "resolve: 解析全部状态");
-                            parseAll(value);
-                            break;
-                        case 0x86: // 86 GPS+GSM+BAT
-
-                            break;
-                    }
+                    resolveQueryResponse(key, value);
                     break;
                 case 5:
-                    switch (key) {
-                        case 0x02:
-                            //用户连接返回
-                            Log.i(TAG, "--用户连接");
-                            isConnSuccessfulUser(value);
-                            break;
-                        case 0x81:
-                            Log.i(TAG, "--电池携带");
-                            parseVoltage(value);
-                            break;
-                        case 0x82:
-                            Log.i(TAG, "--校验失败原因");
-                            parseVerifyFailed(value);
-                            break;
-                        case 0x83:
-                            Log.i(TAG, "--车辆故障");
-                            parseDeviceFault(value);
-                            break;
-                        case 0x84:
-                            Log.i(TAG, "--经纬度");
-                            parseLocation(value);
-                            break;
-                        case 0x85:
-                            Log.i(TAG, "--小区基站信息相关");
-//                            parseIsTested(value);
-                            break;
-                        case 0x86:
-                            Log.i(TAG, "--GPS+GSM+BAT");
-                            parseSignal(value);
-                            break;
-                        case 0xff:
-                            Log.i(TAG, "--终端重启原因");
-                            break;
-                    }
+                    resolveConnectionResponse(key, value);
                     break;
                 case 6:
                     break;
@@ -434,6 +341,10 @@ public class BikeBleConnector implements Reader, Writer {
             }
         }
 
+        if (command == 5) {
+            handler.removeMessages(Constant.REQUEST_CONNECT);
+            bus.post(new BluEvent.UpdateBikeState());
+        }
     }
 
     /**
@@ -465,12 +376,10 @@ public class BikeBleConnector implements Reader, Writer {
      * @param data
      */
     private void isConnSuccessfulUser(Byte[] data) {
-        if (data[0] == (byte) 0x01) {
-            bus.post(new BluEvent.Verified(BluEvent.State.SUCCEED));
-
-        } else if (data[0] == (byte) 0x00) {
-            bus.post(new BluEvent.Verified(BluEvent.State.FAILED));
-        }
+        int sequence = Constant.REQUEST_CONNECT;
+        BluEvent.State state = data[0] == (byte) 0x01 ? BluEvent.State.SUCCEED :
+                BluEvent.State.FAILED;
+        bus.post(new BluEvent.WriteData(sequence, state));
     }
 
     private void parseVerifyFailed(Byte[] data) {
@@ -489,13 +398,15 @@ public class BikeBleConnector implements Reader, Writer {
         if (data == null || data.length < 15)
             return;
         Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
-        Byte[] signalData = Arrays.copyOfRange(data, 11, 13);
-        Byte[] batteryData = Arrays.copyOfRange(data, 14, 15);
+        Byte[] signalData = Arrays.copyOfRange(data, 10, 13);
+        Byte[] batteryData = Arrays.copyOfRange(data, 13, 15);
 
         parseLocation(locationData);
         parseVoltage(batteryData);
         parseSignal(signalData);
 
+        handler.removeMessages(Constant.REQUEST_UPDATE);
+        bus.post(new BluEvent.WriteData(Constant.REQUEST_UPDATE, BluEvent.State.SUCCEED));
         bus.post(new BluEvent.UpdateBikeState());
     }
 
@@ -505,7 +416,7 @@ public class BikeBleConnector implements Reader, Writer {
         int[] result = new int[3];
         try {
             for (int i = 0; i < data.length; i++) {
-                result[0] = Integer.valueOf(data[i]);
+                result[i] = Integer.valueOf(data[i]);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -524,7 +435,7 @@ public class BikeBleConnector implements Reader, Writer {
             e.printStackTrace();
         }
         Log.i(TAG, "-->>DeviceFault：" + result);
-        bikeState.setDeviceFaltCode(result);
+        bikeState.setDeviceFaultCode(result);
     }
 
     private void parseVoltage(Byte[] data) {
@@ -549,26 +460,102 @@ public class BikeBleConnector implements Reader, Writer {
      * @param state
      */
     private void parseSysState(Byte state) {
-        /*String alarm = "";
+        int[] result = new int[8];
 
-        if ((byte) 0xC0 == (byte) ((byte) 0xC0 & state)) {
-            Log.d(TAG, "parseSysState: " + "断电告警");
-            alarm = "断电告警";
+        result[0] = bitResolver(state, 0x01);
+        result[1] = bitResolver(state, 0x02);
+        result[2] = bitResolver(state, 0x04);
+        result[3] = bitResolver(state, 0x08);
+        result[4] = bitResolver(state, 0x10);
+        result[5] = bitResolver(state, 0x20);
+        result[6] = bitResolver(state, 0x40);
+        result[7] = bitResolver(state, 0x80);
+
+        bikeState.setSystemState(result);
+    }
+
+    private int bitResolver(Byte state, int flag) {
+        boolean isFlagged = (state & flag) == flag;
+        return isFlagged ? 1 : 0;
+    }
+
+    private void resolveOperationResponse(int key, Byte[] value) {
+        Log.d(TAG, "resolveOperationResponse: " + ByteUtil.bytesToHexString(value));
+        int sequence = -1;
+        BluEvent.State state = value[0] == 0 ? BluEvent.State.SUCCEED :
+                BluEvent.State.FAILED;
+        bikeState.setOperateFaultCode(value[0]);
+        switch (key) {
+            case 0x81:
+                Log.i(TAG, "--指令返回-设撤防");
+                sequence = Constant.REQUEST_LOCK;
+                break;
+            case 0x82:
+                Log.i(TAG, "--指令返回-电门锁");
+                sequence = Constant.REQUEST_UNLOCK;
+                break;
+            case 0x83:
+                Log.i(TAG, "--指令返回-蓝牙设撤防模式");
+                break;
+            case 0x84:
+                Log.i(TAG, "--指令返回-一键寻车");
+                break;
         }
-        if ((byte) 0x80 == (byte) ((byte) 0xC0 & state)) {
-            Log.d(TAG, "parseSysState: " + "震动告警");
-            alarm = "震动告警";
+        if (sequence == -1)
+            return;
+        handler.removeMessages(sequence);
+        bus.post(new BluEvent.WriteData(sequence, state));
+        if (state == BluEvent.State.FAILED) {
+            bus.post(new BluEvent.UpdateBikeState());
         }
-        if ((byte) 0x40 == (byte) ((byte) 0xC0 & state)) {
-            Log.d(TAG, "parseSysState: " + "低电告警");
-            alarm = "低电告警";
+    }
+
+    private void resolveConnectionResponse(int key, Byte[] value) {
+        switch (key) {
+            case 0x02:
+                //用户连接返回
+                Log.i(TAG, "--用户连接");
+                isConnSuccessfulUser(value);
+                break;
+            case 0x81:
+                Log.i(TAG, "--电池携带");
+                parseVoltage(value);
+                break;
+            case 0x82:
+                Log.i(TAG, "--校验失败原因");
+                parseVerifyFailed(value);
+                break;
+            case 0x83:
+                Log.i(TAG, "--车辆故障");
+                parseDeviceFault(value);
+                break;
+            case 0x84:
+                Log.i(TAG, "--经纬度");
+                parseLocation(value);
+                break;
+            case 0x85:
+                Log.i(TAG, "--小区基站信息相关");
+//              parseIsTested(value);
+                break;
+            case 0x86:
+                Log.i(TAG, "--GPS+GSM+BAT");
+                parseSignal(value);
+                break;
+            case 0xff:
+                Log.i(TAG, "--终端重启原因");
+                break;
         }
-        if ((byte) 0x00 == (byte) ((byte) 0xC0 & state)) {
-            Log.d(TAG, "parseSysState: " + "无告警信息");
-            alarm = "";
-        }*/
-        boolean isLocked = (byte) 0x01 == (byte) ((byte) 0x01 & state);
-        bikeState.setLocked(isLocked);
+    }
+
+    private void resolveQueryResponse(int key, Byte[] value) {
+        switch (key) {
+            case 0x85: // 85 解析全部状态
+                Log.d(TAG, "resolve: 解析全部状态");
+                parseAll(value);
+                break;
+            default:
+                break;
+        }
     }
 
     private void sendACK(Packet rPacket, boolean error) {
@@ -650,6 +637,7 @@ public class BikeBleConnector implements Reader, Writer {
 
     @Override
     public void onWriteAckTimeout(int sequenceId) {
+        handler.removeMessages(sequenceId);
         bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
     }
 
@@ -667,6 +655,23 @@ public class BikeBleConnector implements Reader, Writer {
                 break;
             case READ:
                 break;
+        }
+    }
+
+    static class TimeoutHandler extends Handler {
+        WeakReference<BikeBleConnector> connectorReference;
+
+        public TimeoutHandler(Looper looper, BikeBleConnector connector) {
+            super(looper);
+            this.connectorReference = new WeakReference<>(connector);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final BikeBleConnector connector = connectorReference.get();
+            if (connector == null)
+                return;
+            connector.bus.post(new BluEvent.WriteData(msg.what, BluEvent.State.FAILED));
         }
     }
 }

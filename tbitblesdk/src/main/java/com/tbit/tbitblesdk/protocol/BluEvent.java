@@ -83,13 +83,13 @@ public class BluEvent {
     public static class ScanTimeOut {
     }
 
-    public static class Verified {
-        public State state;
-
-        public Verified(State state) {
-            this.state = state;
-        }
-    }
+//    public static class Verified {
+//        public State state;
+//
+//        public Verified(State state) {
+//            this.state = state;
+//        }
+//    }
 
     public static class Ota {
     }

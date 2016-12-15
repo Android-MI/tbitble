@@ -230,17 +230,23 @@ class TbitBleInstance {
                 case Constant.REQUEST_UPDATE:
                     listener.onUpdateResponse(ResultCode.SUCCEED);
                     break;
+                case Constant.REQUEST_CONNECT:
+                    listener.onConnectResponse(ResultCode.SUCCEED);
+                    break;
             }
         } else {
             switch (event.requestId) {
                 case Constant.REQUEST_UNLOCK:
-                    listener.onUnlockResponse(ResultCode.UNLOCK_FAILED);
+                    listener.onUnlockResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_LOCK:
-                    listener.onLockResponse(ResultCode.LOCK_FAILED);
+                    listener.onLockResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_UPDATE:
-                    listener.onUpdateResponse(ResultCode.UPDATE_FAILED);
+                    listener.onUpdateResponse(ResultCode.FAILED);
+                    break;
+                case Constant.REQUEST_CONNECT:
+                    listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
                     break;
             }
         }
@@ -251,13 +257,13 @@ class TbitBleInstance {
         listener.onStateUpdated(getState());
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onVerified(BluEvent.Verified event) {
-        Log.d(TAG, "onVerified: ");
-        if (event.state == BluEvent.State.SUCCEED) {
-            listener.onConnectResponse(ResultCode.SUCCEED);
-        } else {
-            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
-        }
-    }
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onVerified(BluEvent.Verified event) {
+//        Log.d(TAG, "onVerified: ");
+//        if (event.state == BluEvent.State.SUCCEED) {
+//            listener.onConnectResponse(ResultCode.SUCCEED);
+//        } else {
+//            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+//        }
+//    }
 }

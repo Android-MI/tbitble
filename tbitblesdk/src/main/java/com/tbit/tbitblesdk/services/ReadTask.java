@@ -53,9 +53,7 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     private void process() {
         for (int i = 0; i < readTemp.length; i++) {
             if (readTemp[i] == (byte) 0xAA) {
-                Log.i(TAG, "-- HEAD");
                 if (readTemp.length - i >= 8) {
-                    Log.i(TAG, "-- Head length legal");
                     //可以拼接头
                     System.arraycopy(readTemp, i, head, 0, 8);//把数据复制到head
                     int len = head[5] & 0xFF;  //4 5角标为数据长度  这里存在小问题，后面研究
@@ -89,8 +87,6 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
                     SystemClock.sleep(3000);
                     wait2 = false;
                 }
-            } else {
-                readTemp = null;
             }
         }
     }

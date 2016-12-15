@@ -4,7 +4,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,7 +16,7 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
     private static final String TAG = "BikeBleScanner";
     private Handler handler = new Handler(Looper.getMainLooper());
     private long timeoutMillis = 10000;
-    private String macAddress;
+    private String encryptedTid;
     private ScannerCallback callback;
     private BluetoothAdapter bluetoothAdapter;
     private AtomicBoolean needProcessScan = new AtomicBoolean(true);
@@ -34,7 +33,7 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
     }
 
     public void setMacAddress(String macAddress) {
-        this.macAddress = macAddress;
+        this.encryptedTid = encryptStr(macAddress);
     }
 
     public void setBluetoothAdapter(BluetoothAdapter bluetoothAdapter) {
@@ -44,7 +43,7 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
     public void start(String macAddress, BluetoothAdapter bluetoothAdapter,
                       final ScannerCallback callback) {
         this.bluetoothAdapter = bluetoothAdapter;
-        this.macAddress = macAddress;
+        setMacAddress(macAddress);
         this.callback = callback;
         reset();
         handler.postDelayed(new Runnable() {
@@ -88,7 +87,7 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
         Log.d(TAG, "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
             "\nrssi: " + i);
 
-        if (dataStr.contains(macAddress)) {
+        if (dataStr.contains(encryptedTid)) {
             needProcessScan.set(false);
             removeHandlerMsg();
             stop();
@@ -132,5 +131,30 @@ public class BikeBleScanner implements BluetoothAdapter.LeScanCallback {
             sb.append(sTemp.toUpperCase());
         }
         return sb.toString();
+    }
+
+    private static final int MAX_ENCRYPT_COUNT = 95;
+
+    public static char[] szKey = {
+            0x35,0x41,0x32,0x42,0x33,0x43,0x36,0x44,0x39,0x45,
+            0x38,0x46,0x37,0x34,0x31,0x30};
+
+    public static String encryptStr(String in_str) {
+        int count = 0;
+
+        StringBuilder builder = new StringBuilder();
+        if (in_str == null || in_str.length() == 0) {
+            return null;
+        }
+
+        count = in_str.length();
+        if (count > MAX_ENCRYPT_COUNT) {
+            return null;
+        }
+
+        for (int i = 0; i < count; i++) {
+            builder.append(szKey[in_str.charAt(i) - 0x2A]);
+        }
+        return builder.toString();
     }
 }

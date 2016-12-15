@@ -7,6 +7,8 @@ package com.tbit.tbitblesdk.protocol;
 public class ResultCode {
     // 操作成功
     public static final int SUCCEED = 0;
+    // 操作失败
+    public static final int FAILED = -1;
     // 手机蓝牙未开启
     public static final int BLE_NOT_OPENED = -1001;
     // 设备不支持蓝牙BLE或非指定终端
@@ -24,9 +26,9 @@ public class ResultCode {
     // 密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
     public static final int KEY_ILLEGAL = -2003;
     // 解锁失败
-    public static final int UNLOCK_FAILED = -3001;
+//    public static final int UNLOCK_FAILED = -3001;
     // 上锁失败
-    public static final int LOCK_FAILED = -3002;
+//    public static final int LOCK_FAILED = -3002;
     // 更新状态失败
-    public static final int UPDATE_FAILED = -3003;
+//    public static final int UPDATE_FAILED = -3003;
 }

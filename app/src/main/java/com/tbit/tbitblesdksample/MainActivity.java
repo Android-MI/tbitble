@@ -4,15 +4,21 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewStub;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,10 +48,14 @@ public class MainActivity extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
-    private String logStr;
+    private StringBuilder logBuilder = new StringBuilder();
     private EasyPermissionHelper helper;
     private EditTextDialog editTextDialog;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
+    private View facView, originView;
+    private CheckBox facCheckBox;
+    private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
+    private View.OnClickListener facButtonListener;
     TbitListener listener = new TbitListener() {
         @Override
         public void onConnectResponse(int resultCode) {
@@ -81,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCommonCommandResponse(int resultCode) {
-            Log.d(TAG, "onCommonCommandResponse: " + resultCode);
         }
     };
 
@@ -90,13 +99,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textLog = (TextView) findViewById(R.id.text_log);
-//        editId = (EditText) findViewById(R.id.edit_id);
-//        editKey = (EditText) findViewById(R.id.edit_key);
-//        editValue = (EditText) findViewById(R.id.edit_value);
-
-
-        logStr = "";
+        initView();
         initMapData();
         helper = new EasyPermissionHelper(this);
 
@@ -119,6 +122,25 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }, Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA);
+    }
+
+    private void initView() {
+        originView = findViewById(R.id.linear_origin);
+        textLog = (TextView) findViewById(R.id.text_log);
+        facCheckBox = (CheckBox) findViewById(R.id.checkbox_fac);
+//        editId = (EditText) findViewById(R.id.edit_id);
+//        editKey = (EditText) findViewById(R.id.edit_key);
+//        editValue = (EditText) findViewById(R.id.edit_value);
+
+        facCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b)
+                    showFac();
+                else
+                    hideFac();
+            }
+        });
     }
 
     private void initMapData() {
@@ -162,28 +184,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void common(View view) {
-//        String idStr = editId.getText().toString();
-//        String keyStr = editKey.getText().toString();
-//        String valueStr = editValue.getText().toString();
-//        if (TextUtils.isEmpty(idStr) || TextUtils.isEmpty(keyStr) ||
-//                TextUtils.isEmpty(valueStr))
-//            return;
-//        byte id;
-//        byte key;
-//        Byte[] value;
-//        try {
-//            id = (byte) Integer.parseInt(idStr, 16);
-//            key = (byte) Integer.parseInt(keyStr, 16);
-//            value = ByteUtil.stringToBytes(valueStr);
-//        } catch (NumberFormatException e) {
-//            e.printStackTrace();
-//            return;
-//        }
-//        TbitBle.commonCommand(id, key, value);
     }
 
     public void reconnect(View view) {
-        showLog("重新连接状态按下");
+        showLog("重新连接按下");
         TbitBle.reconnect();
     }
 
@@ -197,6 +201,9 @@ public class MainActivity extends AppCompatActivity {
         TbitBle.update();
     }
 
+    public void switchFac(View view) {
+        facCheckBox.setChecked(!facCheckBox.isChecked());
+    }
 
     public void disconnect(View view) {
         TbitBle.disConnect();
@@ -239,11 +246,66 @@ public class MainActivity extends AppCompatActivity {
 
     private void showLog(String str) {
         makeLog(str);
-        textLog.setText(logStr);
+        textLog.setText(logBuilder.toString());
     }
 
     private void makeLog(String log) {
-        logStr = getTime() + "\n" + log + "\n\n" + logStr;
+        logBuilder.insert(0, "\n\n")
+                .insert(0, log)
+                .insert(0, "\n")
+                .insert(0, getTime());
+    }
+
+    private void showFac() {
+        originView.setVisibility(View.GONE);
+        if (facView == null) {
+            ViewStub stub = (ViewStub) findViewById(R.id.stub_fac_mode);
+            facView = stub.inflate();
+            autoConnectButton = (Button) facView.findViewById(R.id.button_auto_connect);
+            autoLockButton = (Button) facView.findViewById(R.id.button_auto_lock);
+            autoUnlockButton = (Button) facView.findViewById(R.id.button_auto_unlock);
+            autoUpdateButton = (Button) facView.findViewById(R.id.button_auto_update);
+            initFacButtonListener();
+            autoConnectButton.setOnClickListener(facButtonListener);
+            autoLockButton.setOnClickListener(facButtonListener);
+            autoUnlockButton.setOnClickListener(facButtonListener);
+            autoUpdateButton.setOnClickListener(facButtonListener);
+        } else {
+            facView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideFac() {
+        if (autoTask != null)
+            autoTask.cancel(false);
+        facView.setVisibility(View.GONE);
+        originView.setVisibility(View.VISIBLE);
+    }
+
+    private AutoTask autoTask;
+    private void initFacButtonListener() {
+        facButtonListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (autoTask != null)
+                    autoTask.cancel(false);
+                switch (view.getId()) {
+                    case R.id.button_auto_connect:
+                        autoTask = new AutoTask(Action.CONNECT);
+                        break;
+                    case R.id.button_auto_lock:
+                        autoTask = new AutoTask(Action.LOCK);
+                        break;
+                    case R.id.button_auto_unlock:
+                        autoTask = new AutoTask(Action.UNLOCK);
+                        break;
+                    case R.id.button_auto_update:
+                        autoTask = new AutoTask(Action.UPDATE);
+                        break;
+                }
+                autoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }
+        };
     }
 
     private String getTime() {
@@ -284,5 +346,45 @@ public class MainActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);
+    }
+
+    public enum Action {
+        CONNECT, LOCK, UNLOCK, UPDATE
+    }
+
+    class AutoTask extends AsyncTask<Void, Void,Void> {
+        private Action action;
+
+        public AutoTask(Action action) {
+            this.action = action;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            while (!isCancelled()) {
+                publishProgress();
+
+                SystemClock.sleep(10 * 1000);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            switch (action) {
+                case CONNECT:
+                    TbitBle.reconnect();
+                    break;
+                case LOCK:
+                    TbitBle.lock();
+                    break;
+                case UNLOCK:
+                    TbitBle.unlock();
+                    break;
+                case UPDATE:
+                    TbitBle.update();
+                    break;
+            }
+        }
     }
 }
