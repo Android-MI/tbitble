@@ -93,36 +93,34 @@ public class EditTextDialog extends DialogFragment {
 
     }
 
-    public void setEditTextListener(EditTextListener listener) {
+    public EditTextDialog setEditTextListener(EditTextListener listener) {
         mListener = listener;
+        return this;
     }
 
-    public void setTitle(String title) {
+    public EditTextDialog setTitle(String title) {
         mTitle = title;
+        return this;
     }
 
-    public void setNeutralButton(String neutral) {
+    public EditTextDialog setNeutralButton(String neutral) {
         mNeutralContent = neutral;
+        return this;
     }
 
-    public void setEditTextHint(String hint) {
+    public EditTextDialog setEditTextHint(String hint) {
         mEditHint = hint;
+        return this;
     }
 
-    public void setInputType(int type) {
+    public EditTextDialog setInputType(int type) {
         mInputType = type;
+        return this;
     }
 
-    public void setEditTextContent(String content) {
+    public EditTextDialog setEditTextContent(String content) {
         mEditContent = content;
-    }
-
-    protected void showToast(String s) {
-        if (mToast == null) {
-            mToast = Toast.makeText(getContext(), "", Toast.LENGTH_SHORT);
-        }
-        mToast.setText(s);
-        mToast.show();
+        return this;
     }
 
     public interface EditTextListener {
