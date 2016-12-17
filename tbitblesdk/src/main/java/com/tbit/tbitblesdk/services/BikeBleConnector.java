@@ -75,20 +75,9 @@ public class BikeBleConnector implements Reader, Writer {
         return bikeState;
     }
 
-    /**
-     * 发送数据
-     *
-     * @param packet
-     */
     private void send(Packet packet) {
         final int sequenceId = packet.getL1Header().getSequenceId();
         requestQueue.add(Integer.valueOf(sequenceId));
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
-//            }
-//        }, timeout);
         handler.removeMessages(sequenceId);
         handler.sendEmptyMessageDelayed(sequenceId, timeout);
         writeTask.addData(packet);
@@ -107,58 +96,6 @@ public class BikeBleConnector implements Reader, Writer {
     private void onUpdateStatus(boolean status) {
 //        if (writeTask != null)
 //            writeTask.setWriteStatus(status);
-    }
-
-    /**
-     * 发生连接指令，如果校验成功建立持续连接，不成功则断开
-     */
-    public void getConnect(String tid) {
-        Log.d(TAG, "getConnect: 连接绑定");
-
-        Byte[] value = {48, 48, 48, 48, 48, 48, 48, 48,
-                48, 48, 48, 48, 48, 48, 48, 48,
-                48, 48, 48, 48, 48, 48, 48, 48,
-                48, 48, 48, 48, 48, 48, 48, 48
-        };
-
-        String encryptSN = getEncryptSN(tid);
-//        String encryptSN = "135790246";
-        //设置sn的位数
-        value[0] = (byte) encryptSN.length();
-        for (int i = 0; i < encryptSN.length(); i++) {
-            char c = encryptSN.charAt(i);
-            value[i + 1] = (byte) c;
-        }
-
-        PacketValue packetValue = new PacketValue();
-        packetValue.setCommandId((byte) (0x02));
-        packetValue.addData(new PacketValue.DataBean((byte) 0x01, value));
-        Packet send_packet = new Packet();
-        send_packet.setPacketValue(packetValue, true);
-        send_packet.print();
-        send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, value);
-    }
-
-    /**
-     * 获得加密后的SN码
-     */
-    public String getEncryptSN(String tid) {
-        //从mac地址中获取设备的SN码
-//        String addr = application.deviceAddr;
-//        String[] temp = addr.split(":");
-//        StringBuilder SN = new StringBuilder();
-////        for (int i = 0; i < temp.length; i++) {
-////            SN.append(temp[temp.length - 1 - i]);
-////        }
-//        for (int i = temp.length - 1; i >= 0; i--) {
-//            SN.append(temp[i]);
-//        }
-//
-//        LogUtil.getInstance().info(TAG, "--解析出的SN为：" + SN.toString().substring(3));
-        //对SN进行加密
-        String cipherText = EncryptUtil.encryptStr(tid);
-        Log.d(TAG, "getEncryptSN: " + cipherText);
-        return cipherText;
     }
 
     public void send(int requestCode, byte commandId, byte key, Byte[] data) {
@@ -232,73 +169,53 @@ public class BikeBleConnector implements Reader, Writer {
                 new Byte[]{open ? Constant.VALUE_ON : Constant.VALUE_OFF});
     }
 
-    /**
-     * 解析收到的数据
-     *
-     * @param received
-     */
+    // 预解析
     public void parseReceivedPacket(byte[] received) {
         byte[] data = received;
-        Packet receive_packet = new Packet(data);
-        Log.i(TAG, "-->>receive_packet value = " + receive_packet.toString());
-        int checkResult = receive_packet.checkPacket();
-        Log.i(TAG, "-->>Check:" + Integer.toHexString(checkResult));
-        receive_packet.print();
-        //数据头错误，清空
+        Packet receivedPacket = new Packet(data);
+        Log.i(TAG, "receivedPacket value：" + receivedPacket.toString());
+        int checkResult = receivedPacket.checkPacket();
+        Log.i(TAG, "checkResult: " + Integer.toHexString(checkResult));
+        receivedPacket.print();
+        // 数据头错误，清空
         if (checkResult == 0x05) {
 
         }
-        //发送成功
+        // 发送成功
         else if (checkResult == 0x10) {
-            Log.d(TAG, "parseReceivedPacket: " +
-                    "checkResult == 0x10  Receive ACK:" + receive_packet.toString());
-            int sequenceId = receive_packet.getL1Header().getSequenceId();
+            int sequenceId = receivedPacket.getL1Header().getSequenceId();
             writeTask.setAck(sequenceId);
         }
-        //ACK错误，需要重发
+        // ACK错误
         else if (checkResult == 0x30) {
-            Log.i(TAG, "checkResult == 0x30  Receive ACK:" + receive_packet.toString());
-            int sequenceId = receive_packet.getL1Header().getSequenceId();
+            int sequenceId = receivedPacket.getL1Header().getSequenceId();
         }
-        //接收数据包校验正确
+        // 接收数据包校验正确
         else if (checkResult == 0) {
             try {
-                //获取数据包
-                parseSysState(data[2]);/*解析系统状态**/
-                PacketValue packetValue = (PacketValue) receive_packet.getPacketValue().clone();
+                parseSysState(data[2]);
+                PacketValue packetValue = (PacketValue) receivedPacket.getPacketValue().clone();
                 resolve(packetValue);
             } catch (CloneNotSupportedException e) {
                 Log.d(TAG, "parseReceivedPacket: " + "PacketValue:CloneNotSupportedException");
             }
-            //接收终端的消息校验正确，给终端一个反馈
-            Log.d(TAG, "parseReceivedPacket: " + "checkResult == 0  Send ACK! Receive Packet:" + receive_packet.toString());
-            sendACK(receive_packet, false);
+            // 接收终端的消息校验正确，给终端应答
+            // 0x09是板间命令，不做应答
+            if (receivedPacket.getPacketValue().getCommandId() != 0x09)
+                sendACK(receivedPacket, false);
         }
-        //接收数据包校验错误
+        // 接收数据包校验错误
         else if (checkResult == 0x0b) {
-            Log.i(TAG, "checkResult == 0x0b  Receive ACK:" + receive_packet.toString());
-            sendACK(receive_packet, true);
+            sendACK(receivedPacket, true);
         }
     }
 
-    /**
-     * 解析数据包
-     *
-     * @param packetValue
-     */
+    // 解析数据包
     private void resolve(PacketValue packetValue) {
         Byte[] temp = packetValue.toArray();
-        StringBuilder sb = new StringBuilder();
-        for (byte b : temp) {
-            sb.append(String.format("%02X ", b));
-        }
-        Log.d(TAG, "resolve: " + sb.toString());
-
         byte command = packetValue.getCommandId();
-
-        List<PacketValue.DataBean> resolveData = packetValue.getData();
-
-        for (PacketValue.DataBean b : resolveData) {
+        List<PacketValue.DataBean> resolvedData = packetValue.getData();
+        for (PacketValue.DataBean b : resolvedData) {
             int key = b.key & 0xff;
             Byte[] value = b.value;
             switch (command) {
@@ -347,34 +264,26 @@ public class BikeBleConnector implements Reader, Writer {
         }
     }
 
-    /**
-     * 判断终端是否进入ota模式成功
-     *
-     * @param data
-     */
+    // 判断终端是否进入ota模式成功
     private void isOTASuccessful(Byte[] data) {
         byte dataOne = data[0];
         byte dataTwo = data[1];
         if (dataOne == (byte) 0x00) {
-            //提示用户进入ota成功，下载升级文件，发送文件到硬件
-            Log.i(TAG, "--进入ota模式成功，发送广播，判断是否需要更新");
+            //进入ota成功，下载升级文件，发送文件到硬件
+            Log.i(TAG, "--进入ota模式成功");
             bus.post(new BluEvent.Ota());
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
-                //提示用户失败的原因是电量过低
+                //电量过低
                 Log.i(TAG, "--进入ota模式失败，电池电量过低");
             } else {
-                //提示用户失败于未知原因
+                //未知原因
                 Log.i(TAG, "--进入ota模式失败，发生未知错误");
             }
         }
     }
 
-    /**
-     * 判断硬件与APP是否唯一匹配
-     *
-     * @param data
-     */
+    // 判断硬件与APP是否唯一匹配
     private void isConnSuccessfulUser(Byte[] data) {
         int sequence = Constant.REQUEST_CONNECT;
         BluEvent.State state = data[0] == (byte) 0x01 ? BluEvent.State.SUCCEED :
@@ -434,7 +343,7 @@ public class BikeBleConnector implements Reader, Writer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.i(TAG, "-->>DeviceFault：" + result);
+        Log.i(TAG, "--设备故障：" + result);
         bikeState.setDeviceFaultCode(result);
     }
 
@@ -454,11 +363,7 @@ public class BikeBleConnector implements Reader, Writer {
     private void parseLog(Byte[] data) {
     }
 
-    /**
-     * 解析系统状态，若系统状态有告警则发送告警广播，若系统状态中的各个状态与本地不一致，发送一个心跳包同步数据
-     *
-     * @param state
-     */
+    // 解析系统状态
     private void parseSysState(Byte state) {
         int[] result = new int[8];
 
@@ -487,18 +392,14 @@ public class BikeBleConnector implements Reader, Writer {
         bikeState.setOperateFaultCode(value[0]);
         switch (key) {
             case 0x81:
-                Log.i(TAG, "--指令返回-设撤防");
                 sequence = Constant.REQUEST_LOCK;
                 break;
             case 0x82:
-                Log.i(TAG, "--指令返回-电门锁");
                 sequence = Constant.REQUEST_UNLOCK;
                 break;
             case 0x83:
-                Log.i(TAG, "--指令返回-蓝牙设撤防模式");
                 break;
             case 0x84:
-                Log.i(TAG, "--指令返回-一键寻车");
                 break;
         }
         if (sequence == -1)
@@ -514,35 +415,27 @@ public class BikeBleConnector implements Reader, Writer {
         switch (key) {
             case 0x02:
                 //用户连接返回
-                Log.i(TAG, "--用户连接");
                 isConnSuccessfulUser(value);
                 break;
             case 0x81:
-                Log.i(TAG, "--电池");
                 parseVoltage(value);
                 break;
             case 0x82:
-                Log.i(TAG, "--校验失败原因");
                 parseVerifyFailed(value);
                 break;
             case 0x83:
-                Log.i(TAG, "--车辆故障");
                 parseDeviceFault(value);
                 break;
             case 0x84:
-                Log.i(TAG, "--经纬度");
                 parseLocation(value);
                 break;
             case 0x85:
-                Log.i(TAG, "--小区基站信息相关");
 //              parseIsTested(value);
                 break;
             case 0x86:
-                Log.i(TAG, "--GPS+GSM+BAT");
                 parseSignal(value);
                 break;
             case 0xff:
-                Log.i(TAG, "--终端重启原因");
                 break;
         }
     }
