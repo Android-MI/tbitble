@@ -7,38 +7,51 @@ import android.util.Log;
 import com.tbit.tbitblesdk.listener.Reader;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
- * Created by Salmon on 2016/12/7 0007.
+ * Created by Salmon on 2016/12/15 0015.
  */
 
 public class ReadTask extends AsyncTask<Void, byte[], Void> {
     private static final String TAG = "ReadTask";
-    private byte[] readTemp;
-    private boolean wait = true;
-    private boolean wait2 = true;
-    private byte[] head = new byte[8];
+    private static final Byte HEAD_FLAG = new Byte((byte) 0xAA);
     private Reader reader;
+    private List<Byte> readTemp = Collections.synchronizedList(new ArrayList<Byte>());
 
     public ReadTask(Reader reader) {
         this.reader = reader;
     }
 
     public void setData(byte[] data) {
-        this.readTemp = ByteUtil.byteMerger(readTemp, data);//拼接缓存
+        Byte[] temp = new Byte[data.length];
+        int length = temp.length;
+        for (int i = 0; i < length; i++) {
+            temp[i] = data[i];
+        }
+        readTemp.addAll(Arrays.asList(temp));
     }
 
     @Override
     protected Void doInBackground(Void... voids) {
         while (!isCancelled()) {
-            try {
-                if (readTemp != null && readTemp.length != 0) {
-                    print(readTemp);
-                    process();
+            if (readTemp.size() != 0) {
+                // 过滤
+                if (!readTemp.get(0).equals(HEAD_FLAG)) {
+                    continue;
                 }
-                SystemClock.sleep(300L);
-            } catch (Exception e) {
-                readTemp = null;
-                e.printStackTrace();
+                if (readTemp.size() < 8)
+                    continue;
+
+                //处理
+                try {
+                    process();
+                } catch (IndexOutOfBoundsException e) {
+                    e.printStackTrace();
+                }
             }
         }
         return null;
@@ -51,47 +64,38 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     }
 
     private void process() {
-        for (int i = 0; i < readTemp.length; i++) {
-            if (readTemp[i] == (byte) 0xAA) {
-                if (readTemp.length - i >= 8) {
-                    //可以拼接头
-                    System.arraycopy(readTemp, i, head, 0, 8);//把数据复制到head
-                    int len = head[5] & 0xFF;  //4 5角标为数据长度  这里存在小问题，后面研究
-                    if (len <= readTemp.length - 8) {
-                        //后面接着的数据达到len的长度，直接取出来
-                        byte[] receiveData = ByteUtil.subBytes(readTemp, i, i + 8 + len);//将完整的数据包截取出来
-                        publishProgress(receiveData);
-                        Log.i(TAG, "--readTemp length" + readTemp.length);
-                        readTemp = ByteUtil.subBytes(readTemp, i + 8 + len, readTemp.length - (i + 8 + len));//清除已经发送的部分
-                        break;
-                    } else {
-                        //后面缓存的数据不够len的长度，等待
-                        Log.d(TAG, "--readTemp 等待数据包");
-                        if (!wait) {
-                            //不等待了，把前面的头和数据丢掉
-                            readTemp = null;
-                            wait = true;
-                        }
-                        SystemClock.sleep(3000);
-                        wait = false;
-                    }
-
-                } else {
-                    Log.d(TAG, "--readTemp 等待数据包");
-                    //头不够长，等待头
-                    if (!wait2) {
-                        //不等待了，把前面的头
-                        readTemp = null;
-                        wait2 = true;
-                    }
-                    SystemClock.sleep(3000);
-                    wait2 = false;
-                }
+        // 数据包长度
+        int dataPacketLen = readTemp.get(5) & 0xFF;
+        // 等待数据包长度足够
+        for (int i = 0; i < 30; i++) {
+            if (readTemp.size() - 8 >= dataPacketLen) {
+                break;
             }
+            SystemClock.sleep(100L);
         }
+        // 数据包长度不足
+        if (readTemp.size() - 8 < dataPacketLen) {
+            for (int i = 0; i < 8; i++) {
+                readTemp.remove(0);
+            }
+            return;
+        }
+        // 数据包长度足够，取出数据包
+        int totalLength = 8 + dataPacketLen;
+        byte[] receiveData = new byte[totalLength];
+        for (int i = 0; i < totalLength; i++) {
+            receiveData[i] = readTemp.remove(0);
+        }
+        // 发布数据
+        publishProgress(receiveData);
     }
 
-    private void print(byte[] data) {
-        Log.i(TAG, "--receiveData= " + ByteUtil.bytesToHexString(data));
+    private void print() {
+        int length = readTemp.size();
+        byte[] array = new byte[length];
+        for (int i = 0; i < length; i++) {
+            array[i] = readTemp.get(i);
+        }
+        Log.i(TAG, "--receiveData= " + ByteUtil.bytesToHexString(array));
     }
 }
