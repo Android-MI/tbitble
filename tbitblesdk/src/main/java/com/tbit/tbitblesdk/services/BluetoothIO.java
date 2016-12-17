@@ -62,7 +62,8 @@ public class BluetoothIO {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connectionState = STATE_DISCONNECTED;
                 gatt.close();
-                tryAutoReconnect();
+                bus.post(new BluEvent.DisConnected());
+//                tryAutoReconnect();
             } else if (newState == BluetoothGatt.STATE_CONNECTING) {
                 connectionState = STATE_CONNECTING;
             }

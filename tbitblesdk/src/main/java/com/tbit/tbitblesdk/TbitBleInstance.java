@@ -107,6 +107,10 @@ class TbitBleInstance {
             listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
             return;
         }
+        if (!isMacAddrLegal() || !isKeyLegal()) {
+            listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
+            return;
+        }
         bluetoothIO.reconnect();
     }
 
@@ -159,8 +163,18 @@ class TbitBleInstance {
 
     private Byte[] resolve(String keyStr) {
         Byte[] result = new Byte[]{};
+        keyStr = keyStr.replace(" ", "");
+        if (keyStr.length() != 64)
+            return result;
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < 64; j+=2) {
+            sb.append(keyStr.substring(j, j+2));
+            if (j == 64 -2)
+                continue;
+            sb.append(" ");
+        }
         try {
-            result = ByteUtil.stringToBytes(keyStr);
+            result = ByteUtil.stringToBytes(sb.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -246,7 +260,7 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+                    listener.onConnectResponse(ResultCode.FAILED);
                     break;
             }
         }

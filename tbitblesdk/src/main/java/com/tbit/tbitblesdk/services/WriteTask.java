@@ -73,7 +73,11 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
         for (int i = 0; i < 3; i++) {
             if (isAcked())
                 break;
-            doWrite();
+            // 写入是否成功
+            boolean result = doWrite();
+            if (!result)
+                continue;
+            // 写入成功才等待ACK
             for (int j = 0; j < 30; j++) {
                 if (isAcked())
                     break;
@@ -86,44 +90,45 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
         currentSequenceId.set(-1);
     }
 
-    private void doWrite() {
+    private boolean doWrite() {
         isWriteProceed.set(true);
         byte[] realData = currentData.toByteArray();
         int lastLength = realData.length;//数据的总长度
-        Log.d(TAG, "--send_data_total_size: " + lastLength);
         byte[] sendData;
         int sendIndex = 0;
         SystemClock.sleep(100L);
+        boolean result = false;
         while (lastLength > 0) {
-            //此包的长度小于20字节，不用拆包，直接发送
+            // 包长度小于20字节，直接发送
             if (lastLength <= MAX_PACKAGE_LENGTH) {
-                Log.i(TAG, "--不用拆包" + lastLength);
                 sendData = Arrays.copyOfRange(realData, sendIndex, sendIndex + lastLength);
                 sendIndex += lastLength;
                 lastLength = 0;
-//                    SEND_OVER = true;
             } else {
-                //拆包发送
+                // 拆包发送
                 sendData = Arrays.copyOfRange(realData, sendIndex, sendIndex + MAX_PACKAGE_LENGTH);
                 sendIndex += MAX_PACKAGE_LENGTH;
                 lastLength -= MAX_PACKAGE_LENGTH;
-                Log.i(TAG, "--拆包" + lastLength);
             }
 
-            int count = 0;
-            do {
-                count++;
+            // 等待写入成功回应1秒
+            for (int i = 0; i < 10; i++) {
                 SystemClock.sleep(100L);
-            } while (!isWriteProceed.get() && count < 10);
-            if (count >= 10) {
+                if (isWriteProceed.get())
+                    break;
+            }
+            if (!isWriteProceed.get()) {
+                result = false;
                 break;
             }
 
-            //向蓝牙终端发送数据
+            result = true;
+            // 发布数据
             Log.i(TAG, "--sendData= " + ByteUtil.bytesToHexString(sendData));
             isWriteProceed.set(false);
             publishProgress(sendData);
         }
+        return result;
     }
 
     private boolean isAcked() {

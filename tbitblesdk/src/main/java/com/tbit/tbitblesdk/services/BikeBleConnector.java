@@ -34,7 +34,7 @@ import java.util.Set;
 
 public class BikeBleConnector implements Reader, Writer {
     private static final String TAG = "BikeBleConnector";
-    private static final int DEFAULT_TIME_OUT = 9 * 1000;
+    private static final int DEFAULT_TIME_OUT = 10 * 1000;
     private EventBus bus;
     private BluetoothIO bluetoothIO;
     private Handler handler = new TimeoutHandler(Looper.getMainLooper(), this);
@@ -113,7 +113,7 @@ public class BikeBleConnector implements Reader, Writer {
      * 发生连接指令，如果校验成功建立持续连接，不成功则断开
      */
     public void getConnect(String tid) {
-        Log.d(TAG, "getConnect: --连接绑定");
+        Log.d(TAG, "getConnect: 连接绑定");
 
         Byte[] value = {48, 48, 48, 48, 48, 48, 48, 48,
                 48, 48, 48, 48, 48, 48, 48, 48,
@@ -157,7 +157,7 @@ public class BikeBleConnector implements Reader, Writer {
 //        LogUtil.getInstance().info(TAG, "--解析出的SN为：" + SN.toString().substring(3));
         //对SN进行加密
         String cipherText = EncryptUtil.encryptStr(tid);
-        Log.d(TAG, "getEncryptSN: --加密后的SN为：" + cipherText);
+        Log.d(TAG, "getEncryptSN: " + cipherText);
         return cipherText;
     }
 
@@ -348,7 +348,7 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     /**
-     * 根据返回值，判断硬件那边返回是否进入ota模式成功
+     * 判断终端是否进入ota模式成功
      *
      * @param data
      */
@@ -391,7 +391,7 @@ public class BikeBleConnector implements Reader, Writer {
     private void parseLocation(Byte[] data) {
         double[] result = ByteUtil.getPoint(data);
         bikeState.setLocation(result);
-        Log.i(TAG, "经纬度：" + result[0] + " | " + result[1]);
+        Log.i(TAG, "--经纬度：" + result[0] + " | " + result[1]);
     }
 
     private void parseAll(Byte[] data) {
@@ -418,7 +418,7 @@ public class BikeBleConnector implements Reader, Writer {
             for (int i = 0; i < data.length; i++) {
                 result[i] = Integer.valueOf(data[i]);
             }
-        } catch (Exception e) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             e.printStackTrace();
             return;
         }
@@ -447,7 +447,7 @@ public class BikeBleConnector implements Reader, Writer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.i(TAG, "-->>电量：" + result);
+        Log.i(TAG, "--电量：" + result);
         bikeState.setBattery(result);
     }
 
@@ -518,7 +518,7 @@ public class BikeBleConnector implements Reader, Writer {
                 isConnSuccessfulUser(value);
                 break;
             case 0x81:
-                Log.i(TAG, "--电池携带");
+                Log.i(TAG, "--电池");
                 parseVoltage(value);
                 break;
             case 0x82:
