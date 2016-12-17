@@ -102,7 +102,7 @@ public class ByteUtil {
         return byteArray;
     }
 
-    //    public static final short BLE_GAP_AD_TYPE_FLAGS                              = 0x01; /**< Flags for discoverability. */
+//    public static final short BLE_GAP_AD_TYPE_FLAGS                              = 0x01; /**< Flags for discoverability. */
 //    public static final short BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE  = 0x02;/**< Partial list of 16 bit service UUIDs. */
 //    public static final short BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE        = 0x03; /**< Complete list of 16 bit service UUIDs. */
 //    public static final short BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE  = 0x04; /**< Partial list of 32 bit service UUIDs. */
@@ -159,18 +159,6 @@ public class ByteUtil {
         }
         return null;
     }
-
-//    public static String bytesToHexString(byte[] bArray) {
-//        StringBuffer sb = new StringBuffer(bArray.length);
-//        String sTemp;
-//        for (int i = 0; i < bArray.length; i++) {
-//            sTemp = Integer.toHexString(0xFF & bArray[i]);
-//            if (sTemp.length() < 2)
-//                sb.append(0);
-//            sb.append(sTemp.toUpperCase());
-//        }
-//        return sb.toString();
-//    }
 
     public static String bytesToHexString(byte[] bytes) {
         if (bytes == null)
