@@ -15,7 +15,6 @@ import com.tbit.tbitblesdk.protocol.Constant;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.util.ByteUtil;
-import com.tbit.tbitblesdk.util.EncryptUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -39,7 +38,7 @@ public class BikeBleConnector implements Reader, Writer {
     private BluetoothIO bluetoothIO;
     private Handler handler = new TimeoutHandler(Looper.getMainLooper(), this);
     private WriteTask writeTask;
-    private NewReadTask readTask;
+    private ReadTask readTask;
     private int timeout = DEFAULT_TIME_OUT;
     private BikeState bikeState;
     private boolean isRunning = true;
@@ -54,7 +53,7 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private void start() {
-        readTask = new NewReadTask(this);
+        readTask = new ReadTask(this);
         readTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         writeTask = new WriteTask(this);
         writeTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -481,8 +480,6 @@ public class BikeBleConnector implements Reader, Writer {
                         sendIndex += packLength;
                         lastLength -= packLength;
                     }
-//                    GattCommand.putExtra(BluetoothLeService.HandleCMD, BluetoothLeService.NUS_WRITE_CHARACTERISTIC);
-//                    GattCommand.putExtra(BluetoothLeService.HandleData, sendData);
                     SystemClock.sleep(50L);
                     final byte[] resultData = sendData;
                     runOnMainThread(new Runnable() {
