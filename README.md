@@ -19,6 +19,8 @@
 ```
 // 操作成功
 public static final int SUCCEED = 0;
+// 操作失败
+public static final int FAILED = -1;
 // 手机蓝牙未开启
 public static final int BLE_NOT_OPENED = -1001;
 // 设备不支持蓝牙BLE或非指定终端
@@ -35,12 +37,6 @@ public static final int MAC_ADDRESS_ILLEGAL = -2001;
 public static final int DEVICE_NOT_FOUNDED = -2002;
 // 密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
 public static final int KEY_ILLEGAL = -2003;
-// 解锁失败
-public static final int UNLOCK_FAILED = -3001;
-// 上锁失败
-public static final int LOCK_FAILED = -3002;
-// 更新状态失败
-public static final int UPDATE_FAILED = -3003;
 ```
 
 ### 使用
@@ -122,6 +118,41 @@ public static final int STATE_SCANNING = 1;
 public static final int STATE_CONNECTING = 2;
 public static final int STATE_CONNECTED = 3;
 public static final int STATE_SERVICES_DISCOVERED = 4;
+```
+
+##### 车辆状态字段
+```
+// 电量
+private float battery;
+
+// 位置,location[0]是经度，location[1]是纬度
+private double[] location = new double[]{0, 0};
+
+// 信号量，数组的三位分别为如下
+// GSM：用于标识 GSM 信号强度，范围 0~9
+// GPS：用于标识 GPS 信号强度，范围 0~9
+// BAT：用于标识定位器后备电池电量，范围 0~9
+private int[] signal = new int[]{0, 0, 0};
+
+// 校验失败原因
+// 0：未知原因 1：连接密钥非法 2：数据校验失败 3：指令不支持
+private int verifyFailedCode;
+
+// 车辆故障 电机类故障 中控类故障 通信类故障 其它故障 详见常用数据类型说明
+private int deviceFaultCode;
+
+// 数组每一位的解析如下
+// 0 | 0：车辆撤防模式开启 1：车辆设防模式开启
+// 1 | 0：车辆处于静止状态 1：车辆处于运动状态
+// 2 | 0：车辆锁电机为关闭状态 1：车辆锁电机为打开状态
+// 3 | 0：车辆 ACC 为关闭状态 1：车辆 ACC 为打开状态
+// 4 | 0：车辆不处于休眠模式 1：车辆处于休眠模式
+// 5 | 0：车辆蓝牙处于非连接状态 1：车辆蓝牙处于连接状态
+// 6~7 | 11：断电告警  10：震动告警  01：低电告警  00：无告警信息
+private int[] systemState = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+
+// 0x00：成功  0x01：指令非法 0x02：运动状态 0x03：非绑定状态
+private int operateFaultCode;
 ```
 ##### 结果回调
 
