@@ -188,7 +188,7 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onConnectionStateChange(BluEvent.ConnectionStateChange event) {
-        Log.i(TAG, "onConnectionStateChange: ");
+        Log.i(TAG, "onConnectionStateChange: from " + event.status + " to " + event.newState);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
