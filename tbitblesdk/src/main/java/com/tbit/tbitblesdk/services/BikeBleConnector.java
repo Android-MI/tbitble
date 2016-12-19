@@ -41,7 +41,6 @@ public class BikeBleConnector implements Reader, Writer {
     private ReadTask readTask;
     private int timeout = DEFAULT_TIME_OUT;
     private BikeState bikeState;
-    private boolean isRunning = true;
     private Set<Integer> requestQueue = Collections.synchronizedSet(new HashSet<Integer>());
 
     public BikeBleConnector(BluetoothIO bluetoothIO) {
@@ -60,7 +59,6 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private void stop() {
-        isRunning = false;
         readTask.cancel(true);
         writeTask.cancel(true);
     }
@@ -288,6 +286,8 @@ public class BikeBleConnector implements Reader, Writer {
         BluEvent.State state = data[0] == (byte) 0x01 ? BluEvent.State.SUCCEED :
                 BluEvent.State.FAILED;
         bus.post(new BluEvent.WriteData(sequence, state));
+        if (state == BluEvent.State.FAILED)
+            bluetoothIO.disconnect();
     }
 
     private void parseVerifyFailed(Byte[] data) {
@@ -457,41 +457,13 @@ public class BikeBleConnector implements Reader, Writer {
         l1Header.setError(error);
         l1Header.setSequenceId(rPacket.getL1Header().getSequenceId());
         l1Header.setCRC16((short) 0);
-        Packet send_packet = new Packet();
-        send_packet.setL1Header(l1Header);
-        send_packet.setPacketValue(null, false);
-        send_packet.print();
+        Packet ackPacket = new Packet();
+        ackPacket.setL1Header(l1Header);
+        ackPacket.setPacketValue(null, false);
 
-        final byte[] data = send_packet.toByteArray();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final int packLength = 20;
-                int lastLength = data.length;
-                byte[] sendData;
-                int sendIndex = 0;
-                while (lastLength > 0 && isRunning) {
-                    if (lastLength <= packLength) {
-                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + lastLength);
-                        sendIndex += lastLength;
-                        lastLength = 0;
-                    } else {
-                        sendData = Arrays.copyOfRange(data, sendIndex, sendIndex + packLength);
-                        sendIndex += packLength;
-                        lastLength -= packLength;
-                    }
-                    SystemClock.sleep(50L);
-                    final byte[] resultData = sendData;
-                    runOnMainThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            bluetoothIO.writeRXCharacteristic(resultData);
-                        }
-                    });
-                }
-            }
-        }).start();
-        Log.i(TAG, "Send ACK:" + send_packet.toString());
+        final byte[] data = ackPacket.toByteArray();
+        bluetoothIO.writeRXCharacteristic(data);
+        Log.i(TAG, "Send ACK:" + ackPacket.toString());
     }
 
     private void setReadTemp(byte[] value) {
