@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 
 public abstract class Scanner {
-    private static final String TAG = "BikeBleScanner";
     protected Handler handler = new Handler(Looper.getMainLooper());
     protected long timeoutMillis = 10000;
     protected String encryptedTid;
