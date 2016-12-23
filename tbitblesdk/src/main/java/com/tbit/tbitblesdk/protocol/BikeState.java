@@ -32,6 +32,26 @@ public class BikeState {
     private int[] systemState = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
     // 0x00：成功  0x01：指令非法 0x02：运动状态 0x03：非绑定状态
     private int operateFaultCode;
+    // 0:MCC 1:MNC 2:LAC 3.Cell ID
+    private int[] baseStation = new int[]{0, 0, 0, 0};
+    // 版本号 0：硬件版本 1：软件版本
+    private int[] version = new int[]{0, 0};
+
+    public int[] getBaseStation() {
+        return baseStation;
+    }
+
+    public void setBaseStation(int[] baseStation) {
+        this.baseStation = baseStation;
+    }
+
+    public int[] getVersion() {
+        return version;
+    }
+
+    public void setVersion(int[] version) {
+        this.version = version;
+    }
 
     public int[] getSystemState() {
         return systemState;
@@ -99,6 +119,8 @@ public class BikeState {
                 ", deviceFaultCode=" + deviceFaultCode +
                 ", systemState=" + Arrays.toString(systemState) +
                 ", operateFaultCode=" + operateFaultCode +
+                ", baseStation=" + Arrays.toString(baseStation) +
+                ", version=" + Arrays.toString(version) +
                 '}';
     }
 }

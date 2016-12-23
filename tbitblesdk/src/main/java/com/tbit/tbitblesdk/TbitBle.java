@@ -77,6 +77,10 @@ public class TbitBle {
         instance = null;
     }
 
+    public static boolean hasInitialized() {
+        return instance != null;
+    }
+
     private static void checkInstanceNotNull() {
         if (instance == null)
             throw new RuntimeException("have you 'initialize' on TbitBle ? ");

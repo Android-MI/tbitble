@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -44,7 +45,7 @@ public class BluetoothIO {
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
-    private BikeBleScanner scanner;
+    private Scanner scanner;
     private String lastConnectedDeviceMac;
     private boolean isAutoReconnectEnable = true;
 //    private boolean hasVerified = false;
@@ -134,7 +135,11 @@ public class BluetoothIO {
         this.context = context = context.getApplicationContext();
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
-        scanner = new BikeBleScanner();
+        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            scanner = new AndroidLBikeBleScanner(bluetoothAdapter);
+        } else {
+            scanner = new BikeBleScanner(bluetoothAdapter);
+        }
         bus = EventBus.getDefault();
     }
 
@@ -144,7 +149,7 @@ public class BluetoothIO {
         connectionState = STATE_SCANNING;
         stopScan();
         disconnectInside();
-        scanner.start(macAddress, bluetoothAdapter, new BikeBleScanner.ScannerCallback() {
+        scanner.start(macAddress, new ScannerCallback() {
             @Override
             public void onScanTimeout() {
                 stopScan();
@@ -160,7 +165,7 @@ public class BluetoothIO {
 
     public void stopScan() {
         connectionState = STATE_DISCONNECTED;
-        scanner.stop(bluetoothAdapter);
+        scanner.stop();
     }
 
     public boolean isBlueEnable() {
@@ -237,7 +242,7 @@ public class BluetoothIO {
     private void autoReconnect() {
         isAutoReconnectEnable = true;
         disconnectInside();
-        scanner.start(lastConnectedDeviceMac, bluetoothAdapter, new BikeBleScanner.ScannerCallback() {
+        scanner.start(lastConnectedDeviceMac, new ScannerCallback() {
             @Override
             public void onScanTimeout() {
                 stopScan();

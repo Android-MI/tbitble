@@ -1,28 +1,30 @@
 package com.tbit.tbitblesdk.services;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
+import android.os.Build;
 import android.util.Log;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
 
-public class BikeBleScanner extends Scanner {
-
-    private static final String TAG = "BikeBleScanner";
-
-    private BluetoothAdapter.LeScanCallback bleCallback = new BluetoothAdapter.LeScanCallback() {
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+public class AndroidLBikeBleScanner extends Scanner {
+    private static final String TAG = "AndroidLBikeBleScanner";
+    private ScanCallback bleCallback = new ScanCallback() {
         @Override
-        public void onLeScan(final BluetoothDevice bluetoothDevice, final int i, final byte[] bytes) {
+        public void onScanResult(int callbackType, final ScanResult result) {
             if (!needProcessScan.get())
                 return;
-            if (bluetoothDevice == null)
-                return;
 
-            String dataStr = bytesToHexString(bytes);
-            Log.d(TAG, "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
-                    "\nrssi: " + i);
+            final BluetoothDevice device = result.getDevice();
+            String dataStr = bytesToHexString(result.getScanRecord().getBytes());
+            Log.d(TAG, "onLeScan: " + device.getName() + "\n" + dataStr + "\nmac： " + device.getAddress() +
+                    "\nrssi: " + result.getRssi());
 
             if (dataStr.contains(encryptedTid)) {
                 needProcessScan.set(false);
@@ -32,7 +34,7 @@ public class BikeBleScanner extends Scanner {
                     runOnMainThread(new Runnable() {
                         @Override
                         public void run() {
-                            callback.onDeviceFounded(bluetoothDevice, i, bytes);
+                            callback.onDeviceFounded(device, result.getRssi(), result.getScanRecord().getBytes());
                         }
                     });
                 }
@@ -40,7 +42,7 @@ public class BikeBleScanner extends Scanner {
         }
     };
 
-    public BikeBleScanner(BluetoothAdapter bluetoothAdapter) {
+    public AndroidLBikeBleScanner(BluetoothAdapter bluetoothAdapter) {
         super(bluetoothAdapter);
     }
 
@@ -57,7 +59,7 @@ public class BikeBleScanner extends Scanner {
                 needProcessScan.set(false);
             }
         }, timeoutMillis);
-        bluetoothAdapter.startLeScan(bleCallback);
+        bluetoothAdapter.getBluetoothLeScanner().startScan(bleCallback);
     }
 
     @Override
@@ -65,7 +67,7 @@ public class BikeBleScanner extends Scanner {
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
-                bluetoothAdapter.stopLeScan(bleCallback);
+                bluetoothAdapter.getBluetoothLeScanner().stopScan(bleCallback);
             }
         });
     }

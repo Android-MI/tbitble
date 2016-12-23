@@ -303,15 +303,25 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private void parseAll(Byte[] data) {
-        if (data == null || data.length < 15)
+        if (data == null || data.length == 0)
             return;
-        Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
-        Byte[] signalData = Arrays.copyOfRange(data, 10, 13);
-        Byte[] batteryData = Arrays.copyOfRange(data, 13, 15);
 
-        parseLocation(locationData);
-        parseVoltage(batteryData);
-        parseSignal(signalData);
+        if (data.length >= 10) {
+            Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
+            parseLocation(locationData);
+        }
+        if (data.length >= 13) {
+            Byte[] signalData = Arrays.copyOfRange(data, 10, 13);
+            parseSignal(signalData);
+        }
+        if (data.length >= 15) {
+            Byte[] batteryData = Arrays.copyOfRange(data, 13, 15);
+            parseVoltage(batteryData);
+        }
+        if (data.length >= 22) {
+            Byte[] baseStationData = Arrays.copyOfRange(data, 15, 22);
+            parseBaseStation(baseStationData);
+        }
 
         handler.removeMessages(Constant.REQUEST_UPDATE);
         bus.post(new BluEvent.WriteData(Constant.REQUEST_UPDATE, BluEvent.State.SUCCEED));
@@ -331,6 +341,35 @@ public class BikeBleConnector implements Reader, Writer {
             return;
         }
         bikeState.setSignal(result);
+    }
+
+    private void parseBaseStation(Byte[] data) {
+        if (data == null || data.length != 8)
+            return;
+        try {
+            byte[] temp = ByteUtil.bytesToBytes(data);
+            byte[] mcc = ByteUtil.subBytes(temp, 0, 2);
+            byte[] mnc = ByteUtil.subBytes(temp, 2, 1);
+            byte[] lac = ByteUtil.subBytes(temp, 3, 2);
+            byte[] cell = ByteUtil.subBytes(temp, 5, 3);
+
+            int[] result = new int[4];
+            result[0] = byteArrayToInt(mcc);
+            result[1] = byteArrayToInt(mnc);
+            result[2] = byteArrayToInt(lac);
+            result[3] = byteArrayToInt(cell);
+
+            bikeState.setBaseStation(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private int byteArrayToInt(byte[] data) {
+        String s = ByteUtil.bytesToHexString(data);
+        s = s.replace(" ", "");
+        Log.d(TAG, "byteArrayToInt: " + s);
+        return Integer.parseInt(s, 16);
     }
 
     private void parseDeviceFault(Byte[] data) {
@@ -429,7 +468,7 @@ public class BikeBleConnector implements Reader, Writer {
                 parseLocation(value);
                 break;
             case 0x85:
-//              parseIsTested(value);
+                parseBaseStation(value);
                 break;
             case 0x86:
                 parseSignal(value);
