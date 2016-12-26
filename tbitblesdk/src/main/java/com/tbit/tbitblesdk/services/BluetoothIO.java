@@ -149,6 +149,11 @@ public class BluetoothIO {
         connectionState = STATE_SCANNING;
         stopScan();
         disconnectInside();
+        if (!isBlueEnable()) {
+            bus.post(new BluEvent.BleNotOpened());
+            return;
+        }
+        scanner.setBluetoothAdapter(bluetoothAdapter);
         scanner.start(macAddress, new ScannerCallback() {
             @Override
             public void onScanTimeout() {
@@ -158,6 +163,9 @@ public class BluetoothIO {
 
             @Override
             public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+//                BluetoothGatt connect = connect(bluetoothDevice, false, coreGattCallback);
+//                refreshDeviceCache(connect);
+//                connect.connect();
                 connect(bluetoothDevice, false, coreGattCallback);
             }
         });
@@ -169,6 +177,8 @@ public class BluetoothIO {
     }
 
     public boolean isBlueEnable() {
+        if (bluetoothAdapter == null)
+            return false;
         return bluetoothAdapter.isEnabled();
     }
 
@@ -262,19 +272,21 @@ public class BluetoothIO {
     }
 
     // Clears the device cache. After uploading new hello4 the DFU target will have other services than before.
-    public boolean refreshDeviceCache() {
+    private boolean refreshDeviceCache(BluetoothGatt gatt){
         try {
-            final Method refresh = BluetoothGatt.class.getMethod("refresh");
-            if (refresh != null) {
-                final boolean success = (Boolean) refresh.invoke(bluetoothGatt);
-                Log.i(TAG, "Refreshing result: " + success);
-                return success;
+            BluetoothGatt localBluetoothGatt = gatt;
+            Method localMethod = localBluetoothGatt.getClass().getMethod("refresh", new Class[0]);
+            if (localMethod != null) {
+                boolean bool = ((Boolean) localMethod.invoke(localBluetoothGatt, new Object[0])).booleanValue();
+                return bool;
             }
-        } catch (Exception e) {
-            Log.e(TAG, "An exception occured while refreshing device", e);
+        }
+        catch (Exception localException) {
+            Log.e(TAG, "An exception occured while refreshing device");
         }
         return false;
     }
+
 
     public void runOnMainThread(Runnable runnable) {
         if (isMainThread()) {
@@ -355,6 +367,10 @@ public class BluetoothIO {
             Log.d(TAG, "--指令下发失败！");
         }
         return status;
+    }
+
+    public void reset() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     private void printServices(BluetoothGatt gatt) {

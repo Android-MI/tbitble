@@ -3,7 +3,14 @@ package com.tbit.tbitblesdk.services;
 import android.bluetooth.BluetoothAdapter;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
+import com.tbit.tbitblesdk.protocol.BluEvent;
+
+import org.greenrobot.eventbus.EventBus;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -12,11 +19,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 
 public abstract class Scanner {
+    private static final String TAG = "Scanner";
     protected Handler handler = new Handler(Looper.getMainLooper());
-    protected long timeoutMillis = 10000;
+    protected long timeoutMillis = 15000;
+    protected String originTid;
     protected String encryptedTid;
     protected ScannerCallback callback;
     protected BluetoothAdapter bluetoothAdapter;
+    protected Map<String, Integer> results = new ConcurrentHashMap<>();
     protected AtomicBoolean needProcessScan = new AtomicBoolean(true);
 
     abstract void start(String macAddress, ScannerCallback callback);
@@ -31,8 +41,9 @@ public abstract class Scanner {
         this.timeoutMillis = timeoutMillis;
     }
 
-    public void setMacAddress(String macAddress) {
-        this.encryptedTid = encryptStr(macAddress);
+    public void setMacAddress(String tid) {
+        originTid = tid;
+        this.encryptedTid = encryptStr(tid);
     }
 
     public void setBluetoothAdapter(BluetoothAdapter bluetoothAdapter) {
@@ -87,5 +98,18 @@ public abstract class Scanner {
             builder.append(szKey[in_str.charAt(i) - 0x2A]);
         }
         return builder.toString();
+    }
+
+    StringBuilder sb;
+    protected void printLogScannedLog() {
+        sb = new StringBuilder();
+        sb.append("#########################################\n");
+        for (Map.Entry<String, Integer> entry : results.entrySet()) {
+            sb.append("mac: " + entry.getKey() + " rssi : " + entry.getValue())
+                    .append("\n");
+        }
+        sb.append("#########################################");
+        Log.d(TAG, sb.toString());
+        EventBus.getDefault().post(new BluEvent.DebugLogEvent("Scan Record", sb.toString()));
     }
 }

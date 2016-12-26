@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdksample;
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
@@ -13,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewStub;
 import android.widget.Button;
@@ -27,6 +29,12 @@ import com.google.zxing.integration.android.IntentResult;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitListener;
 import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdksample.aes.AesTool;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -43,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
     // 022009020
     private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
-    private Map<String, String> keyMap = new HashMap<>();
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
@@ -99,8 +106,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        EventBus.getDefault().register(this);
+
         initView();
-        initMapData();
         helper = new EasyPermissionHelper(this);
 
         helper.checkPermissions(new PermissionListener() {
@@ -141,29 +149,6 @@ public class MainActivity extends AppCompatActivity {
                     hideFac();
             }
         });
-    }
-
-    private void initMapData() {
-        keyMap.put("022009029", "90 EB 28 6C 76 92 AB 11 BD C6 D8 A5 C9 4C 08 19 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("022009028", "60 DA 69 AD B8 43 F5 56 69 48 C0 33 86 71 B2 6F 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("0229027", "D0 EA 52 28 C9 C9 31 D3 2D AA FF CA 96 09 55 31 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("022009026", "59 65 83 A5 0E C4 23 F7 40 39 E6 CA EA 40 82 4E 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("022009025", "A3 D1 80 97 93 7C 3E 15 A5 55 22 10 0D 4A 31 B6 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("135790246", "D6 15 61 BC 02 4E 33 70 B1 7B 57 24 60 83 25 81 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("022009021", "18 1B E3 4F BE 0B A3 39 06 4D 6B 9A 8E 73 F8 46 02 7D B3 56 AB E6 11 1B CE 33 BB C2 32 1E CD F2");
-        keyMap.put("022004009", "EEADB670D6FC5AAE5C0DEBB7C38CD861027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022004008", "185A248BC45304BE7168E46FF2E66F5E027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014032", "8A40775EF6265FAFD575DF98CAB62651027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014033", "CC7D75BF3D2A7F0988AD8496FE1F8CB0027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014034", "5365EE8A084B8762FA6D7FD209D5893D027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014035", "BE042FA2A6D17F6DD87896A8E63376A7027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014036", "2379E297BFB316531B65BCEF3B8AB1BD027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014037", "EC660F70C30C06DD2C04EA1688612409027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014038", "7FB39DAC915B6A0605094E57CC8AF54E027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014039", "B327FEAF1F48AC8CF07E16E67F3775D6027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014040", "A9E9B9A1EAF4C162E641CBF2D6A6DF6E027DB356ABE6111BCE33BBC2321ECDF2");
-        keyMap.put("022014041", "64D28C77A2CB47D663BE03FB161925BD027DB356ABE6111BCE33BBC2321ECDF2");
-
     }
 
     private void showSetting() {
@@ -221,11 +206,23 @@ public class MainActivity extends AppCompatActivity {
         TbitBle.disConnect();
     }
 
+    public void reset(View view) {
+        BluetoothAdapter.getDefaultAdapter().disable();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                BluetoothAdapter.getDefaultAdapter().enable();
+                TbitBle.reset();
+            }
+        }, 500);
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         helper.onDestroy();
         TbitBle.destroy();
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -254,6 +251,11 @@ public class MainActivity extends AppCompatActivity {
             // This is important, otherwise the result will not be passed to the fragment
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDebudLogEvent(BluEvent.DebugLogEvent event) {
+        showLog(event.getKey() + "\n" +event.getLogStr());
     }
 
     private void showLog(String str) {
@@ -353,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void connectInside(String deviceId) {
         showLog("连接开始");
-        String key = keyMap.get(deviceId);
+        String key = AesTool.Genkey(deviceId);
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);

@@ -77,6 +77,11 @@ public class TbitBle {
         instance = null;
     }
 
+    public static void reset() {
+        checkInstanceNotNull();
+        instance.reset();
+    }
+
     public static boolean hasInitialized() {
         return instance != null;
     }

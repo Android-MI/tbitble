@@ -83,6 +83,10 @@ public class BluEvent {
     public static class ScanTimeOut {
     }
 
+    public static class BleNotOpened {
+
+    }
+
 //    public static class Verified {
 //        public State state;
 //
@@ -90,6 +94,24 @@ public class BluEvent {
 //            this.state = state;
 //        }
 //    }
+
+    public static class DebugLogEvent {
+        private String key;
+        private String logStr;
+
+        public DebugLogEvent(String key, String logStr) {
+            this.key = key;
+            this.logStr = logStr;
+        }
+
+        public String getLogStr() {
+            return logStr;
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
 
     public static class Ota {
     }

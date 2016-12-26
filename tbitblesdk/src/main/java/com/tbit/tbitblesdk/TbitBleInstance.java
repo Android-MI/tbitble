@@ -63,6 +63,8 @@ class TbitBleInstance {
     }
 
     void unlock() {
+        if (!isBluetoothOpened())
+            return;
         if (!bluetoothIO.isConnected()) {
             listener.onUnlockResponse(ResultCode.DISCONNECTED);
             return;
@@ -73,6 +75,8 @@ class TbitBleInstance {
     }
 
     void lock() {
+        if (!isBluetoothOpened())
+            return;
         if (!bluetoothIO.isConnected()) {
             listener.onLockResponse(ResultCode.DISCONNECTED);
             return;
@@ -83,6 +87,8 @@ class TbitBleInstance {
     }
 
     void update() {
+        if (!isBluetoothOpened())
+            return;
         if (!bluetoothIO.isConnected()) {
             listener.onUpdateResponse(ResultCode.DISCONNECTED);
             return;
@@ -93,6 +99,8 @@ class TbitBleInstance {
     }
 
     void common(byte commandId, byte key, Byte[] value) {
+        if (!isBluetoothOpened())
+            return;
         if (!bluetoothIO.isConnected()) {
             listener.onCommonCommandResponse(ResultCode.DISCONNECTED);
             return;
@@ -179,6 +187,15 @@ class TbitBleInstance {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public void reset() {
+        bluetoothIO.reset();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBleNotOpened(BluEvent.BleNotOpened event) {
+        listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

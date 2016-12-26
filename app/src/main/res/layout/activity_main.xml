@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="connect"
-            android:text="scan" />
+            android:text="扫描二维码" />
 
         <Button
             android:id="@+id/button_unlock"
@@ -46,7 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:onClick="unlock"
-            android:text="unlock" />
+            android:text="解锁" />
 
         <Button
             android:id="@+id/button_lock"
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:onClick="lock"
-            android:text="lock" />
+            android:text="上锁" />
 
         <Button
             android:id="@+id/button_common"
@@ -71,7 +71,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:onClick="update"
-            android:text="update" />
+            android:text="更新状态" />
+
+        <Button
+            android:id="@+id/button_reset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="reset"
+            android:text="重置蓝牙" />
 
     </LinearLayout>
 
@@ -94,7 +102,7 @@
             android:layout_centerVertical="true"
             android:layout_gravity="right"
             android:onClick="manualConnect"
-            android:text="connect" />
+            android:text="手动输入编号" />
 
         <Button
             android:id="@+id/button_disconnect"
@@ -102,7 +110,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="left"
             android:onClick="reconnect"
-            android:text="reconnect" />
+            android:text="重新连接" />
 
         <LinearLayout
             android:layout_width="wrap_content"

@@ -4,6 +4,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.protocol.BluEvent;
+
+import org.greenrobot.eventbus.EventBus;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
@@ -21,8 +29,12 @@ public class BikeBleScanner extends Scanner {
                 return;
 
             String dataStr = bytesToHexString(bytes);
-            Log.d(TAG, "onLeScan: " + bluetoothDevice.getName() + "\n" + dataStr + "\nmac： " + bluetoothDevice.getAddress() +
-                    "\nrssi: " + i);
+
+            String address = bluetoothDevice.getAddress();
+            int rssi = i;
+            if (results.get(address) != null)
+                rssi = (rssi + results.get(address)) / 2;
+            results.put(address, rssi);
 
             if (dataStr.contains(encryptedTid)) {
                 needProcessScan.set(false);
@@ -32,6 +44,7 @@ public class BikeBleScanner extends Scanner {
                     runOnMainThread(new Runnable() {
                         @Override
                         public void run() {
+                            printLogScannedLog();
                             callback.onDeviceFounded(bluetoothDevice, i, bytes);
                         }
                     });
@@ -49,11 +62,14 @@ public class BikeBleScanner extends Scanner {
         setMacAddress(macAddress);
         this.callback = callback;
         reset();
+        results.clear();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (needProcessScan.get() && callback != null)
+                if (needProcessScan.get() && callback != null) {
+                    printLogScannedLog();
                     callback.onScanTimeout();
+                }
                 needProcessScan.set(false);
             }
         }, timeoutMillis);
@@ -65,6 +81,10 @@ public class BikeBleScanner extends Scanner {
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
+                if (bluetoothAdapter == null) {
+                    EventBus.getDefault().post(new BluEvent.BleNotOpened());
+                    return;
+                }
                 bluetoothAdapter.stopLeScan(bleCallback);
             }
         });
