@@ -103,12 +103,12 @@ public abstract class Scanner {
     StringBuilder sb;
     protected void printLogScannedLog() {
         sb = new StringBuilder();
-        sb.append("#########################################\n");
+        sb.append("#####################################\n");
         for (Map.Entry<String, Integer> entry : results.entrySet()) {
             sb.append("mac: " + entry.getKey() + " rssi : " + entry.getValue())
                     .append("\n");
         }
-        sb.append("#########################################");
+        sb.append("#####################################");
         Log.d(TAG, sb.toString());
         EventBus.getDefault().post(new BluEvent.DebugLogEvent("Scan Record", sb.toString()));
     }
