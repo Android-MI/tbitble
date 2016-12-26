@@ -135,8 +135,15 @@ public class BikeBleConnector implements Reader, Writer {
     public boolean lock() {
         if (requestQueue.contains(Constant.REQUEST_LOCK))
             return false;
-        send(Constant.REQUEST_LOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_DEFENCE,
-                new Byte[]{Constant.VALUE_ON});
+        lockCount = 0;
+//        send(Constant.REQUEST_LOCK, Constant.COMMAND_SETTING, Constant.SETTING_KEY_DEFENCE,
+//                new Byte[]{Constant.VALUE_ON});
+
+        final int sequenceId = Constant.REQUEST_LOCK;
+        requestQueue.add(Integer.valueOf(sequenceId));
+        handler.removeMessages(sequenceId);
+        handler.sendEmptyMessageDelayed(sequenceId, 15 * 1000);
+        doLock();
         return true;
     }
 
@@ -152,6 +159,18 @@ public class BikeBleConnector implements Reader, Writer {
             return false;
         send(Constant.REQUEST_COMMON, commandId, key, value);
         return true;
+    }
+
+    private void doLock() {
+        PacketValue packetValue = new PacketValue();
+        packetValue.setCommandId(Constant.COMMAND_SETTING);
+        packetValue.addData(new PacketValue.DataBean(Constant.SETTING_KEY_DEFENCE,
+                new Byte[]{Constant.VALUE_ON}));
+        Packet send_packet = new Packet();
+        send_packet.setHeadSerialNo(Constant.REQUEST_LOCK);
+        send_packet.setPacketValue(packetValue, true);
+        send_packet.print();
+        writeTask.addData(send_packet);
     }
 
     // 心跳包，同步系统状态
@@ -422,7 +441,12 @@ public class BikeBleConnector implements Reader, Writer {
         return isFlagged ? 1 : 0;
     }
 
+    private int lockCount = 0;
     private void resolveOperationResponse(int key, Byte[] value) {
+        if (key == 0x81) {
+            resolveLockResponse(key, value);
+            return;
+        }
         Log.d(TAG, "resolveOperationResponse: " + ByteUtil.bytesToHexString(value));
         int sequence = -1;
         BluEvent.State state = value[0] == 0 ? BluEvent.State.SUCCEED :
@@ -446,6 +470,27 @@ public class BikeBleConnector implements Reader, Writer {
         bus.post(new BluEvent.WriteData(sequence, state));
         if (state == BluEvent.State.FAILED) {
             bus.post(new BluEvent.UpdateBikeState());
+        }
+    }
+
+    private void resolveLockResponse(int key, Byte[] value) {
+        Log.d(TAG, "resolveLockResponse: " + ByteUtil.bytesToHexString(value));
+        if (!requestQueue.contains(Constant.REQUEST_LOCK))
+            return;
+        BluEvent.State state = value[0] == 0 ? BluEvent.State.SUCCEED :
+                BluEvent.State.FAILED;
+        bikeState.setOperateFaultCode(value[0]);
+        if (state == BluEvent.State.SUCCEED) {
+            bus.post(new BluEvent.WriteData(Constant.REQUEST_LOCK, state));
+        } else {
+            if (lockCount < 2) {
+                lockCount++;
+                doLock();
+            }
+            else {
+                bus.post(new BluEvent.WriteData(Constant.REQUEST_LOCK, state));
+                bus.post(new BluEvent.UpdateBikeState());
+            }
         }
     }
 
