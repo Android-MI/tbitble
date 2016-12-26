@@ -277,7 +277,7 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    listener.onConnectResponse(ResultCode.FAILED);
+                    listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
                     break;
             }
         }
