@@ -212,7 +212,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 BluetoothAdapter.getDefaultAdapter().enable();
-                TbitBle.reset();
             }
         }, 500);
     }
