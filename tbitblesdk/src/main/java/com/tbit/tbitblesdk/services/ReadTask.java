@@ -7,9 +7,9 @@ import android.util.Log;
 import com.tbit.tbitblesdk.listener.Reader;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
     private static final String TAG = "ReadTask";
     private static final Byte HEAD_FLAG = new Byte((byte) 0xAA);
     private Reader reader;
-    private List<Byte> readTemp = Collections.synchronizedList(new ArrayList<Byte>());
+    private List<Byte> readTemp = Collections.synchronizedList(new LinkedList<Byte>());
 
     public ReadTask(Reader reader) {
         this.reader = reader;

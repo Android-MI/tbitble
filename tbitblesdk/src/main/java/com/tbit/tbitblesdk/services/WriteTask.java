@@ -8,9 +8,9 @@ import com.tbit.tbitblesdk.listener.Writer;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +23,7 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     private static final String TAG = "WriteTask";
     private static final int MAX_PACKAGE_LENGTH = 20;//每个数据包的长度最长为20字节
     private Packet currentData;
-    private List<Packet> dataQueue = Collections.synchronizedList(new ArrayList<Packet>());
+    private List<Packet> dataQueue = Collections.synchronizedList(new LinkedList<Packet>());
     private AtomicBoolean isWriteProceed = new AtomicBoolean(true);//发送完全标志位，存在拆包问题
     private AtomicInteger currentSequenceId = new AtomicInteger(-1);
     private Writer writer;
