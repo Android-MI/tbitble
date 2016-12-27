@@ -604,6 +604,12 @@ public class BikeBleConnector implements Reader, Writer {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onVersionResponse(BluEvent.VersionResponse response) {
+        int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
+        bikeState.setVersion(version);
+    }
+
     static class TimeoutHandler extends Handler {
         WeakReference<BikeBleConnector> connectorReference;
 
