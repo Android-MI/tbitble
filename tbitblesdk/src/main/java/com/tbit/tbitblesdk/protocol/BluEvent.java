@@ -119,4 +119,14 @@ public class BluEvent {
     public static class UpdateBikeState {
 
     }
+
+    public static class VersionResponse {
+        public int deviceVersion;
+        public int firmwareVersion;
+
+        public VersionResponse(int deviceVersion, int firmwareVersion) {
+            this.deviceVersion = deviceVersion;
+            this.firmwareVersion = firmwareVersion;
+        }
+    }
 }
