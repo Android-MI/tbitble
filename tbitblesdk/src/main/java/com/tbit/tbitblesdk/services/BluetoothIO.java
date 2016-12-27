@@ -149,6 +149,7 @@ public class BluetoothIO {
         connectionState = STATE_SCANNING;
         stopScan();
         disconnectInside();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!isBlueEnable()) {
             bus.post(new BluEvent.BleNotOpened());
             return;
@@ -367,10 +368,6 @@ public class BluetoothIO {
             Log.d(TAG, "--指令下发失败！");
         }
         return status;
-    }
-
-    public void reset() {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     private void printServices(BluetoothGatt gatt) {
