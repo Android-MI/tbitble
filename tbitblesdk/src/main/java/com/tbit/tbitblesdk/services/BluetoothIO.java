@@ -203,13 +203,15 @@ public class BluetoothIO {
         return connectionState == STATE_SERVICES_DISCOVERED;
     }
 
-    public BluetoothGatt connect(final BluetoothDevice device,
+    public void connect(final BluetoothDevice device,
                                  final boolean autoConnect,
                                  BluetoothGattCallback callback) {
         Log.i(TAG, "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
-        return device.connectGatt(context, autoConnect, callback);
+        BluetoothGatt bluetoothGatt = device.connectGatt(context, autoConnect, callback);
+        refreshDeviceCache(bluetoothGatt);
+        bluetoothGatt.connect();
     }
 
     public void disconnect() {
