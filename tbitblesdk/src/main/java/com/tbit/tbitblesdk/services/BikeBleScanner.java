@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.protocol.ParsedAd;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -41,6 +42,7 @@ public class BikeBleScanner extends Scanner {
                 removeHandlerMsg();
                 stop();
                 if (callback != null) {
+                    publishVersion(bytes);
                     runOnMainThread(new Runnable() {
                         @Override
                         public void run() {

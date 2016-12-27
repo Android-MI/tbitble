@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.protocol.ParsedAd;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -98,6 +99,18 @@ public abstract class Scanner {
             builder.append(szKey[in_str.charAt(i) - 0x2A]);
         }
         return builder.toString();
+    }
+
+    protected void publishVersion(byte[] bytes) {
+        try {
+            ParsedAd ad = ParsedAd.parseData(bytes);
+            final byte[] manuData = ad.getManufacturer();
+            final int hard = manuData[9];
+            final int firm = manuData[10];
+            EventBus.getDefault().post(new BluEvent.VersionResponse(hard, firm));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     StringBuilder sb;

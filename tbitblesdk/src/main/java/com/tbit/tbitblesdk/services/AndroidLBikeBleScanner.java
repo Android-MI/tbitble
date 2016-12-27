@@ -39,14 +39,15 @@ public class AndroidLBikeBleScanner extends Scanner {
             Integer rssi = result.getRssi();
             if (results.get(address) != null)
                 rssi = (rssi + results.get(address)) / 2;
-            results.put(result.getDevice().getAddress(), rssi);
+            results.put(address, rssi);
 
             if (dataStr.contains(encryptedTid)) {
                 needProcessScan.set(false);
                 removeHandlerMsg();
                 stop();
                 if (callback != null) {
-                    Log.d(TAG, "le scan found: ");
+                    Log.w(TAG, "le scan found: ");
+                    publishVersion(result.getScanRecord().getBytes());
                     printLogScannedLog();
                     callback.onDeviceFounded(result.getDevice(), result.getRssi(),
                             result.getScanRecord().getBytes());
