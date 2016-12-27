@@ -189,10 +189,6 @@ class TbitBleInstance {
         return result;
     }
 
-    public void reset() {
-        bluetoothIO.reset();
-    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onBleNotOpened(BluEvent.BleNotOpened event) {
         listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
