@@ -394,9 +394,7 @@ public class BikeBleConnector implements Reader, Writer {
     private void parseDeviceFault(Byte[] data) {
         int result = 0;
         try {
-            String s = ByteUtil.bytesToHexString(data);
-            s = s.replace(" ", "");
-            result = Integer.parseInt(s, 16);
+            result = byteArrayToInt(ByteUtil.bytesToBytes(data));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -407,9 +405,7 @@ public class BikeBleConnector implements Reader, Writer {
     private void parseVoltage(Byte[] data) {
         int result = 0;
         try {
-            String s = ByteUtil.bytesToHexString(data);
-            s = s.replace(" ", "");
-            result = Integer.parseInt(s, 16);
+            result = byteArrayToInt(ByteUtil.bytesToBytes(data));
         } catch (Exception e) {
             e.printStackTrace();
         }
