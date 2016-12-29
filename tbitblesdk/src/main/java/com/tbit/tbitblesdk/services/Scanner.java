@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class Scanner {
     private static final String TAG = "Scanner";
     protected Handler handler = new Handler(Looper.getMainLooper());
-    protected long timeoutMillis = 15000;
+    protected long timeoutMillis = 10000;
     protected String originTid;
     protected String encryptedTid;
     protected ScannerCallback callback;
