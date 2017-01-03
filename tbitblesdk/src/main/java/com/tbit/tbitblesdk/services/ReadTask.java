@@ -41,11 +41,12 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
             if (readTemp.size() != 0) {
                 // 过滤
                 if (!readTemp.get(0).equals(HEAD_FLAG)) {
+                    readTemp.remove(0);
                     continue;
                 }
-                if (readTemp.size() < 8)
+                if (readTemp.size() < 8) {
                     continue;
-
+                }
                 //处理
                 try {
                     process();

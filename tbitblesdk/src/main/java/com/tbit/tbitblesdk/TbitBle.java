@@ -26,6 +26,11 @@ public class TbitBle {
         instance.setListener(listener);
     }
 
+    public static void setDebugListener(TbitDebugListener listener) {
+        checkInstanceNotNull();
+        instance.setDebugListener(listener);
+    }
+
     public static void connect(String macAddr, String key) {
         checkInstanceNotNull();
         instance.connect(macAddr, key);

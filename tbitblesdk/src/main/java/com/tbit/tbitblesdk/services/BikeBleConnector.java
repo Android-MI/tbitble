@@ -161,6 +161,21 @@ public class BikeBleConnector implements Reader, Writer {
         return true;
     }
 
+    public void remoteDisconnect() {
+        send(Constant.REQUEST_REMOTE, Constant.COMMAND_REMOTE, (byte) 0x01, null);
+    }
+
+    public void disConnect() {
+//        remoteDisconnect();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                bluetoothIO.disconnect();
+//            }
+//        }, 1500);
+        bluetoothIO.disconnect();
+    }
+
     private void doLock() {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId(Constant.COMMAND_SETTING);

@@ -113,7 +113,8 @@ public abstract class Scanner {
         }
     }
 
-    StringBuilder sb;
+    private StringBuilder sb;
+    private EventBus bus = EventBus.getDefault();
     protected void printLogScannedLog() {
         sb = new StringBuilder();
         sb.append("#####################################\n");
@@ -123,6 +124,22 @@ public abstract class Scanner {
         }
         sb.append("#####################################");
         Log.d(TAG, sb.toString());
-        EventBus.getDefault().post(new BluEvent.DebugLogEvent("Scan Record", sb.toString()));
+        bus.post(new BluEvent.DebugLogEvent("Scan Record", sb.toString()));
+    }
+
+    protected void printLogStart() {
+        bus.post(new BluEvent.DebugLogEvent("Scan Started", "Scan Started : " + originTid));
+    }
+
+    protected void printLogTimeout() {
+        bus.post(new BluEvent.DebugLogEvent("Scan Timeout", "Scan Timeout : " + timeoutMillis));
+    }
+
+    protected void printLogStop() {
+        bus.post(new BluEvent.DebugLogEvent("Scan Stop", "Scan Stop"));
+    }
+
+    protected void printLogFound() {
+        bus.post(new BluEvent.DebugLogEvent("Scan Found", "Scan Found"));
     }
 }

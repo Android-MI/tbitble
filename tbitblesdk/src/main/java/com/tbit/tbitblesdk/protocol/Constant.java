@@ -22,7 +22,7 @@ public class Constant {
     public static final byte COMMAND_BIND            = (byte) 0x05;
     public static final byte COMMAND_LOG             = (byte) 0x08;
     public static final byte COMMAND_HEART_BEAT      = (byte) 0x09;
-    public static final byte COMMAND_RESTART         = (byte) 0xfc;
+    public static final byte COMMAND_REMOTE          = (byte) 0xfc;
     public static final byte COMMAND_FACTORY_RESET   = (byte) 0xfd;
 
     // 0x02 1 终端连接是否成功
@@ -85,6 +85,7 @@ public class Constant {
     public static final int REQUEST_UNLOCK = 25;
     public static final int REQUEST_LOCK = 26;
     public static final int REQUEST_COMMON = 27;
+    public static final int REQUEST_REMOTE = 28;
 
 
     //***************应用层*************

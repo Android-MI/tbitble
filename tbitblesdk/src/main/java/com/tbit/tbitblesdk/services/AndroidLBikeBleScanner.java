@@ -15,9 +15,7 @@ import com.tbit.tbitblesdk.protocol.BluEvent;
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
@@ -46,9 +44,10 @@ public class AndroidLBikeBleScanner extends Scanner {
                 removeHandlerMsg();
                 stop();
                 if (callback != null) {
-                    Log.w(TAG, "le scan found: ");
+                    printLogFound();
                     publishVersion(result.getScanRecord().getBytes());
                     printLogScannedLog();
+                    printLogFound();
                     callback.onDeviceFounded(result.getDevice(), result.getRssi(),
                             result.getScanRecord().getBytes());
                 }
@@ -72,19 +71,20 @@ public class AndroidLBikeBleScanner extends Scanner {
             public void run() {
                 if (needProcessScan.get() && callback != null) {
                     printLogScannedLog();
+                    printLogTimeout();
                     callback.onScanTimeout();
                 }
                 needProcessScan.set(false);
             }
         }, timeoutMillis);
-        Log.d(TAG, "le scan started: " + tid);
+        printLogStart();
         bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
 //        bluetoothAdapter.getBluetoothLeScanner().startScan(bleCallback);
     }
 
     @Override
     public void stop() {
-        Log.d(TAG, "le scan stopped: ");
+        printLogStop();
         if (bluetoothAdapter == null) {
             EventBus.getDefault().post(new BluEvent.BleNotOpened());
             return;
@@ -110,7 +110,7 @@ public class AndroidLBikeBleScanner extends Scanner {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
         return settingBuilder.build();
     }
-    
+
     private String resolveMAC() {
         if (TextUtils.isEmpty(originTid))
             return "";

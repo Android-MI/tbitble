@@ -26,6 +26,7 @@ class TbitBleInstance {
     private Byte[] key;
     private String macAddr;
     private TbitListener listener;
+    private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
 
@@ -42,6 +43,10 @@ class TbitBleInstance {
         if (listener == null)
             throw new RuntimeException("listener cannot be null");
         this.listener = listener;
+    }
+
+    void setDebugListener(TbitDebugListener debugListener) {
+        this.debugListener = debugListener;
     }
 
     void connect(String macAddr, String key) {
@@ -123,7 +128,7 @@ class TbitBleInstance {
     }
 
     void disConnect() {
-        bluetoothIO.disconnect();
+        bikeBleConnector.disConnect();
     }
 
     BikeState getState() {
@@ -282,6 +287,14 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onStateUpdated(BluEvent.UpdateBikeState event) {
         listener.onStateUpdated(getState());
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDebudLogEvent(BluEvent.DebugLogEvent event) {
+        if (debugListener != null) {
+            debugListener.onLogStrReceived(event.getKey() + "\n" +event.getLogStr());
+        }
     }
 
 //    @Subscribe(threadMode = ThreadMode.MAIN)

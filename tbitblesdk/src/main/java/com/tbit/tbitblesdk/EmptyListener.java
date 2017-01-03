@@ -42,4 +42,12 @@ public class EmptyListener implements TbitListener {
     public void onCommonCommandResponse(int resultCode) {
 
     }
+
+    public static class EmptyDebugListener implements TbitDebugListener {
+
+        @Override
+        public void onLogStrReceived(String logStr) {
+
+        }
+    }
 }

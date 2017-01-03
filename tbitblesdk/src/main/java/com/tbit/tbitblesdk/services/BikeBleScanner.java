@@ -47,6 +47,7 @@ public class BikeBleScanner extends Scanner {
                         @Override
                         public void run() {
                             printLogScannedLog();
+                            printLogFound();
                             callback.onDeviceFounded(bluetoothDevice, i, bytes);
                         }
                     });
@@ -70,16 +71,19 @@ public class BikeBleScanner extends Scanner {
             public void run() {
                 if (needProcessScan.get() && callback != null) {
                     printLogScannedLog();
+                    printLogTimeout();
                     callback.onScanTimeout();
                 }
                 needProcessScan.set(false);
             }
         }, timeoutMillis);
+        printLogStart();
         bluetoothAdapter.startLeScan(bleCallback);
     }
 
     @Override
     public void stop() {
+        printLogStop();
         runOnMainThread(new Runnable() {
             @Override
             public void run() {
