@@ -44,10 +44,9 @@ public class AndroidLBikeBleScanner extends Scanner {
                 removeHandlerMsg();
                 stop();
                 if (callback != null) {
-                    printLogFound();
-                    publishVersion(result.getScanRecord().getBytes());
                     printLogScannedLog();
                     printLogFound();
+                    publishVersion(result.getScanRecord().getBytes());
                     callback.onDeviceFounded(result.getDevice(), result.getRssi(),
                             result.getScanRecord().getBytes());
                 }
@@ -84,7 +83,6 @@ public class AndroidLBikeBleScanner extends Scanner {
 
     @Override
     public void stop() {
-        printLogStop();
         if (bluetoothAdapter == null) {
             EventBus.getDefault().post(new BluEvent.BleNotOpened());
             return;
