@@ -359,7 +359,7 @@ public class BikeBleConnector implements Reader, Writer {
 
         handler.removeMessages(Constant.REQUEST_UPDATE);
         bus.post(new BluEvent.WriteData(Constant.REQUEST_UPDATE, BluEvent.State.SUCCEED));
-        bus.post(new BluEvent.UpdateBikeState());
+//        bus.post(new BluEvent.UpdateBikeState());
     }
 
     private void parseSignal(Byte[] data) {
@@ -480,7 +480,7 @@ public class BikeBleConnector implements Reader, Writer {
         handler.removeMessages(sequence);
         bus.post(new BluEvent.WriteData(sequence, state));
         if (state == BluEvent.State.FAILED) {
-            bus.post(new BluEvent.UpdateBikeState());
+//            bus.post(new BluEvent.UpdateBikeState());
         }
     }
 
@@ -500,7 +500,7 @@ public class BikeBleConnector implements Reader, Writer {
             }
             else {
                 bus.post(new BluEvent.WriteData(Constant.REQUEST_LOCK, state));
-                bus.post(new BluEvent.UpdateBikeState());
+//                bus.post(new BluEvent.UpdateBikeState());
             }
         }
     }

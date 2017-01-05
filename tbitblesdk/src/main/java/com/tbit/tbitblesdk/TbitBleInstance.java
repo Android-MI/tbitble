@@ -281,6 +281,7 @@ class TbitBleInstance {
                     listener.onLockResponse(ResultCode.SUCCEED);
                     break;
                 case Constant.REQUEST_UPDATE:
+                    EventBus.getDefault().post(new BluEvent.UpdateBikeState());
                     listener.onUpdateResponse(ResultCode.SUCCEED);
                     break;
                 case Constant.REQUEST_CONNECT:
