@@ -25,6 +25,8 @@ public class ResultCode {
     public static final int DEVICE_NOT_FOUNDED = -2002;
     // 密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
     public static final int KEY_ILLEGAL = -2003;
+    // 连接超时
+    public static final int CONNECT_TIME_OUT = -2004;
     // 解锁失败
 //    public static final int UNLOCK_FAILED = -3001;
     // 上锁失败

@@ -1,6 +1,9 @@
 package com.tbit.tbitblesdk;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -16,6 +19,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by Salmon on 2016/12/5 0005.
  */
@@ -29,6 +34,8 @@ class TbitBleInstance {
     private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
+    private boolean isConnectResponse = false;
+    private ConnectTimeoutHandler timeoutHandler;
 
     TbitBleInstance(Context context) {
         this.context = context;
@@ -37,6 +44,7 @@ class TbitBleInstance {
         listener = new EmptyListener();
         bluetoothIO = new BluetoothIO(context);
         bikeBleConnector = new BikeBleConnector(bluetoothIO);
+        timeoutHandler = new ConnectTimeoutHandler(Looper.getMainLooper(), this);
     }
 
     void setListener(TbitListener listener) {
@@ -124,6 +132,7 @@ class TbitBleInstance {
             listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
             return;
         }
+        resetTimeout();
         bluetoothIO.reconnect();
     }
 
@@ -142,6 +151,7 @@ class TbitBleInstance {
     void scan() {
         if (!isBluetoothOpened())
             return;
+        resetTimeout();
         bluetoothIO.scanAndConnectByMac(macAddr);
     }
 
@@ -155,6 +165,12 @@ class TbitBleInstance {
         bikeBleConnector.destroy();
         bluetoothIO.close();
         EventBus.getDefault().unregister(this);
+    }
+
+    private void resetTimeout() {
+        isConnectResponse = false;
+        timeoutHandler.removeCallbacksAndMessages(null);
+        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
     }
 
     private boolean isBluetoothOpened() {
@@ -201,6 +217,7 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onScanTimeOut(BluEvent.ScanTimeOut event) {
+        isConnectResponse = true;
         listener.onConnectResponse(ResultCode.DEVICE_NOT_FOUNDED);
     }
 
@@ -212,6 +229,7 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
+        isConnectResponse = true;
         listener.onDisconnected(ResultCode.DISCONNECTED);
     }
 
@@ -224,6 +242,8 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDiscovered(BluEvent.DiscoveredSucceed event) {
         Log.i(TAG, "onDiscovered: ");
+        if (isConnectResponse)
+            return;
         boolean result = bluetoothIO.enableTXNotification();
         if (result)
             verify();
@@ -237,6 +257,7 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUartNotSupport(BluEvent.DeviceUartNotSupported event) {
         Log.i(TAG, "onUartNotSupport: ");
+        isConnectResponse = true;
         bluetoothIO.disconnect();
         listener.onConnectResponse(ResultCode.BLE_NOT_SUPPORTED);
     }
@@ -263,7 +284,10 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.SUCCEED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    listener.onConnectResponse(ResultCode.SUCCEED);
+                    if (!isConnectResponse) {
+                        listener.onConnectResponse(ResultCode.SUCCEED);
+                        isConnectResponse = true;
+                    }
                     break;
             }
         } else {
@@ -278,7 +302,10 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+                    if (!isConnectResponse) {
+                        listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+                        isConnectResponse = true;
+                    }
                     break;
             }
         }
@@ -297,13 +324,24 @@ class TbitBleInstance {
         }
     }
 
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    public void onVerified(BluEvent.Verified event) {
-//        Log.d(TAG, "onVerified: ");
-//        if (event.state == BluEvent.State.SUCCEED) {
-//            listener.onConnectResponse(ResultCode.SUCCEED);
-//        } else {
-//            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
-//        }
-//    }
+    static class ConnectTimeoutHandler extends Handler {
+        WeakReference<TbitBleInstance> instanceReference;
+
+        public ConnectTimeoutHandler(Looper looper, TbitBleInstance instance) {
+            super(looper);
+            this.instanceReference = new WeakReference<>(instance);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            final TbitBleInstance instance = instanceReference.get();
+            if (instance == null)
+                return;
+            if (!instance.isConnectResponse) {
+                instance.isConnectResponse = true;
+                instance.listener.onConnectResponse(ResultCode.CONNECT_TIME_OUT);
+                instance.disConnect();
+            }
+        }
+    }
 }

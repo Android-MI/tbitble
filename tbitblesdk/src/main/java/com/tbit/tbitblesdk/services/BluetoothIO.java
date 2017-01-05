@@ -132,7 +132,7 @@ public class BluetoothIO {
 
     public BluetoothIO(Context context) {
         super();
-        this.context = context = context.getApplicationContext();
+        this.context = context.getApplicationContext();
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -209,7 +209,12 @@ public class BluetoothIO {
         Log.i(TAG, "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
-        BluetoothGatt bluetoothGatt = device.connectGatt(context, autoConnect, callback);
+        BluetoothGatt bluetoothGatt;
+        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            bluetoothGatt = device.connectGatt(context, autoConnect, callback, BluetoothDevice.TRANSPORT_LE);
+        } else {
+            bluetoothGatt = device.connectGatt(context, autoConnect, callback);
+        }
         refreshDeviceCache(bluetoothGatt);
         bluetoothGatt.connect();
     }
