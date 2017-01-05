@@ -33,10 +33,12 @@ public static final int DISCONNECTED = -1004;
 public static final int PROCESSING = -1005;
 // 设备编号不合法
 public static final int MAC_ADDRESS_ILLEGAL = -2001;
-// 未找到设备
+// 未找到设备(10秒)
 public static final int DEVICE_NOT_FOUNDED = -2002;
 // 密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
 public static final int KEY_ILLEGAL = -2003;
+// 连接超时(11秒)
+public static final int CONNECT_TIME_OUT = -2004;
 ```
 
 ### 使用
@@ -153,6 +155,10 @@ private int[] systemState = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
 
 // 0x00：成功  0x01：指令非法 0x02：运动状态 0x03：非绑定状态
 private int operateFaultCode;
+// 0:MCC 1:MNC 2:LAC 3.Cell ID
+private int[] baseStation = new int[]{0, 0, 0, 0};
+// 版本号 0：硬件版本 1：软件版本
+private int[] version = new int[]{0, 0};
 ```
 ##### 结果回调
 
