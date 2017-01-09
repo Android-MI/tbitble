@@ -212,6 +212,7 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onBleNotOpened(BluEvent.BleNotOpened event) {
+        isConnectResponse = true;
         listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
     }
 
@@ -229,8 +230,12 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
-        isConnectResponse = true;
-        listener.onDisconnected(ResultCode.DISCONNECTED);
+        if (!isConnectResponse) {
+            isConnectResponse = true;
+            listener.onConnectResponse(ResultCode.DISCONNECTED);
+        } else {
+            listener.onDisconnected(ResultCode.DISCONNECTED);
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -256,7 +261,7 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUartNotSupport(BluEvent.DeviceUartNotSupported event) {
-        Log.i(TAG, "onUartNotSupport: ");
+        Log.i(TAG, "onUartNotSupport: " + event.message);
         isConnectResponse = true;
         bluetoothIO.disconnect();
         listener.onConnectResponse(ResultCode.BLE_NOT_SUPPORTED);
