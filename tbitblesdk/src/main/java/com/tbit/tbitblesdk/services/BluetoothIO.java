@@ -34,11 +34,12 @@ public class BluetoothIO {
     public static final int STATE_CONNECTING = 2;
     public static final int STATE_CONNECTED = 3;
     public static final int STATE_SERVICES_DISCOVERED = 4;
-    public static final UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
-    public static final UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
-    public static final UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
-    public static final UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final String TAG = "BluetoothIO";
+    public static UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+    public static UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+    public static UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+    public static UUID SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
+    public static UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private int connectionState = STATE_DISCONNECTED;
     private Context context;
     private EventBus bus;
@@ -48,7 +49,7 @@ public class BluetoothIO {
     private Scanner scanner;
     private String lastConnectedDeviceMac;
     private boolean isAutoReconnectEnable = true;
-//    private boolean hasVerified = false;
+    //    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
 
     private BluetoothGattCallback coreGattCallback = new BluetoothGattCallback() {
@@ -81,7 +82,7 @@ public class BluetoothIO {
                 bus.post(new BluEvent.CommonFailedReport("onServicesDiscovered",
                         "status : " + status));
             }
-//            printServices(gatt);
+            printServices(gatt);
         }
 
         @Override
@@ -135,7 +136,7 @@ public class BluetoothIO {
         this.context = context.getApplicationContext();
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
-        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             scanner = new AndroidLBikeBleScanner(bluetoothAdapter);
         } else {
             scanner = new BikeBleScanner(bluetoothAdapter);
@@ -204,13 +205,13 @@ public class BluetoothIO {
     }
 
     public void connect(final BluetoothDevice device,
-                                 final boolean autoConnect,
-                                 BluetoothGattCallback callback) {
+                        final boolean autoConnect,
+                        BluetoothGattCallback callback) {
         Log.i(TAG, "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
         BluetoothGatt bluetoothGatt;
-        if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             bluetoothGatt = device.connectGatt(context, autoConnect, callback, BluetoothDevice.TRANSPORT_LE);
         } else {
             bluetoothGatt = device.connectGatt(context, autoConnect, callback);
@@ -280,7 +281,7 @@ public class BluetoothIO {
     }
 
     // Clears the device cache. After uploading new hello4 the DFU target will have other services than before.
-    private boolean refreshDeviceCache(BluetoothGatt gatt){
+    private boolean refreshDeviceCache(BluetoothGatt gatt) {
         try {
             BluetoothGatt localBluetoothGatt = gatt;
             Method localMethod = localBluetoothGatt.getClass().getMethod("refresh", new Class[0]);
@@ -288,8 +289,7 @@ public class BluetoothIO {
                 boolean bool = ((Boolean) localMethod.invoke(localBluetoothGatt, new Object[0])).booleanValue();
                 return bool;
             }
-        }
-        catch (Exception localException) {
+        } catch (Exception localException) {
             Log.e(TAG, "An exception occured while refreshing device");
         }
         return false;
@@ -308,6 +308,14 @@ public class BluetoothIO {
         return Looper.myLooper() == Looper.getMainLooper();
     }
 
+    public void updateVersion(int hardVersion, int softVersion) {
+        if (softVersion >= 3) {
+            SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
+            SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+            SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+            SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        }
+    }
 
     /**
      * Enable TXNotification
