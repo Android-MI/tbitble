@@ -5,21 +5,16 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewStub;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +24,7 @@ import com.google.zxing.integration.android.IntentResult;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitDebugListener;
 import com.tbit.tbitblesdk.TbitListener;
+import com.tbit.tbitblesdk.TbitListenerAdapter;
 import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdksample.aes.AesTool;
 
@@ -40,7 +36,7 @@ import java.util.List;
 import me.salmonzhg.easypermission.EasyPermissionHelper;
 import me.salmonzhg.easypermission.PermissionListener;
 
-public class MainActivity extends AppCompatActivity {
+public class Main2Activity extends AppCompatActivity {
 
     // 022009020
     private static final String TAG = "MainActivity";
@@ -51,43 +47,52 @@ public class MainActivity extends AppCompatActivity {
     private StringBuilder logBuilder = new StringBuilder();
     private EasyPermissionHelper helper;
     private EditTextDialog editTextDialog;
+    private String tid = "";
+    private TextView titleText;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
-    TbitListener listener = new TbitListener() {
+    TbitListener listener = new TbitListenerAdapter() {
         @Override
         public void onConnectResponse(int resultCode) {
-            showLog("onConnectResponse: " + resultCode);
+            if (resultCode == 0)
+                showLog("连接回应: 成功");
+            else
+            showLog("连接回应: " + resultCode);
         }
 
         @Override
         public void onUnlockResponse(int resultCode) {
-            showLog("onUnlockResponse: " + resultCode);
+            if (resultCode == 0)
+                showLog("解锁回应: 成功");
+            else
+                showLog("解锁回应: " + resultCode);
         }
 
         @Override
         public void onLockResponse(int resultCode) {
-            showLog("onLockResponse: " + resultCode);
+            if (resultCode == 0)
+                showLog("上锁回应: 成功");
+            else
+                showLog("上锁回应: " + resultCode);
         }
 
         @Override
         public void onUpdateResponse(int resultCode) {
-            showLog("onUpdateResponse: " + resultCode);
+            if (resultCode == 0)
+                showLog("更新状态回应: 成功");
+            else
+                showLog("更新状态回应: " + resultCode);
         }
 
         @Override
         public void onStateUpdated(BikeState state) {
-            showLog("onStateUpdated: " + state.toString());
-            //也可以这样
-            Log.d(TAG, "onStateUpdated: " + TbitBle.getState());
+            Log.d(TAG, "最新状态: " + state.toString());
         }
 
         @Override
         public void onDisconnected(int resultCode) {
-//            showLog("onDisconnected: " + resultCode);
+            showLog("请按连接");
         }
 
-        @Override
-        public void onCommonCommandResponse(int resultCode) {
-        }
     };
 
     TbitDebugListener debugListener = new TbitDebugListener() {
@@ -96,16 +101,13 @@ public class MainActivity extends AppCompatActivity {
             showLog(logStr);
         }
     };
-    private View facView, originView;
-    private CheckBox facCheckBox;
     private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
     private View.OnClickListener facButtonListener;
-    private AutoTask autoTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
 
         initView();
         helper = new EasyPermissionHelper(this);
@@ -117,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
                                             @Override
                                             public void run() {
                                                 showSetting();
-                                                TbitBle.initialize(MainActivity.this);
+                                                TbitBle.initialize(Main2Activity.this);
                                                 TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }
@@ -133,20 +135,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        originView = findViewById(R.id.linear_origin);
         textLog = (TextView) findViewById(R.id.text_log);
-        facCheckBox = (CheckBox) findViewById(R.id.checkbox_fac);
-//        editId = (EditText) findViewById(R.id.edit_id);
-//        editKey = (EditText) findViewById(R.id.edit_key);
-//        editValue = (EditText) findViewById(R.id.edit_value);
-
-        facCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        titleText = (TextView) findViewById(R.id.tv_title_tid);
+        findViewById(R.id.image_pro).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if (b)
-                    showFac();
-                else
-                    hideFac();
+            public void onClick(View v) {
+                finish();
+                startActivity(new Intent(Main2Activity.this, MainActivity.class));
             }
         });
     }
@@ -157,8 +152,8 @@ public class MainActivity extends AppCompatActivity {
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             Intent intent = new Intent();
             intent.setAction(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            MainActivity.this.startActivity(intent);
-            Toast.makeText(MainActivity.this, "请开启", Toast.LENGTH_LONG).show();
+            Main2Activity.this.startActivity(intent);
+            Toast.makeText(Main2Activity.this, "请开启", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -185,6 +180,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void reconnect(View view) {
+        int state = TbitBle.getBleConnectionState();
+        Log.d(TAG, "reconnect: " + state);
+        if (state == 1 || state == 2 || state == 3) {
+            showLog("连接回应： -1005");
+            return;
+        }
         showLog("重新连接按下");
         TbitBle.reconnect();
     }
@@ -196,10 +197,6 @@ public class MainActivity extends AppCompatActivity {
     public void update(View view) {
         showLog("更新状态按下");
         TbitBle.update();
-    }
-
-    public void switchFac(View view) {
-        facCheckBox.setChecked(!facCheckBox.isChecked());
     }
 
     public void disconnect(View view) {
@@ -220,6 +217,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         helper.onDestroy();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
         TbitBle.destroy();
     }
 
@@ -263,56 +265,6 @@ public class MainActivity extends AppCompatActivity {
                 .insert(0, getTime());
     }
 
-    private void showFac() {
-        originView.setVisibility(View.GONE);
-        if (facView == null) {
-            ViewStub stub = (ViewStub) findViewById(R.id.stub_fac_mode);
-            facView = stub.inflate();
-            autoConnectButton = (Button) facView.findViewById(R.id.button_auto_connect);
-            autoLockButton = (Button) facView.findViewById(R.id.button_auto_lock);
-            autoUnlockButton = (Button) facView.findViewById(R.id.button_auto_unlock);
-            autoUpdateButton = (Button) facView.findViewById(R.id.button_auto_update);
-            initFacButtonListener();
-            autoConnectButton.setOnClickListener(facButtonListener);
-            autoLockButton.setOnClickListener(facButtonListener);
-            autoUnlockButton.setOnClickListener(facButtonListener);
-            autoUpdateButton.setOnClickListener(facButtonListener);
-        } else {
-            facView.setVisibility(View.VISIBLE);
-        }
-    }
-
-    private void hideFac() {
-        if (autoTask != null)
-            autoTask.cancel(false);
-        facView.setVisibility(View.GONE);
-        originView.setVisibility(View.VISIBLE);
-    }
-
-    private void initFacButtonListener() {
-        facButtonListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (autoTask != null)
-                    autoTask.cancel(false);
-                switch (view.getId()) {
-                    case R.id.button_auto_connect:
-                        autoTask = new AutoTask(Action.CONNECT);
-                        break;
-                    case R.id.button_auto_lock:
-                        autoTask = new AutoTask(Action.LOCK);
-                        break;
-                    case R.id.button_auto_unlock:
-                        autoTask = new AutoTask(Action.UNLOCK);
-                        break;
-                    case R.id.button_auto_update:
-                        autoTask = new AutoTask(Action.UPDATE);
-                        break;
-                }
-                autoTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-            }
-        };
-    }
 
     private String getTime() {
         return format.format(new Date());
@@ -347,6 +299,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectInside(String deviceId) {
+        this.tid = deviceId;
+        titleText.setText(String.valueOf(tid));
+
         showLog("连接开始 : " + deviceId);
         String key = AesTool.Genkey(deviceId);
         if (TextUtils.isEmpty(key))
@@ -358,39 +313,42 @@ public class MainActivity extends AppCompatActivity {
         CONNECT, LOCK, UNLOCK, UPDATE
     }
 
-    class AutoTask extends AsyncTask<Void, Void, Void> {
-        private Action action;
-
-        public AutoTask(Action action) {
-            this.action = action;
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            while (!isCancelled()) {
-                publishProgress();
-
-                SystemClock.sleep(10 * 1000);
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {
-            switch (action) {
-                case CONNECT:
-                    TbitBle.reconnect();
-                    break;
-                case LOCK:
-                    TbitBle.lock();
-                    break;
-                case UNLOCK:
-                    TbitBle.unlock();
-                    break;
-                case UPDATE:
-                    TbitBle.update();
-                    break;
-            }
+    private void dispatchAction(Action action) {
+        switch (action) {
+            case CONNECT:
+                TbitBle.reconnect();
+                break;
+            case LOCK:
+                TbitBle.lock();
+                break;
+            case UNLOCK:
+                TbitBle.unlock();
+                break;
+            case UPDATE:
+                TbitBle.update();
+                break;
         }
     }
+
+//    class AutoTask extends AsyncTask<Void, Void, Void> {
+//        private Action action;
+//
+//        public AutoTask(Action action) {
+//            this.action = action;
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            while (!isCancelled()) {
+//                SystemClock.sleep(60 * 1000);
+//                publishProgress();
+//            }
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onProgressUpdate(Void... values) {
+//           dispatchAction(action);
+//        }
+//    }
 }
