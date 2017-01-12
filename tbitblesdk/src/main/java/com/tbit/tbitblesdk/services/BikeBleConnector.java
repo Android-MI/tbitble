@@ -619,6 +619,7 @@ public class BikeBleConnector implements Reader, Writer {
     public void onVersionResponse(BluEvent.VersionResponse response) {
         int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
         bikeState.setVersion(version);
+        bluetoothIO.updateVersion(response.deviceVersion, response.firmwareVersion);
     }
 
     static class TimeoutHandler extends Handler {

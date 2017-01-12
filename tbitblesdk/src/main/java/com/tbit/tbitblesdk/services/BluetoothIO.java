@@ -34,10 +34,11 @@ public class BluetoothIO {
     public static final int STATE_CONNECTING = 2;
     public static final int STATE_CONNECTED = 3;
     public static final int STATE_SERVICES_DISCOVERED = 4;
-    public static final UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
-    public static final UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
-    public static final UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
-    public static final UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    public static UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+    public static UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+    public static UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+    public static UUID SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
+    public static UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final String TAG = "BluetoothIO";
     private int connectionState = STATE_DISCONNECTED;
     private Context context;
@@ -308,6 +309,15 @@ public class BluetoothIO {
         return Looper.myLooper() == Looper.getMainLooper();
     }
 
+
+    public void updateVersion(int hardVersion, int softVersion) {
+        if (softVersion >= 3) {
+            SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
+            SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+            SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+            SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        }
+    }
 
     /**
      * Enable TXNotification
