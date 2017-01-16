@@ -84,9 +84,9 @@ public class BluetoothIO {
 //                printServices(gatt);
                 bluetoothGatt = gatt;
 //                enableOTANotification();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
-                }
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                    bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+//                }
                 enableTXNotification();
             } else {
                 bus.post(new BluEvent.CommonFailedReport("onServicesDiscovered",
@@ -97,7 +97,6 @@ public class BluetoothIO {
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
-            Log.d(TAG, "onCharacteristicRead: " + characteristic.getUuid());
             if (BluetoothGatt.GATT_SUCCESS == status) {
                 bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.READ,
                         characteristic.getValue()));
@@ -111,7 +110,6 @@ public class BluetoothIO {
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(gatt, characteristic, status);
 
-            Log.d(TAG, "onCharacteristicWrite: " + status + " | " + characteristic.getUuid());
             if (BluetoothGatt.GATT_SUCCESS == status) {
                 if (characteristic.getUuid().equals(SPS_TX_UUID)) {
                     bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.WRITE,
@@ -128,7 +126,6 @@ public class BluetoothIO {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-            Log.d(TAG, "XonCharacteristicChanged: " + characteristic.getUuid());
             if (characteristic.getUuid().equals(SPS_RX_UUID)) {
                 bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.CHANGE,
                         characteristic.getValue()));
@@ -310,6 +307,7 @@ public class BluetoothIO {
     public void close() {
         stopScan();
         disconnectInside();
+        otaHelper.destroy();
     }
 
     // Clears the device cache. After uploading new hello4 the DFU target will have other services than before.
@@ -432,17 +430,29 @@ public class BluetoothIO {
 
     public boolean enableOTANotification() {
         if (bluetoothGatt == null) {
-            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
+            Log.d(TAG, "enableOTANotification: bluetoothGatt == null");
             return false;
         }
 
         boolean result = false;
-
+        requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
         result = setCharacteristicNotification(OtaHelper.SPOTA_SERVICE_UUID,
                 OtaHelper.SPOTA_SERV_STATUS_UUID, true);
 
         Log.d(TAG, "enableOTANotification: " + result);
         return result;
+    }
+
+    public boolean requestConnectionPriority(int connectionPriority) {
+        if (bluetoothGatt == null) {
+            Log.e(TAG, "gatt is null");
+            return false;
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            Log.e(TAG, "requestConnectionPriority need above android M" );
+            return false;
+        }
+        return bluetoothGatt.requestConnectionPriority(connectionPriority);
     }
 
     /**

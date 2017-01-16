@@ -71,11 +71,12 @@ public class OtaHelper {
                 sendBlock();
             }
         } else {
-            if (retryCount > MAX_RETRY_COUNT) {
-                notifyFailed();
-                return;
-            }
-            retryCount++;
+//            if (retryCount > MAX_RETRY_COUNT) {
+//                notifyFailed();
+//                return;
+//            }
+//            retryCount++;
+            notifyFailed();
         }
     }
 
@@ -84,25 +85,29 @@ public class OtaHelper {
         String stringValue = String.format("%#10x", value);
         Log.d(TAG, "onCharacteristicChanged" + stringValue);
 
-        int step = -1;
         int error = -1;
         int memDevValue = -1;
         // Set memtype callback
         if (stringValue.trim().equals("0x10")) {
             this.step = Step.GpioMap;
-            step = 0;
+            dispatch();
         }
         // Successfully sent a block, send the next one
         else if (stringValue.trim().equals("0x2")) {
             this.step = Step.WriteData;
-            step = 0;
+            dispatch();
+            final float progress = ((float) (blockCounter + 1) / (float) otaFile.getNumberOfBlocks()) * 100;
+            bus.post(new BluEvent.Ota((int) progress));
         } else if (stringValue.trim().equals("0x3") || stringValue.trim().equals("0x1")) {
             memDevValue = value;
         } else {
             error = Integer.parseInt(stringValue.trim().replace("0x", ""));
         }
-        if (step >= 0 || error >= 0 || memDevValue >= 0) {
-            dispatch();
+//        if (step >= 0 || error >= 0 || memDevValue >= 0) {
+//            dispatch();
+//        }
+        if (error > 0) {
+            notifyFailed();
         }
     }
 
@@ -241,6 +246,7 @@ public class OtaHelper {
     }
 
     private void notifySucceed() {
+        bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         sendRebootSignal();
         bus.post(new BluEvent.Ota(BluEvent.OtaState.SUCCEED));
     }
@@ -294,5 +300,10 @@ public class OtaHelper {
         result[0] = (byte)(value & 0xFF);
         result[1] = (byte)((value >> 8) & 0xFF);
         return result;
+    }
+
+    public void destroy() {
+        if (otaFile != null)
+            otaFile.close();
     }
 }
