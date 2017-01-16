@@ -165,6 +165,14 @@ public class BikeBleConnector implements Reader, Writer {
         send(Constant.REQUEST_REMOTE, Constant.COMMAND_REMOTE, (byte) 0x01, null);
     }
 
+    public boolean ota() {
+        if (requestQueue.contains(Constant.REQUEST_OTA)) {
+            return false;
+        }
+        send(Constant.REQUEST_OTA, Constant.COMMAND_OTA, Constant.VALUE_ON, null);
+        return true;
+    }
+
     public void disConnect() {
 //        remoteDisconnect();
 //        handler.postDelayed(new Runnable() {
@@ -223,6 +231,10 @@ public class BikeBleConnector implements Reader, Writer {
         }
         // 接收数据包校验正确
         else if (checkResult == 0) {
+            // 接收终端的消息校验正确，给终端应答
+            // 0x09是板间命令，不做应答
+            if (receivedPacket.getPacketValue().getCommandId() != 0x09)
+                sendACK(receivedPacket, false);
             try {
                 parseSysState(data[2]);
                 PacketValue packetValue = (PacketValue) receivedPacket.getPacketValue().clone();
@@ -230,10 +242,6 @@ public class BikeBleConnector implements Reader, Writer {
             } catch (CloneNotSupportedException e) {
                 Log.d(TAG, "parseReceivedPacket: " + "PacketValue:CloneNotSupportedException");
             }
-            // 接收终端的消息校验正确，给终端应答
-            // 0x09是板间命令，不做应答
-            if (receivedPacket.getPacketValue().getCommandId() != 0x09)
-                sendACK(receivedPacket, false);
         }
         // 接收数据包校验错误
         else if (checkResult == 0x0b) {
@@ -302,7 +310,7 @@ public class BikeBleConnector implements Reader, Writer {
         if (dataOne == (byte) 0x00) {
             //进入ota成功，下载升级文件，发送文件到硬件
             Log.i(TAG, "--进入ota模式成功");
-            bus.post(new BluEvent.Ota());
+            bus.post(new BluEvent.Ota(BluEvent.OtaState.START));
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
                 //电量过低
@@ -617,8 +625,11 @@ public class BikeBleConnector implements Reader, Writer {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onVersionResponse(BluEvent.VersionResponse response) {
+        Log.d(TAG, "onVersionResponse: hard: " + response.deviceVersion +
+            " || soft: " + response.firmwareVersion);
         int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
         bikeState.setVersion(version);
+        bluetoothIO.updateVersion(response.deviceVersion, response.firmwareVersion);
     }
 
     static class TimeoutHandler extends Handler {

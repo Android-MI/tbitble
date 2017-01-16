@@ -33,4 +33,12 @@ public class ResultCode {
 //    public static final int LOCK_FAILED = -3002;
     // 更新状态失败
 //    public static final int UPDATE_FAILED = -3003;
+    // OTA升级文件不合法
+    public static final int OTA_FILE_ILLEGAL = -4001;
+    // OTA升级失败 - 电量不足
+    public static final int OTA_FAILED_LOW_POWER = -4002;
+    // OTA升级失败 - 未知原因
+    public static final int OTA_FAILED_UNKNOWN = -4003;
+    // OTA升级失败 - 写入失败
+    public static final int OTA_WRITE_FAILED = -4004;
 }

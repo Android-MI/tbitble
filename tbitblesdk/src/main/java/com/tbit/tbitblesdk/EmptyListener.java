@@ -50,4 +50,17 @@ public class EmptyListener implements TbitListener {
 
         }
     }
+
+    public static class EmptyOtaListener implements OtaListener {
+
+        @Override
+        public void onOtaResponse(int code) {
+
+        }
+
+        @Override
+        public void onOtaProgress(int progress) {
+
+        }
+    }
 }

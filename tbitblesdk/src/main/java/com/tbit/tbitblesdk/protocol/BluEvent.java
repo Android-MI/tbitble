@@ -14,6 +14,10 @@ public class BluEvent {
         SUCCEED, FAILED
     }
 
+    public enum OtaState {
+        START, ENABLED, FAILED, SUCCEED, UPDATING
+    }
+
     public static class ConnectionStateChange {
         public int status;
         public int newState;
@@ -114,6 +118,25 @@ public class BluEvent {
     }
 
     public static class Ota {
+        private OtaState state;
+        private int progressing;
+
+        public Ota(OtaState state) {
+            this.state = state;
+        }
+
+        public Ota(int progressing) {
+            this.state = OtaState.UPDATING;
+            this.progressing = progressing;
+        }
+
+        public OtaState getState() {
+            return state;
+        }
+
+        public int getProgressing() {
+            return progressing;
+        }
     }
 
     public static class UpdateBikeState {

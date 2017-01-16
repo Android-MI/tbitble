@@ -13,15 +13,19 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.protocol.OtaFile;
+import com.tbit.tbitblesdk.protocol.OtaHelper;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,11 +39,11 @@ public class BluetoothIO {
     public static final int STATE_CONNECTED = 3;
     public static final int STATE_SERVICES_DISCOVERED = 4;
     private static final String TAG = "BluetoothIO";
-    public static UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
-    public static UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
-    public static UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
-    public static UUID SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
-    public static UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    public UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+    public UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+    public UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+    public UUID SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
+    public UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private int connectionState = STATE_DISCONNECTED;
     private Context context;
     private EventBus bus;
@@ -49,6 +53,7 @@ public class BluetoothIO {
     private Scanner scanner;
     private String lastConnectedDeviceMac;
     private boolean isAutoReconnectEnable = true;
+    private OtaHelper otaHelper;
     //    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -76,18 +81,23 @@ public class BluetoothIO {
             super.onServicesDiscovered(gatt, status);
             connectionState = STATE_SERVICES_DISCOVERED;
             if (status == BluetoothGatt.GATT_SUCCESS) {
+//                printServices(gatt);
                 bluetoothGatt = gatt;
-                bus.post(new BluEvent.DiscoveredSucceed());
+//                enableOTANotification();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    bluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                }
+                enableTXNotification();
             } else {
                 bus.post(new BluEvent.CommonFailedReport("onServicesDiscovered",
                         "status : " + status));
             }
-            printServices(gatt);
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
+            Log.d(TAG, "onCharacteristicRead: " + characteristic.getUuid());
             if (BluetoothGatt.GATT_SUCCESS == status) {
                 bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.READ,
                         characteristic.getValue()));
@@ -101,11 +111,16 @@ public class BluetoothIO {
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(gatt, characteristic, status);
 
+            Log.d(TAG, "onCharacteristicWrite: " + status + " | " + characteristic.getUuid());
             if (BluetoothGatt.GATT_SUCCESS == status) {
-                bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.WRITE,
-                        characteristic.getValue()));
+                if (characteristic.getUuid().equals(SPS_TX_UUID)) {
+                    bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.WRITE,
+                            characteristic.getValue()));
+                } else {
+                    otaHelper.onCharacteristicWrite(gatt, characteristic, status);
+                }
             } else {
-                bus.post(new BluEvent.CommonFailedReport("onCharacteristicWrite",
+                bus.post(new BluEvent.CommonFailedReport(characteristic.getUuid() + "\nonCharacteristicWrite",
                         "status : " + status));
             }
         }
@@ -113,9 +128,13 @@ public class BluetoothIO {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-
-            bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.CHANGE,
-                    characteristic.getValue()));
+            Log.d(TAG, "XonCharacteristicChanged: " + characteristic.getUuid());
+            if (characteristic.getUuid().equals(SPS_RX_UUID)) {
+                bus.post(new BluEvent.ChangeCharacteristic(BluEvent.CharState.CHANGE,
+                        characteristic.getValue()));
+            } else {
+                otaHelper.onCharacteristicChanged(gatt, characteristic);
+            }
         }
 
         @Override
@@ -129,6 +148,16 @@ public class BluetoothIO {
             }
         }
 
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            Log.d(TAG, "onDescriptorWrite: " + descriptor.getCharacteristic().getUuid() +
+                 " || " + status);
+
+            if (descriptor.getCharacteristic().getUuid().equals(OtaHelper.SPOTA_SERV_STATUS_UUID)) {
+                bus.post(new BluEvent.Ota(BluEvent.OtaState.ENABLED));
+            }
+            super.onDescriptorWrite(gatt, descriptor, status);
+        }
     };
 
     public BluetoothIO(Context context) {
@@ -142,6 +171,7 @@ public class BluetoothIO {
             scanner = new BikeBleScanner(bluetoothAdapter);
         }
         bus = EventBus.getDefault();
+        otaHelper = new OtaHelper(BluetoothIO.this);
     }
 
     public void scanAndConnectByMac(String macAddress) {
@@ -200,6 +230,10 @@ public class BluetoothIO {
         return connectionState;
     }
 
+    public BluetoothGatt getBluetoothGatt() {
+        return bluetoothGatt;
+    }
+
     public boolean isServiceDiscovered() {
         return connectionState == STATE_SERVICES_DISCOVERED;
     }
@@ -210,14 +244,18 @@ public class BluetoothIO {
         Log.i(TAG, "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
-        BluetoothGatt bluetoothGatt;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             bluetoothGatt = device.connectGatt(context, autoConnect, callback, BluetoothDevice.TRANSPORT_LE);
         } else {
             bluetoothGatt = device.connectGatt(context, autoConnect, callback);
         }
-        refreshDeviceCache(bluetoothGatt);
-        bluetoothGatt.connect();
+//        refreshDeviceCache(bluetoothGatt);
+//        bluetoothGatt.connect();
+    }
+
+    public void otaUpdate(OtaFile file) {
+//        enableOTANotification();
+        otaHelper.otaUpdate(file);
     }
 
     public void disconnect() {
@@ -243,12 +281,6 @@ public class BluetoothIO {
         isAutoReconnectEnable = true;
         scanAndConnectByMac(lastConnectedDeviceMac);
     }
-
-//    public void setHasVerified(boolean hasVerified) {
-//        this.hasVerified = hasVerified;
-//        if (hasVerified)
-//            isAutoReconnectEnable = true;
-//    }
 
     private void tryAutoReconnect() {
         if (isAutoReconnectEnable /*&& hasVerified*/) {
@@ -309,7 +341,12 @@ public class BluetoothIO {
     }
 
     public void updateVersion(int hardVersion, int softVersion) {
-        if (softVersion >= 3) {
+        if (softVersion < 3) {
+            SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+            SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+            SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+            SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        } else if (softVersion >= 3) {
             SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
             SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
             SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
@@ -321,33 +358,91 @@ public class BluetoothIO {
      * Enable TXNotification
      */
     public boolean enableTXNotification() {
-        Log.d(TAG, "enableTXNotification: ");
         if (bluetoothGatt == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported("bluetoothGatt == null"));
-            return false;
-        }
-        BluetoothGattService RxService = bluetoothGatt.getService(SPS_SERVICE_UUID);
-        if (RxService == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported("Service"));
-            return false;
-        }
-        BluetoothGattCharacteristic RxChar = RxService.getCharacteristic(SPS_RX_UUID);
-        if (RxChar == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported("rx"));
-            return false;
-        }
-        bluetoothGatt.setCharacteristicNotification(RxChar, true);
-
-        BluetoothGattDescriptor descriptor = RxChar.getDescriptor(SPS_NOTIFY_DESCRIPTOR);
-        if (descriptor == null) {
-            bus.post(new BluEvent.CommonFailedReport("enableTXNotification",
-                    "--descriptor not found"));
+            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
             return false;
         }
 
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        bluetoothGatt.writeDescriptor(descriptor);
+        setCharacteristicNotification(SPS_SERVICE_UUID, SPS_RX_UUID, true);
+        Log.d(TAG, "enableTXNotification: ");
+        bus.post(new BluEvent.DiscoveredSucceed());
         return true;
+    }
+
+    private boolean setCharacteristicNotification(UUID service, UUID character, boolean enable) {
+        BluetoothGattCharacteristic characteristic = getCharacter(service, character);
+
+        if (characteristic == null) {
+            Log.e(TAG, String.format("characteristic not exist!"));
+            return false;
+        }
+
+        if (!isCharacteristicNotifyable(characteristic)) {
+            Log.e(TAG, String.format("characteristic not notifyable!"));
+            return false;
+        }
+
+        if (bluetoothGatt == null) {
+            Log.e(TAG, String.format("ble gatt null"));
+            return false;
+        }
+
+        if (!bluetoothGatt.setCharacteristicNotification(characteristic, enable)) {
+            Log.e(TAG, String.format("setCharacteristicNotification failed"));
+            return false;
+        }
+
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(SPS_NOTIFY_DESCRIPTOR);
+
+        if (descriptor == null) {
+            Log.e(TAG, String.format("getDescriptor for notify null!"));
+            return false;
+        }
+
+        byte[] value = (enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+
+        if (!descriptor.setValue(value)) {
+            Log.e(TAG, String.format("setValue for notify descriptor failed!"));
+            return false;
+        }
+
+        if (!bluetoothGatt.writeDescriptor(descriptor)) {
+            Log.e(TAG, String.format("writeDescriptor for notify failed"));
+            return false;
+        }
+
+        return true;
+    }
+
+    private BluetoothGattCharacteristic getCharacter(UUID service, UUID character) {
+        BluetoothGattCharacteristic characteristic = null;
+        if (bluetoothGatt != null) {
+            BluetoothGattService gattService = bluetoothGatt.getService(service);
+            if (gattService != null) {
+                characteristic = gattService.getCharacteristic(character);
+            }
+        }
+        return characteristic;
+    }
+
+    private boolean isCharacteristicNotifyable(BluetoothGattCharacteristic characteristic) {
+        return characteristic != null && (characteristic.getProperties()
+                & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
+    }
+
+    public boolean enableOTANotification() {
+        if (bluetoothGatt == null) {
+            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
+            return false;
+        }
+
+        boolean result = false;
+
+        result = setCharacteristicNotification(OtaHelper.SPOTA_SERVICE_UUID,
+                OtaHelper.SPOTA_SERV_STATUS_UUID, true);
+
+        Log.d(TAG, "enableOTANotification: " + result);
+        return result;
     }
 
     /**
@@ -356,6 +451,10 @@ public class BluetoothIO {
      * @param value
      */
     public boolean writeRXCharacteristic(byte[] value) {
+        return write(SPS_SERVICE_UUID, SPS_TX_UUID, value, false);
+    }
+
+    public boolean write(UUID serviceUUID, UUID characteristicUUID, byte[] value, boolean withResponse) {
         Log.d(TAG, "writeRXCharacteristic: " + ByteUtil.bytesToHexString(value));
         if (!isConnected()) {
             Log.d(TAG, "writeRXCharacteristic: no connected!");
@@ -365,18 +464,20 @@ public class BluetoothIO {
             Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
             return false;
         }
-        BluetoothGattService Service = bluetoothGatt.getService(SPS_SERVICE_UUID);
-        if (Service == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported());
+        BluetoothGattService service = bluetoothGatt.getService(serviceUUID);
+        if (service == null) {
+            bus.post(new BluEvent.DeviceUartNotSupported(serviceUUID + " - service not exist!"));
             return false;
         }
-        BluetoothGattCharacteristic TxChar = Service.getCharacteristic(SPS_TX_UUID);
-        if (TxChar == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported());
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUUID);
+        if (characteristic == null) {
+            bus.post(new BluEvent.DeviceUartNotSupported(characteristic + " - characteristic not exist!"));
             return false;
         }
-        TxChar.setValue(value);
-        boolean status = bluetoothGatt.writeCharacteristic(TxChar);
+        characteristic.setValue(value);
+        characteristic.setWriteType(withResponse ? BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT :
+            BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+        boolean status = bluetoothGatt.writeCharacteristic(characteristic);
         if (status) {
             Log.d(TAG, "--指令下发成功！");
         } else {

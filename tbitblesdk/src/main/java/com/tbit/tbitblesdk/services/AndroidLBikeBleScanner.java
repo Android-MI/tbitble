@@ -39,7 +39,15 @@ public class AndroidLBikeBleScanner extends Scanner {
                 rssi = (rssi + results.get(address)) / 2;
             results.put(address, rssi);
 
-            if (dataStr.contains(encryptedTid)) {
+            String name = result.getDevice().getName();
+
+            if (TextUtils.isEmpty(name))
+                return;
+
+//            boolean isFound = name.contains("14580") || dataStr.contains(encryptedTid) || result.getDevice().getAddress().contains("FF:6F:24:90:57:13");
+
+            boolean isFound = dataStr.contains(encryptedTid);
+            if (isFound) {
                 needProcessScan.set(false);
                 removeHandlerMsg();
                 stop();
@@ -77,8 +85,8 @@ public class AndroidLBikeBleScanner extends Scanner {
             }
         }, timeoutMillis);
         printLogStart();
-        bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
-//        bluetoothAdapter.getBluetoothLeScanner().startScan(bleCallback);
+//        bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
+        bluetoothAdapter.getBluetoothLeScanner().startScan(bleCallback);
     }
 
     @Override

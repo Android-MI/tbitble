@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
+import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.protocol.BikeState;
@@ -19,6 +20,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 /**
@@ -31,6 +34,8 @@ class TbitBleInstance {
     private Byte[] key;
     private String macAddr;
     private TbitListener listener;
+    private OtaListener otaListener;
+    private OtaFile otaFile;
     private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
@@ -42,6 +47,7 @@ class TbitBleInstance {
         EventBus.getDefault().register(this);
         key = new Byte[]{};
         listener = new EmptyListener();
+        otaListener = new EmptyListener.EmptyOtaListener();
         bluetoothIO = new BluetoothIO(context);
         bikeBleConnector = new BikeBleConnector(bluetoothIO);
         timeoutHandler = new ConnectTimeoutHandler(Looper.getMainLooper(), this);
@@ -167,10 +173,29 @@ class TbitBleInstance {
         EventBus.getDefault().unregister(this);
     }
 
+    void ota(File file, OtaListener otaListener) {
+        if (!isBluetoothOpened())
+            return;
+        this.otaListener = otaListener == null ? new EmptyListener.EmptyOtaListener() :
+                otaListener;
+        if (!isOtaFileLegal(file)) {
+            this.otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            return;
+        }
+        try {
+            this.otaFile = OtaFile.getByFile(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        boolean result = bikeBleConnector.ota();
+        if (!result)
+            this.otaListener.onOtaResponse(ResultCode.PROCESSING);
+    }
+
     private void resetTimeout() {
         isConnectResponse = false;
-        timeoutHandler.removeCallbacksAndMessages(null);
-        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
+//        timeoutHandler.removeCallbacksAndMessages(null);
+//        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
     }
 
     private boolean isBluetoothOpened() {
@@ -210,6 +235,27 @@ class TbitBleInstance {
         return result;
     }
 
+    private boolean isOtaFileLegal(File file) {
+        if (file == null)
+            return false;
+        if (!file.exists()) {
+            return false;
+        }
+        String filename = file.getName();
+        if (TextUtils.isEmpty(filename))
+            return false;
+        int dot = filename.lastIndexOf('.');
+        if ((dot >-1) && (dot < (filename.length() - 1))) {
+            String extName = filename.substring(dot + 1);
+            if (!TextUtils.equals(extName, "img")) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onBleNotOpened(BluEvent.BleNotOpened event) {
         isConnectResponse = true;
@@ -247,11 +293,8 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDiscovered(BluEvent.DiscoveredSucceed event) {
         Log.i(TAG, "onDiscovered: ");
-        if (isConnectResponse)
-            return;
-        boolean result = bluetoothIO.enableTXNotification();
-        if (result)
-            verify();
+        if (isConnectResponse) return;
+        verify();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -269,7 +312,29 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOta(BluEvent.Ota event) {
-
+        Log.d(TAG, "onOta: " + event.getState());
+        if (otaFile == null) {
+            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+        } else {
+            switch (event.getState()) {
+                case START:
+                    otaFile.setFileBlockSize(240);
+                    bluetoothIO.enableOTANotification();
+                    break;
+                case ENABLED:
+                    bluetoothIO.otaUpdate(otaFile);
+                    break;
+                case UPDATING:
+                    otaListener.onOtaProgress(event.getProgressing());
+                    break;
+                case FAILED:
+                    otaListener.onOtaResponse(ResultCode.OTA_WRITE_FAILED);
+                    break;
+                case SUCCEED:
+                    otaListener.onOtaResponse(ResultCode.SUCCEED);
+                    break;
+            }
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
