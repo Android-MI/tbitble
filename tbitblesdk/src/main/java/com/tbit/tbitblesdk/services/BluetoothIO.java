@@ -113,7 +113,8 @@ public class BluetoothIO {
 
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            bus.post(new BluEvent.ChangeDescriptor(BluEvent.CharState.WRITE, descriptor, status));
+            bus.post(new BluEvent.ChangeDescriptor(BluEvent.CharState.WRITE,
+                    descriptor.getCharacteristic().getUuid(), status));
             super.onDescriptorWrite(gatt, descriptor, status);
         }
     };

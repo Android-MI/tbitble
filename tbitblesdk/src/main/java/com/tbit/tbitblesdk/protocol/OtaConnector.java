@@ -138,10 +138,9 @@ public class OtaConnector {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDescriptorChanged(BluEvent.ChangeDescriptor event) {
         Log.d(TAG, "onDescriptor" + event.state + ": "
-                + event.descriptor.getCharacteristic().getUuid() +
+                + event.characterUuid +
                 " || " + event.status);
-        UUID characteristicUuid = event.descriptor.getCharacteristic().getUuid();
-        if (OtaConnector.SPOTA_SERV_STATUS_UUID.equals(characteristicUuid)) {
+        if (OtaConnector.SPOTA_SERV_STATUS_UUID.equals(event.characterUuid)) {
             start();
         }
     }

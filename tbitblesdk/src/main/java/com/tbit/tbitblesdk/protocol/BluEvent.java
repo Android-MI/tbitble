@@ -59,12 +59,12 @@ public class BluEvent {
 
     public static class ChangeDescriptor {
         public CharState state;
-        public BluetoothGattDescriptor descriptor;
+        public UUID characterUuid;
         public int status;
 
-        public ChangeDescriptor(CharState state, BluetoothGattDescriptor descriptor, int status) {
+        public ChangeDescriptor(CharState state, UUID characterUuid, int status) {
             this.state = state;
-            this.descriptor = descriptor;
+            this.characterUuid = characterUuid;
             this.status = status;
         }
     }
