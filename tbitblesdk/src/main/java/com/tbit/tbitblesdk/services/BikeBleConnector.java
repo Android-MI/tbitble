@@ -1,5 +1,7 @@
 package com.tbit.tbitblesdk.services;
 
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -26,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
@@ -34,6 +37,13 @@ import java.util.Set;
 public class BikeBleConnector implements Reader, Writer {
     private static final String TAG = "BikeBleConnector";
     private static final int DEFAULT_TIME_OUT = 10 * 1000;
+
+    public UUID SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+    public UUID SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+    public UUID SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+    public UUID SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
+    public UUID SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+
     private EventBus bus;
     private BluetoothIO bluetoothIO;
     private Handler handler = new TimeoutHandler(Looper.getMainLooper(), this);
@@ -42,6 +52,7 @@ public class BikeBleConnector implements Reader, Writer {
     private int timeout = DEFAULT_TIME_OUT;
     private BikeState bikeState;
     private Set<Integer> requestQueue = Collections.synchronizedSet(new HashSet<Integer>());
+    private Byte[] connectKey;
 
     public BikeBleConnector(BluetoothIO bluetoothIO) {
         this.bus = EventBus.getDefault();
@@ -49,6 +60,10 @@ public class BikeBleConnector implements Reader, Writer {
         this.bikeState = new BikeState();
         bus.register(this);
         start();
+    }
+
+    public void setConnectKey(Byte[] key) {
+        this.connectKey = key;
     }
 
     private void start() {
@@ -111,16 +126,16 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     // 校验密钥
-    public boolean connect(Byte[] key) {
+    public boolean connect() {
         if (requestQueue.contains(Constant.REQUEST_CONNECT))
             return false;
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId((byte) (0x02));
-        packetValue.addData(new PacketValue.DataBean((byte) 0x01, key));
+        packetValue.addData(new PacketValue.DataBean((byte) 0x01, connectKey));
         Packet send_packet = new Packet();
         send_packet.setPacketValue(packetValue, true);
         send_packet.print();
-        send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, key);
+        send(Constant.REQUEST_CONNECT, Constant.COMMAND_CONNECT, Constant.SEND_KEY_CONNECT, connectKey);
         return true;
     }
 
@@ -165,14 +180,15 @@ public class BikeBleConnector implements Reader, Writer {
         send(Constant.REQUEST_REMOTE, Constant.COMMAND_REMOTE, (byte) 0x01, null);
     }
 
+    public boolean ota() {
+        if (requestQueue.contains(Constant.REQUEST_OTA)) {
+            return false;
+        }
+        send(Constant.REQUEST_OTA, Constant.COMMAND_OTA, Constant.VALUE_ON, null);
+        return true;
+    }
+
     public void disConnect() {
-//        remoteDisconnect();
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                bluetoothIO.disconnect();
-//            }
-//        }, 1500);
         bluetoothIO.disconnect();
     }
 
@@ -223,6 +239,10 @@ public class BikeBleConnector implements Reader, Writer {
         }
         // 接收数据包校验正确
         else if (checkResult == 0) {
+            // 接收终端的消息校验正确，给终端应答
+            // 0x09是板间命令，不做应答
+            if (receivedPacket.getPacketValue().getCommandId() != 0x09)
+                sendACK(receivedPacket, false);
             try {
                 parseSysState(data[2]);
                 PacketValue packetValue = (PacketValue) receivedPacket.getPacketValue().clone();
@@ -230,10 +250,6 @@ public class BikeBleConnector implements Reader, Writer {
             } catch (CloneNotSupportedException e) {
                 Log.d(TAG, "parseReceivedPacket: " + "PacketValue:CloneNotSupportedException");
             }
-            // 接收终端的消息校验正确，给终端应答
-            // 0x09是板间命令，不做应答
-            if (receivedPacket.getPacketValue().getCommandId() != 0x09)
-                sendACK(receivedPacket, false);
         }
         // 接收数据包校验错误
         else if (checkResult == 0x0b) {
@@ -302,7 +318,7 @@ public class BikeBleConnector implements Reader, Writer {
         if (dataOne == (byte) 0x00) {
             //进入ota成功，下载升级文件，发送文件到硬件
             Log.i(TAG, "--进入ota模式成功");
-            bus.post(new BluEvent.Ota());
+            bus.post(new BluEvent.Ota(BluEvent.OtaState.START));
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
                 //电量过低
@@ -557,7 +573,7 @@ public class BikeBleConnector implements Reader, Writer {
         ackPacket.setPacketValue(null, false);
 
         final byte[] data = ackPacket.toByteArray();
-        bluetoothIO.writeRXCharacteristic(data);
+        bluetoothIO.write(SPS_SERVICE_UUID, SPS_RX_UUID, data, false);
         Log.i(TAG, "Send ACK:" + ackPacket.toString());
     }
 
@@ -566,7 +582,7 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     public void writeData(byte[] data) {
-        boolean status = bluetoothIO.writeRXCharacteristic(data);
+        boolean status = bluetoothIO.write(SPS_SERVICE_UUID, SPS_RX_UUID, data, false);
         writeTask.setWriteStatus(status);
     }
 
@@ -598,11 +614,22 @@ public class BikeBleConnector implements Reader, Writer {
         bus.post(new BluEvent.WriteData(sequenceId, BluEvent.State.FAILED));
     }
 
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCharacteristicChanged(BluEvent.ChangeCharacteristic event) {
-        Log.d(TAG, "onCharacteristicChanged: " + event.state.name() + "\n" +
-                ByteUtil.bytesToHexString(event.value));
+        final int status = event.status;
+
+        if (!SPS_SERVICE_UUID.equals(event.serviceUuid))
+            return;
+
+        Log.d(TAG, "onCharacteristicChanged: " + event.state.name() + "\nvalue: " +
+                ByteUtil.bytesToHexString(event.value) + "\nstatus: " + status);
+
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+            bus.post(new BluEvent.CommonFailedReport(event.characterUuid + "\nonCharacteristicWrite",
+                    "status : " + status));
+            return;
+        }
+
         switch (event.state) {
             case WRITE:
                 onUpdateStatus(true);
@@ -610,15 +637,37 @@ public class BikeBleConnector implements Reader, Writer {
             case CHANGE:
                 setReadTemp(event.value);
                 break;
-            case READ:
-                break;
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDiscovered(BluEvent.DiscoveredSucceed event) {
+        Log.i(TAG, "onDiscovered: ");
+        bluetoothIO.setCharacteristicNotification(SPS_SERVICE_UUID, SPS_TX_UUID, SPS_NOTIFY_DESCRIPTOR, true);
+        this.connect();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onVersionResponse(BluEvent.VersionResponse response) {
+        Log.d(TAG, "onVersionResponse: hard: " + response.deviceVersion +
+                " || soft: " + response.firmwareVersion);
         int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
         bikeState.setVersion(version);
+        updateVersion(response.deviceVersion, response.firmwareVersion);
+    }
+
+    private void updateVersion(int hardVersion, int softVersion) {
+        if (softVersion < 3) {
+            SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
+            SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+            SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+            SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        } else if (softVersion >= 3) {
+            SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
+            SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
+            SPS_RX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cba");
+            SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+        }
     }
 
     static class TimeoutHandler extends Handler {

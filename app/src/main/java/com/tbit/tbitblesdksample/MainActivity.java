@@ -30,7 +30,6 @@ import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitDebugListener;
 import com.tbit.tbitblesdk.TbitListener;
 import com.tbit.tbitblesdk.protocol.BikeState;
-import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -348,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void connectInside(String deviceId) {
         showLog("连接开始 : " + deviceId);
-        String key = AesTool.Genkey(deviceId);
+        String key = "";
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);
