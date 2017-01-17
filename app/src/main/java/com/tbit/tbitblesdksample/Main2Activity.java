@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -21,13 +22,14 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+import com.tbit.tbitblesdk.OtaListener;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitDebugListener;
 import com.tbit.tbitblesdk.TbitListener;
 import com.tbit.tbitblesdk.TbitListenerAdapter;
 import com.tbit.tbitblesdk.protocol.BikeState;
-import com.tbit.tbitblesdksample.aes.AesTool;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,6 +43,7 @@ public class Main2Activity extends AppCompatActivity {
     // 022009020
     private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
+    private static String filesDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/fw_3.img";
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
@@ -49,6 +52,7 @@ public class Main2Activity extends AppCompatActivity {
     private EditTextDialog editTextDialog;
     private String tid = "";
     private TextView titleText;
+    private Button buttonOta;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
     TbitListener listener = new TbitListenerAdapter() {
         @Override
@@ -131,7 +135,8 @@ public class Main2Activity extends AppCompatActivity {
 
                                     }
                                 }, Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA);
+                Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
     private void initView() {
@@ -144,6 +149,7 @@ public class Main2Activity extends AppCompatActivity {
                 startActivity(new Intent(Main2Activity.this, MainActivity.class));
             }
         });
+        buttonOta = (Button) findViewById(R.id.button_ota);
     }
 
     private void showSetting() {
@@ -211,6 +217,23 @@ public class Main2Activity extends AppCompatActivity {
                 BluetoothAdapter.getDefaultAdapter().enable();
             }
         }, 500);
+    }
+
+    public void ota(View view) {
+        TbitBle.ota(new File(filesDir), new OtaListener() {
+            @Override
+            public void onOtaResponse(int code) {
+                Log.d(TAG, "onOtaResponse: " + code);
+                showLog("onOtaResponse: " + code);
+            }
+
+            @Override
+            public void onOtaProgress(int progress) {
+                Log.d(TAG, "onOtaProgress: " + progress);
+//                buttonOta.setText(String.valueOf(progress));
+                showLog(progress+"%");
+            }
+        });
     }
 
     @Override
@@ -303,7 +326,8 @@ public class Main2Activity extends AppCompatActivity {
         titleText.setText(String.valueOf(tid));
 
         showLog("连接开始 : " + deviceId);
-        String key = AesTool.Genkey(deviceId);
+//        String key = AesTool.Genkey(deviceId);
+        String key = "";
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);
