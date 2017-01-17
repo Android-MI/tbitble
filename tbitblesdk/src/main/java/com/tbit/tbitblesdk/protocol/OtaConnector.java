@@ -1,15 +1,13 @@
 package com.tbit.tbitblesdk.protocol;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.services.BluetoothIO;
-import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.math.BigInteger;
 import java.util.UUID;
@@ -18,7 +16,7 @@ import java.util.UUID;
  * Created by Salmon on 2017/1/9 0009.
  */
 
-public class OtaHelper {
+public class OtaConnector {
     // ota相关
     public static final UUID SPOTA_SERVICE_UUID = UUID.fromString("0000fef5-0000-1000-8000-00805f9b34fb");
     public static final UUID SPOTA_MEM_DEV_UUID = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc34");
@@ -48,26 +46,33 @@ public class OtaHelper {
     int chunkCounter = -1;
     int blockCounter = 0;
 
-    public OtaHelper(BluetoothIO bluetoothIO) {
+    public OtaConnector(BluetoothIO bluetoothIO, OtaFile file) {
         bus = EventBus.getDefault();
+        bus.register(this);
         this.bluetoothIO = bluetoothIO;
+        this.otaFile = file;
+        setBlockSize();
     }
 
-    public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-        Log.d(TAG, "onCharacteristicWrite: " + characteristic.getUuid());
+    private void setBlockSize() {
+        this.otaFile.setFileBlockSize(240);
+    }
+
+    private void doOnWrite(UUID characterUuid, int status) {
+        Log.d(TAG, "onCharacteristicWrite: " + characterUuid + " status: " + status);
         if (status == BluetoothGatt.GATT_SUCCESS) {
             retryCount = 0;
-            if (characteristic.getUuid().equals(SPOTA_GPIO_MAP_UUID)) {
+            if (SPOTA_GPIO_MAP_UUID.equals(characterUuid)) {
                 step = Step.PatchLength;
                 dispatch();
             }
             // Step 4 callback: set the patch length, default 240
-            else if (characteristic.getUuid().equals(SPOTA_PATCH_LEN_UUID)) {
+            else if (SPOTA_PATCH_LEN_UUID.equals(characterUuid)) {
                 step = Step.WriteData;
                 dispatch();
-            } else if (characteristic.getUuid().equals(SPOTA_MEM_DEV_UUID)) {
+            } else if (SPOTA_MEM_DEV_UUID.equals(characterUuid)) {
 
-            } else if (characteristic.getUuid().equals(SPOTA_PATCH_DATA_UUID) && chunkCounter != -1) {
+            } else if (SPOTA_PATCH_DATA_UUID.equals(characterUuid) && chunkCounter != -1) {
                 sendBlock();
             }
         } else {
@@ -80,8 +85,8 @@ public class OtaHelper {
         }
     }
 
-    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-        int value = new BigInteger(characteristic.getValue()).intValue();
+    private void doOnChanged(byte[] byteValue) {
+        int value = new BigInteger(byteValue).intValue();
         String stringValue = String.format("%#10x", value);
         Log.d(TAG, "onCharacteristicChanged" + stringValue);
 
@@ -97,7 +102,7 @@ public class OtaHelper {
             this.step = Step.WriteData;
             dispatch();
             final float progress = ((float) (blockCounter + 1) / (float) otaFile.getNumberOfBlocks()) * 100;
-            bus.post(new BluEvent.Ota((int) progress));
+            bus.post(BluEvent.Ota.getProgressInstance((int) progress));
         } else if (stringValue.trim().equals("0x3") || stringValue.trim().equals("0x1")) {
             memDevValue = value;
         } else {
@@ -107,25 +112,48 @@ public class OtaHelper {
 //            dispatch();
 //        }
         if (error > 0) {
-            notifyFailed();
+            notifyFailed(error);
         }
     }
 
-    public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onCharacteristicChanged(BluEvent.ChangeCharacteristic event) {
+        UUID serviceUuid = event.serviceUuid;
+        if (!SPOTA_SERVICE_UUID.equals(serviceUuid))
+            return;
+
+        int status = event.status;
+
+        switch (event.state) {
+            case WRITE:
+                doOnWrite(event.characterUuid, status);
+                break;
+            case CHANGE:
+                doOnChanged(event.value);
+                break;
+        }
     }
 
-    public void otaUpdate(OtaFile file) {
-//        boolean result = enableOta();
-//        if (result) {
-//            updateFlag = true;
-//            reset();
-//            this.otaFile = file;
-//        } else {
-//            notifyFailed();
-//        }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDescriptorChanged(BluEvent.ChangeDescriptor event) {
+        Log.d(TAG, "onDescriptor" + event.state + ": "
+                + event.descriptor.getCharacteristic().getUuid() +
+                " || " + event.status);
+        UUID characteristicUuid = event.descriptor.getCharacteristic().getUuid();
+        if (OtaConnector.SPOTA_SERV_STATUS_UUID.equals(characteristicUuid)) {
+            start();
+        }
+    }
+
+    public void update() {
+        bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+        bluetoothIO.setCharacteristicNotification(OtaConnector.SPOTA_SERVICE_UUID,
+                OtaConnector.SPOTA_SERV_STATUS_UUID, SPOTA_DESCRIPTOR_UUID, true);
+    }
+
+    private void start() {
         reset();
-        this.otaFile = file;
         this.step = Step.MemDev;
         dispatch();
     }
@@ -241,8 +269,12 @@ public class OtaHelper {
         }
     }
 
+    private void notifyFailed(int errCode) {
+        bus.post(BluEvent.Ota.getFailedInstance(errCode));
+    }
+
     private void notifyFailed() {
-        bus.post(new BluEvent.Ota(BluEvent.OtaState.FAILED));
+        notifyFailed(ResultCode.OTA_WRITE_FAILED);
     }
 
     private void notifySucceed() {
@@ -275,7 +307,7 @@ public class OtaHelper {
             if (retryCount < MAX_RETRY_COUNT) {
                 Log.d(TAG, "dispatch: " + step + " failed");
                 retryCount++;
-                OtaHelper.this.dispatch();
+                OtaConnector.this.dispatch();
             } else {
                 notifyFailed();
             }
@@ -305,5 +337,6 @@ public class OtaHelper {
     public void destroy() {
         if (otaFile != null)
             otaFile.close();
+        bus.unregister(this);
     }
 }

@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
+import com.tbit.tbitblesdk.protocol.OtaConnector;
 import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
@@ -35,10 +36,10 @@ class TbitBleInstance {
     private String macAddr;
     private TbitListener listener;
     private OtaListener otaListener;
-    private OtaFile otaFile;
     private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
+    private OtaConnector otaConnector;
     private boolean isConnectResponse = false;
     private ConnectTimeoutHandler timeoutHandler;
 
@@ -74,11 +75,8 @@ class TbitBleInstance {
             listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
             return;
         }
+        bikeBleConnector.setConnectKey(this.key);
         scan();
-    }
-
-    private void verify() {
-        bikeBleConnector.connect(key);
     }
 
     void unlock() {
@@ -170,6 +168,8 @@ class TbitBleInstance {
     void destroy() {
         bikeBleConnector.destroy();
         bluetoothIO.close();
+        if (otaConnector != null)
+            otaConnector.destroy();
         EventBus.getDefault().unregister(this);
     }
 
@@ -183,13 +183,18 @@ class TbitBleInstance {
             return;
         }
         try {
-            this.otaFile = OtaFile.getByFile(file);
+            OtaFile otaFile = OtaFile.getByFile(file);
+            if (otaConnector != null) {
+                otaConnector.destroy();
+            }
+            this.otaConnector = new OtaConnector(bluetoothIO, otaFile);
+            boolean result = bikeBleConnector.ota();
+            if (!result)
+                this.otaListener.onOtaResponse(ResultCode.PROCESSING);
         } catch (IOException e) {
+            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
             e.printStackTrace();
         }
-        boolean result = bikeBleConnector.ota();
-        if (!result)
-            this.otaListener.onOtaResponse(ResultCode.PROCESSING);
     }
 
     private void resetTimeout() {
@@ -286,16 +291,10 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCommonFailedOccurred(BluEvent.CommonFailedReport report) {
-        Log.i(TAG, "onCommonFailedOccurred: " + "\nname: " + report.functionName
+        Log.e(TAG, "onCommonFailedOccurred: " + "\nname: " + report.functionName
                 + "\nmessage: " + report.message);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDiscovered(BluEvent.DiscoveredSucceed event) {
-        Log.i(TAG, "onDiscovered: ");
-        if (isConnectResponse) return;
-        verify();
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onRssiRead(BluEvent.ReadRssi event) {
@@ -313,22 +312,18 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOta(BluEvent.Ota event) {
         Log.d(TAG, "onOta: " + event.getState());
-        if (otaFile == null) {
+        if (otaConnector == null) {
             otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
         } else {
             switch (event.getState()) {
                 case START:
-                    otaFile.setFileBlockSize(240);
-                    bluetoothIO.enableOTANotification();
-                    break;
-                case ENABLED:
-                    bluetoothIO.otaUpdate(otaFile);
+                    otaConnector.update();
                     break;
                 case UPDATING:
-                    otaListener.onOtaProgress(event.getProgressing());
+                    otaListener.onOtaProgress(event.getProgress());
                     break;
                 case FAILED:
-                    otaListener.onOtaResponse(ResultCode.OTA_WRITE_FAILED);
+                    otaListener.onOtaResponse(event.getFailedCode());
                     break;
                 case SUCCEED:
                     otaListener.onOtaResponse(ResultCode.SUCCEED);
