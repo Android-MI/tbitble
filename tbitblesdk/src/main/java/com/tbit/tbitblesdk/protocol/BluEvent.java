@@ -1,5 +1,9 @@
 package com.tbit.tbitblesdk.protocol;
 
+import android.bluetooth.BluetoothGattDescriptor;
+
+import java.util.UUID;
+
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
@@ -12,6 +16,10 @@ public class BluEvent {
 
     public enum State {
         SUCCEED, FAILED
+    }
+
+    public enum OtaState {
+        START, FAILED, SUCCEED, UPDATING
     }
 
     public static class ConnectionStateChange {
@@ -31,13 +39,33 @@ public class BluEvent {
     }
 
     public static class ChangeCharacteristic {
-        public byte[] value;
         public CharState state;
+        public UUID serviceUuid;
+        public UUID characterUuid;
+        public byte[] value;
+        public int status;
 
         public ChangeCharacteristic(CharState state,
-                                    byte[] value) {
+                                    UUID serviceUuid,
+                                    UUID characterUuid,
+                                    byte[] value, int status) {
             this.state = state;
+            this.serviceUuid = serviceUuid;
+            this.characterUuid = characterUuid;
             this.value = value;
+            this.status = status;
+        }
+    }
+
+    public static class ChangeDescriptor {
+        public CharState state;
+        public BluetoothGattDescriptor descriptor;
+        public int status;
+
+        public ChangeDescriptor(CharState state, BluetoothGattDescriptor descriptor, int status) {
+            this.state = state;
+            this.descriptor = descriptor;
+            this.status = status;
         }
     }
 
@@ -114,6 +142,37 @@ public class BluEvent {
     }
 
     public static class Ota {
+        private OtaState state;
+        private int progress;
+        private int failedCode;
+
+        public Ota(OtaState state) {
+            this.state = state;
+        }
+
+        public static Ota getProgressInstance(int progress) {
+            Ota ota = new Ota(OtaState.UPDATING);
+            ota.progress = progress;
+            return ota;
+        }
+
+        public static Ota getFailedInstance(int failedCode) {
+            Ota ota = new Ota(OtaState.FAILED);
+            ota.failedCode = failedCode;
+            return ota;
+        }
+
+        public OtaState getState() {
+            return state;
+        }
+
+        public int getProgress() {
+            return progress;
+        }
+
+        public int getFailedCode() {
+            return failedCode;
+        }
     }
 
     public static class UpdateBikeState {

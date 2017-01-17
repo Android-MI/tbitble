@@ -15,7 +15,7 @@ public class Constant {
     public static final byte VALUE_PHONE_CONTROL = 0x00;
     public static final byte VALUE_SHRANK_CONTROL =  0x01;
 
-    public static final byte COMMAND_UPDATE          = (byte) 0x01;
+    public static final byte COMMAND_OTA             = (byte) 0x01;
     public static final byte COMMAND_CONNECT         = (byte) 0x02;
     public static final byte COMMAND_SETTING         = (byte) 0x03;
     public static final byte COMMAND_QUERY           = (byte) 0x04;
@@ -86,6 +86,7 @@ public class Constant {
     public static final int REQUEST_LOCK = 26;
     public static final int REQUEST_COMMON = 27;
     public static final int REQUEST_REMOTE = 28;
+    public static final int REQUEST_OTA = 29;
 
 
     //***************应用层*************

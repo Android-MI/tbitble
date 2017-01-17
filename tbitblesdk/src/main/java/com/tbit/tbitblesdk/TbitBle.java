@@ -4,6 +4,8 @@ import android.content.Context;
 
 import com.tbit.tbitblesdk.protocol.BikeState;
 
+import java.io.File;
+
 /**
  * Created by Salmon on 2016/12/5 0005.
  */
@@ -17,7 +19,7 @@ public class TbitBle {
 
     public static void initialize(Context context) {
         if (instance == null) {
-            instance = new TbitBleInstance(context);
+            instance = new TbitBleInstance(context.getApplicationContext());
         }
     }
 
@@ -74,6 +76,11 @@ public class TbitBle {
     public static void disConnect() {
         checkInstanceNotNull();
         instance.disConnect();
+    }
+
+    public static void ota(File file, OtaListener otaListener) {
+        checkInstanceNotNull();
+        instance.ota(file, otaListener);
     }
 
     public static void destroy() {

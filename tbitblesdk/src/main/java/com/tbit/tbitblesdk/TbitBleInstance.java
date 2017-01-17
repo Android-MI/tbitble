@@ -9,6 +9,8 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
+import com.tbit.tbitblesdk.protocol.OtaConnector;
+import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.protocol.BikeState;
@@ -19,6 +21,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 /**
@@ -31,9 +35,11 @@ class TbitBleInstance {
     private Byte[] key;
     private String macAddr;
     private TbitListener listener;
+    private OtaListener otaListener;
     private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
     private BikeBleConnector bikeBleConnector;
+    private OtaConnector otaConnector;
     private boolean isConnectResponse = false;
     private ConnectTimeoutHandler timeoutHandler;
 
@@ -42,6 +48,7 @@ class TbitBleInstance {
         EventBus.getDefault().register(this);
         key = new Byte[]{};
         listener = new EmptyListener();
+        otaListener = new EmptyListener.EmptyOtaListener();
         bluetoothIO = new BluetoothIO(context);
         bikeBleConnector = new BikeBleConnector(bluetoothIO);
         timeoutHandler = new ConnectTimeoutHandler(Looper.getMainLooper(), this);
@@ -68,11 +75,8 @@ class TbitBleInstance {
             listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
             return;
         }
+        bikeBleConnector.setConnectKey(this.key);
         scan();
-    }
-
-    private void verify() {
-        bikeBleConnector.connect(key);
     }
 
     void unlock() {
@@ -164,13 +168,39 @@ class TbitBleInstance {
     void destroy() {
         bikeBleConnector.destroy();
         bluetoothIO.close();
+        if (otaConnector != null)
+            otaConnector.destroy();
         EventBus.getDefault().unregister(this);
+    }
+
+    void ota(File file, OtaListener otaListener) {
+        if (!isBluetoothOpened())
+            return;
+        this.otaListener = otaListener == null ? new EmptyListener.EmptyOtaListener() :
+                otaListener;
+        if (!isOtaFileLegal(file)) {
+            this.otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            return;
+        }
+        try {
+            OtaFile otaFile = OtaFile.getByFile(file);
+            if (otaConnector != null) {
+                otaConnector.destroy();
+            }
+            this.otaConnector = new OtaConnector(bluetoothIO, otaFile);
+            boolean result = bikeBleConnector.ota();
+            if (!result)
+                this.otaListener.onOtaResponse(ResultCode.PROCESSING);
+        } catch (IOException e) {
+            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            e.printStackTrace();
+        }
     }
 
     private void resetTimeout() {
         isConnectResponse = false;
-        timeoutHandler.removeCallbacksAndMessages(null);
-        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
+//        timeoutHandler.removeCallbacksAndMessages(null);
+//        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
     }
 
     private boolean isBluetoothOpened() {
@@ -210,6 +240,27 @@ class TbitBleInstance {
         return result;
     }
 
+    private boolean isOtaFileLegal(File file) {
+        if (file == null)
+            return false;
+        if (!file.exists()) {
+            return false;
+        }
+        String filename = file.getName();
+        if (TextUtils.isEmpty(filename))
+            return false;
+        int dot = filename.lastIndexOf('.');
+        if ((dot >-1) && (dot < (filename.length() - 1))) {
+            String extName = filename.substring(dot + 1);
+            if (!TextUtils.equals(extName, "img")) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onBleNotOpened(BluEvent.BleNotOpened event) {
         isConnectResponse = true;
@@ -240,19 +291,10 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCommonFailedOccurred(BluEvent.CommonFailedReport report) {
-        Log.i(TAG, "onCommonFailedOccurred: " + "\nname: " + report.functionName
+        Log.e(TAG, "onCommonFailedOccurred: " + "\nname: " + report.functionName
                 + "\nmessage: " + report.message);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDiscovered(BluEvent.DiscoveredSucceed event) {
-        Log.i(TAG, "onDiscovered: ");
-        if (isConnectResponse)
-            return;
-        boolean result = bluetoothIO.enableTXNotification();
-        if (result)
-            verify();
-    }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onRssiRead(BluEvent.ReadRssi event) {
@@ -269,7 +311,25 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onOta(BluEvent.Ota event) {
-
+        Log.d(TAG, "onOta: " + event.getState());
+        if (otaConnector == null) {
+            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+        } else {
+            switch (event.getState()) {
+                case START:
+                    otaConnector.update();
+                    break;
+                case UPDATING:
+                    otaListener.onOtaProgress(event.getProgress());
+                    break;
+                case FAILED:
+                    otaListener.onOtaResponse(event.getFailedCode());
+                    break;
+                case SUCCEED:
+                    otaListener.onOtaResponse(ResultCode.SUCCEED);
+                    break;
+            }
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
