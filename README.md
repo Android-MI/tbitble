@@ -223,7 +223,7 @@ allprojects {
 
 ``` gradle
 dependencies {
-        compile 'com.github.billy96322:tbitble:0.1'
+        compile 'com.github.billy96322:tbitble:0.4.8'
     }
 ```
 
