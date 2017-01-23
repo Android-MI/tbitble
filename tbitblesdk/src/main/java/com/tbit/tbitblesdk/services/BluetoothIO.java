@@ -381,7 +381,7 @@ public class BluetoothIO {
         }
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUUID);
         if (characteristic == null) {
-            bus.post(new BluEvent.DeviceUartNotSupported(characteristic + " - characteristic not exist!"));
+            bus.post(new BluEvent.DeviceUartNotSupported(characteristicUUID + " - characteristic not exist!"));
             return false;
         }
         characteristic.setValue(value);
