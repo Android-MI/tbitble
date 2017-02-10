@@ -1,7 +1,7 @@
-# tbitble   [![](https://jitpack.io/v/billy96322/tbitble.svg)](https://jitpack.io/#billy96322/tbitble)
+# tbitble
 
 ## 版本号
-1.0
+[![](https://jitpack.io/v/billy96322/tbitble.svg)](https://jitpack.io/#billy96322/tbitble)
 > 该版本非最终版本，文中提及的方法名，接口名，以及传递参数有在后续的版本做更改的可能性，以最新版本的文档为准
 
 ---
@@ -159,6 +159,8 @@ private int operateFaultCode;
 private int[] baseStation = new int[]{0, 0, 0, 0};
 // 版本号 0：硬件版本 1：软件版本
 private int[] version = new int[]{0, 0};
+// 控制器信息
+private String controllerInfoStr;
 ```
 ##### 结果回调
 
@@ -223,7 +225,7 @@ allprojects {
 
 ``` gradle
 dependencies {
-        compile 'com.github.billy96322:tbitble:0.4.8'
+        compile 'com.github.billy96322:tbitble:0.5.0'
     }
 ```
 
