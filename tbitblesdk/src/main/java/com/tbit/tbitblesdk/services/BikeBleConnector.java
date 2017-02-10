@@ -1,12 +1,10 @@
 package com.tbit.tbitblesdk.services;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BikeState;
@@ -14,6 +12,7 @@ import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.listener.Reader;
 import com.tbit.tbitblesdk.listener.Writer;
 import com.tbit.tbitblesdk.protocol.Constant;
+import com.tbit.tbitblesdk.protocol.ControllerState;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.util.ByteUtil;
@@ -368,9 +367,13 @@ public class BikeBleConnector implements Reader, Writer {
             Byte[] batteryData = Arrays.copyOfRange(data, 13, 15);
             parseVoltage(batteryData);
         }
-        if (data.length >= 22) {
-            Byte[] baseStationData = Arrays.copyOfRange(data, 15, 22);
+        if (data.length >= 23) {
+            Byte[] baseStationData = Arrays.copyOfRange(data, 15, 23);
             parseBaseStation(baseStationData);
+        }
+        if (data.length >= 36) {
+            Byte[] controllerInfoData = Arrays.copyOfRange(data, 23, 36);
+            parseControllerState(controllerInfoData);
         }
 
         handler.removeMessages(Constant.REQUEST_UPDATE);
@@ -391,6 +394,37 @@ public class BikeBleConnector implements Reader, Writer {
             return;
         }
         bikeState.setSignal(result);
+    }
+
+    private void parseControllerState(Byte[] data) {
+        if (data == null || data.length != 13)
+            return;
+        ControllerState controllerState = bikeState.getControllerState();
+
+        byte[] originData = ByteUtil.bytesToBytes(data);
+
+        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 0, 2)));
+
+        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 2, 4)));
+
+        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 4, 6)));
+
+        Byte originError = data[6];
+        int[] error = controllerState.getErrCode();
+        error[0] = bitResolver(originError, 0x01);
+        error[1] = bitResolver(originError, 0x02);
+        error[2] = bitResolver(originError, 0x04);
+        error[3] = bitResolver(originError, 0x08);
+        error[4] = bitResolver(originError, 0x10);
+        error[5] = bitResolver(originError, 0x20);
+        error[6] = bitResolver(originError, 0x40);
+        error[7] = bitResolver(originError, 0x80);
+
+        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 9)));
+
+        controllerState.setElectricCurrent(byteArrayToInt(Arrays.copyOfRange(originData, 9, 11)));
+
+        controllerState.setBattery(byteArrayToInt(Arrays.copyOfRange(originData, 11, 13)));
     }
 
     private void parseBaseStation(Byte[] data) {
@@ -544,6 +578,9 @@ public class BikeBleConnector implements Reader, Writer {
                 break;
             case 0x86:
                 parseSignal(value);
+                break;
+            case 0x88:
+                parseControllerState(value);
                 break;
             case 0xff:
                 break;

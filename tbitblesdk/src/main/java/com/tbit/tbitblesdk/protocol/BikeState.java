@@ -36,6 +36,16 @@ public class BikeState {
     private int[] baseStation = new int[]{0, 0, 0, 0};
     // 版本号 0：硬件版本 1：软件版本
     private int[] version = new int[]{0, 0};
+    // 控制器信息
+    private ControllerState controllerState = new ControllerState();
+
+    public ControllerState getControllerState() {
+        return controllerState;
+    }
+
+    public void setControllerState(ControllerState controllerState) {
+        this.controllerState = controllerState;
+    }
 
     public int[] getBaseStation() {
         return baseStation;
@@ -121,6 +131,7 @@ public class BikeState {
                 ", operateFaultCode=" + operateFaultCode +
                 ", baseStation=" + Arrays.toString(baseStation) +
                 ", version=" + Arrays.toString(version) +
+                ", controllerState=" + controllerState.toString() +
                 '}';
     }
 }
