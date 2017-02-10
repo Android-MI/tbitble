@@ -160,8 +160,35 @@ private int[] baseStation = new int[]{0, 0, 0, 0};
 // 版本号 0：硬件版本 1：软件版本
 private int[] version = new int[]{0, 0};
 // 控制器信息
-private String controllerInfoStr;
+private ControllerState controllerState;
 ```
+
+##### 控制器状态字段
+```
+// 总里程，单位是 KM
+private int totalMillage;
+// 单次里程，单位是 0.1KM
+private int singleMillage;
+// 速度，单位是 0.1KM/H
+private int speed;
+// 电压，单位是 0.1V
+private int voltage;
+// 电流，单位是 MA
+private int electricCurrent;
+// 电量，单位是 MAH
+private int battery;
+// 故障码
+// BIT7 电机缺相      0: 电机不故障，1: 电机缺相故障
+// BIT6 霍尔故障状态  0: 霍尔无故障，1: 霍尔故障
+// BIT5 转把故障状态  0: 转把无故障，1: 转把故障
+// BIT4 MOS 故障状态   0：MOS 无故障，1：MOS 故障
+// BIT3 欠压状态      0: 不在欠压保护，1: 正在欠压保护
+// BIT2 巡航状态      0: 巡航无效，1: 巡航有效
+// BIT1 刹车状态      0：刹车无效，1：刹车有效
+// BIT0 WALK 状态      0：WALK 无效，1：WALK 有效
+private int[] errCode = new int[]{0,0,0,0,0,0,0,0};
+```
+
 ##### 结果回调
 
 ```
