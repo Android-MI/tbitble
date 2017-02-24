@@ -87,6 +87,7 @@ public class Constant {
     public static final int REQUEST_COMMON = 27;
     public static final int REQUEST_REMOTE = 28;
     public static final int REQUEST_OTA = 29;
+    public static final int REQUEST_OTA_CONNECT = 30;
 
 
     //***************应用层*************

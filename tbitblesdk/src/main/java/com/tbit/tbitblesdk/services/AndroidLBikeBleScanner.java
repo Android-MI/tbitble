@@ -46,7 +46,7 @@ public class AndroidLBikeBleScanner extends Scanner {
 
 //            boolean isFound = name.contains("14580") || dataStr.contains(encryptedTid) || result.getDevice().getAddress().contains("FF:6F:24:90:57:13");
 
-            boolean isFound = dataStr.contains(encryptedTid);
+            boolean isFound = encryptedTid != null && dataStr.contains(encryptedTid);
             if (isFound) {
                 needProcessScan.set(false);
                 removeHandlerMsg();

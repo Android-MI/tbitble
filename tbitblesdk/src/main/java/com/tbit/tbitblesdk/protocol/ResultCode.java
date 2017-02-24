@@ -41,4 +41,6 @@ public class ResultCode {
     public static final int OTA_FAILED_UNKNOWN = -4003;
     // OTA升级失败 - 写入失败
     public static final int OTA_WRITE_FAILED = -4004;
+    // OTA升级失败 - 密钥错误
+    public static final int OTA_FAILED_ERR_KEY = -4005;
 }

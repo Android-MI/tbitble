@@ -15,6 +15,7 @@ import com.tbit.tbitblesdk.protocol.Constant;
 import com.tbit.tbitblesdk.protocol.ControllerState;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
+import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -52,17 +53,27 @@ public class BikeBleConnector implements Reader, Writer {
     private BikeState bikeState;
     private Set<Integer> requestQueue = Collections.synchronizedSet(new HashSet<Integer>());
     private Byte[] connectKey;
+    private ConnectMode connectMode;
+
+    public enum ConnectMode {
+        NORMAL, OTA
+    }
 
     public BikeBleConnector(BluetoothIO bluetoothIO) {
         this.bus = EventBus.getDefault();
         this.bluetoothIO = bluetoothIO;
         this.bikeState = new BikeState();
+        this.connectMode = ConnectMode.NORMAL;
         bus.register(this);
         start();
     }
 
     public void setConnectKey(Byte[] key) {
         this.connectKey = key;
+    }
+
+    public void setConnectMode(ConnectMode mode) {
+        this.connectMode = mode;
     }
 
     private void start() {
@@ -138,6 +149,17 @@ public class BikeBleConnector implements Reader, Writer {
         return true;
     }
 
+    public boolean otaConnect() {
+        PacketValue packetValue = new PacketValue();
+        packetValue.setCommandId((byte) (0x01));
+        packetValue.addData(new PacketValue.DataBean((byte) 0x01, connectKey));
+        Packet send_packet = new Packet();
+        send_packet.setPacketValue(packetValue, true);
+        send_packet.print();
+        send(Constant.REQUEST_OTA_CONNECT, Constant.COMMAND_OTA, Constant.VALUE_ON, connectKey);
+        return true;
+    }
+
     public boolean unlock() {
         if (requestQueue.contains(Constant.REQUEST_UNLOCK))
             return false;
@@ -180,9 +202,9 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     public boolean ota() {
-        if (requestQueue.contains(Constant.REQUEST_OTA)) {
-            return false;
-        }
+//        if (requestQueue.contains(Constant.REQUEST_OTA)) {
+//            return false;
+//        }
         send(Constant.REQUEST_OTA, Constant.COMMAND_OTA, Constant.VALUE_ON, null);
         return true;
     }
@@ -231,10 +253,18 @@ public class BikeBleConnector implements Reader, Writer {
         else if (checkResult == 0x10) {
             int sequenceId = receivedPacket.getL1Header().getSequenceId();
             writeTask.setAck(sequenceId);
+            if (sequenceId == Constant.REQUEST_COMMON) {
+                handler.removeMessages(Constant.REQUEST_COMMON);
+                bus.post(new BluEvent.CommonResponse(ResultCode.SUCCEED, null));
+            }
         }
         // ACK错误
         else if (checkResult == 0x30) {
             int sequenceId = receivedPacket.getL1Header().getSequenceId();
+            if (sequenceId == Constant.REQUEST_COMMON) {
+                handler.removeMessages(Constant.REQUEST_COMMON);
+                bus.post(new BluEvent.CommonResponse(ResultCode.FAILED, null));
+            }
         }
         // 接收数据包校验正确
         else if (checkResult == 0) {
@@ -245,7 +275,13 @@ public class BikeBleConnector implements Reader, Writer {
             try {
                 parseSysState(data[2]);
                 PacketValue packetValue = (PacketValue) receivedPacket.getPacketValue().clone();
-                resolve(packetValue);
+                int sequenceId = receivedPacket.getL1Header().getSequenceId();
+                if (sequenceId == Constant.REQUEST_COMMON) {
+                    handler.removeMessages(Constant.REQUEST_COMMON);
+                    bus.post(new BluEvent.CommonResponse(ResultCode.SUCCEED, packetValue));
+                } else {
+                    resolve(packetValue);
+                }
             } catch (CloneNotSupportedException e) {
                 Log.d(TAG, "parseReceivedPacket: " + "PacketValue:CloneNotSupportedException");
             }
@@ -321,10 +357,16 @@ public class BikeBleConnector implements Reader, Writer {
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
                 //电量过低
+                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_LOW_POWER));
                 Log.i(TAG, "--进入ota模式失败，电池电量过低");
+            } else if (dataTwo == (byte)0x02) {
+                //密钥错误
+                Log.i(TAG, "--进入ota模式失败，密钥错误");
+                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_ERR_KEY));
             } else {
                 //未知原因
                 Log.i(TAG, "--进入ota模式失败，发生未知错误");
+                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_UNKNOWN));
             }
         }
     }
@@ -450,6 +492,7 @@ public class BikeBleConnector implements Reader, Writer {
     }
 
     private int byteArrayToInt(byte[] data) {
+//        return ByteUtil.bytesToInt(data);
         String s = ByteUtil.bytesToHexString(data);
         s = s.replace(" ", "");
         Log.d(TAG, "byteArrayToInt: " + s);
@@ -681,7 +724,11 @@ public class BikeBleConnector implements Reader, Writer {
     public void onDiscovered(BluEvent.DiscoveredSucceed event) {
         Log.i(TAG, "onDiscovered: ");
         bluetoothIO.setCharacteristicNotification(SPS_SERVICE_UUID, SPS_TX_UUID, SPS_NOTIFY_DESCRIPTOR, true);
-        this.connect();
+        if (connectMode == ConnectMode.NORMAL) {
+            this.connect();
+        } else if (connectMode == ConnectMode.OTA) {
+            this.otaConnect();
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -720,7 +767,11 @@ public class BikeBleConnector implements Reader, Writer {
             final BikeBleConnector connector = connectorReference.get();
             if (connector == null)
                 return;
-            connector.bus.post(new BluEvent.WriteData(msg.what, BluEvent.State.FAILED));
+            if (msg.what == Constant.REQUEST_COMMON) {
+//                connector.bus.post(new BluEvent.CommonResponse(ResultCode.FAILED));
+            } else {
+                connector.bus.post(new BluEvent.WriteData(msg.what, BluEvent.State.FAILED));
+            }
         }
     }
 }

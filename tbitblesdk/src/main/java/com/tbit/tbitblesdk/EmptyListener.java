@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk;
 
 import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.protocol.PacketValue;
 
 /**
  * Created by Salmon on 2016/12/7 0007.
@@ -39,7 +40,7 @@ public class EmptyListener implements TbitListener {
     }
 
     @Override
-    public void onCommonCommandResponse(int resultCode) {
+    public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
 
     }
 

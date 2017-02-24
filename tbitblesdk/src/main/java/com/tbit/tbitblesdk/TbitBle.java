@@ -83,6 +83,11 @@ public class TbitBle {
         instance.ota(file, otaListener);
     }
 
+    public static void connectiveOta(String machineNo, String key, File file, OtaListener listener) {
+        checkInstanceNotNull();
+        instance.connectiveOta(machineNo, key, file, listener);
+    }
+
     public static void destroy() {
         checkInstanceNotNull();
         instance.destroy();

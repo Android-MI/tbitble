@@ -108,6 +108,20 @@ public class BluEvent {
         }
     }
 
+    public static class CommonResponse {
+        public PacketValue packetValue;
+        public int code;
+
+        public CommonResponse(int code, PacketValue packetValue) {
+            this.packetValue = packetValue;
+            this.code = code;
+        }
+
+        public CommonResponse(int code) {
+            this.code = code;
+        }
+    }
+
     public static class ScanTimeOut {
     }
 

@@ -66,7 +66,7 @@ class TbitBleInstance {
 
     void connect(String macAddr, String key) {
         this.macAddr = macAddr;
-        this.key = resolve(key);
+        this.key = resolve(key, 32);
         if (!isMacAddrLegal()) {
             listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
             return;
@@ -76,6 +76,7 @@ class TbitBleInstance {
             return;
         }
         bikeBleConnector.setConnectKey(this.key);
+        bikeBleConnector.setConnectMode(BikeBleConnector.ConnectMode.NORMAL);
         scan();
     }
 
@@ -119,12 +120,12 @@ class TbitBleInstance {
         if (!isBluetoothOpened())
             return;
         if (!bluetoothIO.isConnected()) {
-            listener.onCommonCommandResponse(ResultCode.DISCONNECTED);
+            listener.onCommonCommandResponse(ResultCode.DISCONNECTED, null);
             return;
         }
         boolean result = bikeBleConnector.common(commandId, key, value);
         if (!result)
-            listener.onCommonCommandResponse(ResultCode.PROCESSING);
+            listener.onCommonCommandResponse(ResultCode.PROCESSING, null);
     }
 
     void reConnect() {
@@ -171,6 +172,41 @@ class TbitBleInstance {
         if (otaConnector != null)
             otaConnector.destroy();
         EventBus.getDefault().unregister(this);
+    }
+
+    void connectiveOta(String machineNo, String key, File file, OtaListener otaListener) {
+        if (!isBluetoothOpened())
+            return;
+        this.macAddr = machineNo;
+        this.key = resolve(key, 16);
+        this.otaListener = otaListener == null ? new EmptyListener.EmptyOtaListener() :
+                otaListener;
+
+        if (!isMacAddrLegal()) {
+            otaListener.onOtaResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
+            return;
+        }
+        if (!isKeyLegal()) {
+            otaListener.onOtaResponse(ResultCode.KEY_ILLEGAL);
+            return;
+        }
+        bikeBleConnector.setConnectKey(this.key);
+        if (!isOtaFileLegal(file)) {
+            this.otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            return;
+        }
+        try {
+            OtaFile otaFile = OtaFile.getByFile(file);
+            if (otaConnector != null) {
+                otaConnector.destroy();
+            }
+            this.otaConnector = new OtaConnector(bluetoothIO, otaFile);
+            this.bikeBleConnector.setConnectMode(BikeBleConnector.ConnectMode.OTA);
+            scan();
+        } catch (IOException e) {
+            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            e.printStackTrace();
+        }
     }
 
     void ota(File file, OtaListener otaListener) {
@@ -220,15 +256,16 @@ class TbitBleInstance {
         return !TextUtils.isEmpty(macAddr);
     }
 
-    private Byte[] resolve(String keyStr) {
+    private Byte[] resolve(String keyStr, int length) {
+        length = length * 2;
         Byte[] result = new Byte[]{};
         keyStr = keyStr.replace(" ", "");
-        if (keyStr.length() != 64)
+        if (keyStr.length() != length)
             return result;
         StringBuilder sb = new StringBuilder();
-        for (int j = 0; j < 64; j+=2) {
+        for (int j = 0; j < length; j+=2) {
             sb.append(keyStr.substring(j, j+2));
-            if (j == 64 -2)
+            if (j == length -2)
                 continue;
             sb.append(" ");
         }
@@ -375,6 +412,14 @@ class TbitBleInstance {
                     break;
             }
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onCommonResponse(BluEvent.CommonResponse response) {
+        if (!bikeBleConnector.removeFromQueue(Constant.REQUEST_COMMON)) {
+            return;
+        }
+        listener.onCommonCommandResponse(response.code, response.packetValue);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
