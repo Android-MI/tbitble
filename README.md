@@ -249,8 +249,10 @@ TbitListener listener = new TbitListener() {
         }
 
         @Override
-        public void onCommonCommandResponse(int resultCode) {
-            Log.d(TAG, "onCommonCommandResponse: " + resultCode);
+        public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
+            // packetValue 有为null的可能
+            if(packetValue == null)
+                ...
         }
     };
 ```
