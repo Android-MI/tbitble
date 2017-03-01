@@ -112,7 +112,31 @@ public class OtaConnector {
 //            dispatch();
 //        }
         if (error > 0) {
-            notifyFailed(error);
+            int resolvedErrorCode;
+            switch (error) {
+                case 11:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_IMAGE_BANK;
+                    break;
+                case 12:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_IMAGE_HEADER;
+                    break;
+                case 13:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_IMAGE_SIZE;
+                    break;
+                case 14:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_PRODUCT_HEADER;
+                    break;
+                case 15:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_SAME_IMAGE;
+                    break;
+                case 16:
+                    resolvedErrorCode = ResultCode.OTA_FAILED_TO_READ_FROM_EXTERNAL_MEM;
+                    break;
+                default:
+                    resolvedErrorCode = error;
+                    break;
+            }
+            notifyFailed(resolvedErrorCode);
         }
     }
 

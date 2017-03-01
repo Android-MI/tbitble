@@ -27,12 +27,6 @@ public class ResultCode {
     public static final int KEY_ILLEGAL = -2003;
     // 连接超时
     public static final int CONNECT_TIME_OUT = -2004;
-    // 解锁失败
-//    public static final int UNLOCK_FAILED = -3001;
-    // 上锁失败
-//    public static final int LOCK_FAILED = -3002;
-    // 更新状态失败
-//    public static final int UPDATE_FAILED = -3003;
     // OTA升级文件不合法
     public static final int OTA_FILE_ILLEGAL = -4001;
     // OTA升级失败 - 电量不足
@@ -43,4 +37,17 @@ public class ResultCode {
     public static final int OTA_WRITE_FAILED = -4004;
     // OTA升级失败 - 密钥错误
     public static final int OTA_FAILED_ERR_KEY = -4005;
+    // OTA升级失败 - Invalid image bank
+    public static final int OTA_FAILED_IMAGE_BANK = -4006;
+    // OTA升级失败 - Invalid image header
+    public static final int OTA_FAILED_IMAGE_HEADER = -4007;
+    // OTA升级失败 - Invalid image size
+    public static final int OTA_FAILED_IMAGE_SIZE = -4008;
+    // OTA升级失败 - Invalid product header
+    public static final int OTA_FAILED_PRODUCT_HEADER = -4009;
+    // OTA升级失败 - Same Image Error
+    public static final int OTA_FAILED_SAME_IMAGE = -4010;
+    // OTA升级失败 - Failed to read from external memory device
+    public static final int OTA_FAILED_TO_READ_FROM_EXTERNAL_MEM = -4011;
+
 }
