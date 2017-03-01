@@ -2,6 +2,7 @@ package com.tbit.tbitblesdk.services;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
@@ -44,8 +45,6 @@ public class AndroidLBikeBleScanner extends Scanner {
             if (TextUtils.isEmpty(name))
                 return;
 
-//            boolean isFound = name.contains("14580") || dataStr.contains(encryptedTid) || result.getDevice().getAddress().contains("FF:6F:24:90:57:13");
-
             boolean isFound = encryptedTid != null && dataStr.contains(encryptedTid);
             if (isFound) {
                 needProcessScan.set(false);
@@ -85,17 +84,18 @@ public class AndroidLBikeBleScanner extends Scanner {
             }
         }, timeoutMillis);
         printLogStart();
-//        bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
-        bluetoothAdapter.getBluetoothLeScanner().startScan(bleCallback);
+        bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
     }
 
     @Override
     public void stop() {
-        if (bluetoothAdapter == null) {
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             EventBus.getDefault().post(new BluEvent.BleNotOpened());
             return;
         }
-        bluetoothAdapter.getBluetoothLeScanner().stopScan(bleCallback);
+        BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+        if (bluetoothLeScanner != null)
+            bluetoothLeScanner.stopScan(bleCallback);
     }
 
     private List<ScanFilter> getFilters() {
