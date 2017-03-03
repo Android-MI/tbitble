@@ -31,6 +31,8 @@ public static final int PERMISSION_DENIED = -1003;
 public static final int DISCONNECTED = -1004;
 // 该指令正在发送中，请稍后发送
 public static final int PROCESSING = -1005;
+// 低于API18
+public static final int LOWER_THAN_API_18 = -1006;
 // 设备编号不合法
 public static final int MAC_ADDRESS_ILLEGAL = -2001;
 // 未找到设备
