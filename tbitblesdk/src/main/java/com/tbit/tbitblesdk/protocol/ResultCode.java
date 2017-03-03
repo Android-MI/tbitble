@@ -19,6 +19,8 @@ public class ResultCode {
     public static final int DISCONNECTED = -1004;
     // 该指令正在发送中，请稍后发送
     public static final int PROCESSING = -1005;
+    // 低于API18
+    public static final int LOWER_THAN_API_18 = -1006;
     // 设备编号不合法
     public static final int MAC_ADDRESS_ILLEGAL = -2001;
     // 未找到设备
@@ -27,6 +29,8 @@ public class ResultCode {
     public static final int KEY_ILLEGAL = -2003;
     // 连接超时
     public static final int CONNECT_TIME_OUT = -2004;
+    // 验证密钥超时
+    public static final int VERIFICATION_RESPONSE_TIME_OUT = -2005;
     // OTA升级文件不合法
     public static final int OTA_FILE_ILLEGAL = -4001;
     // OTA升级失败 - 电量不足

@@ -101,10 +101,17 @@ public class BluEvent {
     public static class WriteData {
         public int requestId;
         public State state;
+        public int failCode;
 
         public WriteData(int requestId, State state) {
             this.requestId = requestId;
             this.state = state;
+        }
+
+        public WriteData(int requestId, int failCode) {
+            this.requestId = requestId;
+            this.state = State.FAILED;
+            this.failCode = failCode;
         }
     }
 

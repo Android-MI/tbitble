@@ -376,9 +376,13 @@ public class BikeBleConnector implements Reader, Writer {
         int sequence = Constant.REQUEST_CONNECT;
         BluEvent.State state = data[0] == (byte) 0x01 ? BluEvent.State.SUCCEED :
                 BluEvent.State.FAILED;
-        bus.post(new BluEvent.WriteData(sequence, state));
-        if (state == BluEvent.State.FAILED)
+//        bus.post(new BluEvent.WriteData(sequence, state));
+        if (state == BluEvent.State.SUCCEED) {
+            bus.post(new BluEvent.WriteData(sequence, BluEvent.State.SUCCEED));
+        } else {
+            bus.post(new BluEvent.WriteData(sequence, ResultCode.KEY_ILLEGAL));
             bluetoothIO.disconnect();
+        }
     }
 
     private void parseVerifyFailed(Byte[] data) {
@@ -769,6 +773,8 @@ public class BikeBleConnector implements Reader, Writer {
                 return;
             if (msg.what == Constant.REQUEST_COMMON) {
 //                connector.bus.post(new BluEvent.CommonResponse(ResultCode.FAILED));
+            } else if (msg.what == Constant.REQUEST_CONNECT){
+                connector.bus.post(new BluEvent.WriteData(msg.what, ResultCode.VERIFICATION_RESPONSE_TIME_OUT));
             } else {
                 connector.bus.post(new BluEvent.WriteData(msg.what, BluEvent.State.FAILED));
             }

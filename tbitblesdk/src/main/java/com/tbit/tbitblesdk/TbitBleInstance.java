@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -56,7 +57,7 @@ class TbitBleInstance {
 
     void setListener(TbitListener listener) {
         if (listener == null)
-            throw new RuntimeException("listener cannot be null");
+            this.listener = new EmptyListener();
         this.listener = listener;
     }
 
@@ -65,6 +66,10 @@ class TbitBleInstance {
     }
 
     void connect(String macAddr, String key) {
+        if (Build.VERSION.SDK_INT < 18) {
+            listener.onConnectResponse(ResultCode.LOWER_THAN_API_18);
+            return;
+        }
         this.macAddr = macAddr;
         this.key = resolve(key, 32);
         if (!isMacAddrLegal()) {
@@ -406,7 +411,10 @@ class TbitBleInstance {
                     break;
                 case Constant.REQUEST_CONNECT:
                     if (!isConnectResponse) {
-                        listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+                        if (event.failCode != 0)
+                            listener.onConnectResponse(event.failCode);
+                        else
+                            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
                         isConnectResponse = true;
                     }
                     break;
