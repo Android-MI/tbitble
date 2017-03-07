@@ -1,6 +1,6 @@
 package com.tbit.tbitblesdk.services;
 
-import android.bluetooth.BluetoothAdapter;
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -15,7 +15,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.ScanResponse;
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.services.scanner.Scanner;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -27,7 +30,7 @@ import java.util.UUID;
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
-
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothIO {
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_SCANNING = 1;
@@ -39,10 +42,7 @@ public class BluetoothIO {
     private Context context;
     private EventBus bus;
     private BluetoothManager bluetoothManager;
-    private BluetoothAdapter bluetoothAdapter;
     private BluetoothGatt bluetoothGatt;
-    private Scanner scanner;
-    private String lastConnectedDeviceMac;
     private boolean isAutoReconnectEnable = true;
     //    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
@@ -123,31 +123,17 @@ public class BluetoothIO {
         super();
         this.context = context.getApplicationContext();
         bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter = bluetoothManager.getAdapter();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            scanner = new AndroidLBikeBleScanner(bluetoothAdapter);
-        } else {
-            scanner = new BikeBleScanner(bluetoothAdapter);
-        }
         bus = EventBus.getDefault();
     }
 
-    public void scanAndConnectByMac(String macAddress) {
+    public void scanAndConnectByMac(Scanner scanner) {
         isAutoReconnectEnable = true;
-        lastConnectedDeviceMac = macAddress;
         connectionState = STATE_SCANNING;
-        stopScan();
         disconnectInside();
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (!isBlueEnable()) {
-            bus.post(new BluEvent.BleNotOpened());
-            return;
-        }
-        scanner.setBluetoothAdapter(bluetoothAdapter);
-        scanner.start(macAddress, new ScannerCallback() {
+        scanner.start(new ScannerCallback() {
             @Override
-            public void onScanTimeout() {
-                stopScan();
+            public void onScanStop() {
+                connectionState = STATE_DISCONNECTED;
                 bus.post(new BluEvent.ScanTimeOut());
             }
 
@@ -161,15 +147,8 @@ public class BluetoothIO {
         });
     }
 
-    public void stopScan() {
-        connectionState = STATE_DISCONNECTED;
-        scanner.stop();
-    }
+    public void scan(ScanResponse response) {
 
-    public boolean isBlueEnable() {
-        if (bluetoothAdapter == null)
-            return false;
-        return bluetoothAdapter.isEnabled();
     }
 
     public boolean isInScanning() {
@@ -217,7 +196,7 @@ public class BluetoothIO {
     }
 
     private void disconnectInside() {
-        if (bluetoothAdapter == null || bluetoothGatt == null) {
+        if (bluetoothGatt == null) {
             Log.w(TAG, "--BluetoothAdapter not initialized");
             return;
         }
@@ -230,38 +209,37 @@ public class BluetoothIO {
         }
     }
 
-    public void reconnect() {
-        isAutoReconnectEnable = true;
-        scanAndConnectByMac(lastConnectedDeviceMac);
-    }
+//    public void reconnect() {
+//        isAutoReconnectEnable = true;
+//        scanAndConnectByMac(lastConnectedDeviceMac);
+//    }
 
-    private void tryAutoReconnect() {
-        if (isAutoReconnectEnable /*&& hasVerified*/) {
-            autoReconnect();
-        } else {
-            bus.post(new BluEvent.DisConnected());
-        }
-    }
+//    private void tryAutoReconnect() {
+//        if (isAutoReconnectEnable /*&& hasVerified*/) {
+//            autoReconnect();
+//        } else {
+//            bus.post(new BluEvent.DisConnected());
+//        }
+//    }
 
-    private void autoReconnect() {
-        isAutoReconnectEnable = true;
-        disconnectInside();
-        scanner.start(lastConnectedDeviceMac, new ScannerCallback() {
-            @Override
-            public void onScanTimeout() {
-                stopScan();
-                bus.post(new BluEvent.DisConnected());
-            }
-
-            @Override
-            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
-                connect(bluetoothDevice, false, coreGattCallback);
-            }
-        });
-    }
+//    private void autoReconnect() {
+//        isAutoReconnectEnable = true;
+//        disconnectInside();
+//        scanner.start(new ScannerCallback() {
+//            @Override
+//            public void onScanStop() {
+//                stopScanInternal();
+//                bus.post(new BluEvent.DisConnected());
+//            }
+//
+//            @Override
+//            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+//                connect(bluetoothDevice, false, coreGattCallback);
+//            }
+//        });
+//    }
 
     public void close() {
-        stopScan();
         disconnectInside();
     }
 

@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.services;
+package com.tbit.tbitblesdk.services.scanner;
 
 import android.bluetooth.BluetoothDevice;
 
@@ -7,7 +7,7 @@ import android.bluetooth.BluetoothDevice;
  */
 
 public interface ScannerCallback {
-    void onScanTimeout();
+    void onScanStop();
 
     void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes);
 }

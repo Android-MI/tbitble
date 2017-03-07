@@ -1,22 +1,17 @@
-package com.tbit.tbitblesdk.services;
+package com.tbit.tbitblesdk.services.scanner.old;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
-import com.tbit.tbitblesdk.protocol.ParsedAd;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 
 import org.greenrobot.eventbus.EventBus;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
-
+@Deprecated
 public class BikeBleScanner extends Scanner {
 
     private static final String TAG = "BikeBleScanner";
@@ -72,7 +67,7 @@ public class BikeBleScanner extends Scanner {
                 if (needProcessScan.get() && callback != null) {
                     printLogScannedLog();
                     printLogTimeout();
-                    callback.onScanTimeout();
+                    callback.onScanStop();
                 }
                 needProcessScan.set(false);
             }

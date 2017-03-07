@@ -11,7 +11,6 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
-import com.tbit.tbitblesdk.services.ScannerCallback;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -22,45 +21,29 @@ import java.util.List;
  * Created by Salmon on 2017/3/3 0003.
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class AndroidLScanner extends BaseScanner {
+public class AndroidLScanner implements Scanner {
+    private ScannerCallback callback;
+    private BluetoothAdapter bluetoothAdapter;
+
+    public AndroidLScanner(BluetoothAdapter bluetoothAdapter) {
+        this.bluetoothAdapter = bluetoothAdapter;
+    }
 
     private ScanCallback bleCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, final ScanResult result) {
-            if (!needProcessScan.get())
-                return;
-
             BluetoothDevice device = result.getDevice();
             Integer rssi = result.getRssi();
             byte[] bytes = result.getScanRecord().getBytes();
-
             if (callback != null)
                 callback.onDeviceFounded(device, rssi, bytes);
         }
 
     };
 
-    public AndroidLScanner(BluetoothAdapter bluetoothAdapter) {
-        super(bluetoothAdapter);
-    }
-
     @Override
     public void start(final ScannerCallback callback) {
         this.callback = callback;
-        reset();
-        results.clear();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (needProcessScan.get() && callback != null) {
-                    printLogScannedLog();
-                    printLogTimeout();
-                    callback.onScanTimeout();
-                }
-                needProcessScan.set(false);
-            }
-        }, timeoutMillis);
-        printLogStart();
         bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
     }
 
@@ -86,5 +69,6 @@ public class AndroidLScanner extends BaseScanner {
         BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         if (bluetoothLeScanner != null)
             bluetoothLeScanner.stopScan(bleCallback);
+        callback.onScanStop();
     }
 }

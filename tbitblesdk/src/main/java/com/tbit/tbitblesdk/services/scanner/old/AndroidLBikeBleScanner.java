@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.services;
+package com.tbit.tbitblesdk.services.scanner.old;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
@@ -9,9 +9,9 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.os.Build;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
-
+@Deprecated
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class AndroidLBikeBleScanner extends Scanner {
     private static final String TAG = "AndroidLBikeBleScanner";
@@ -78,7 +78,7 @@ public class AndroidLBikeBleScanner extends Scanner {
                 if (needProcessScan.get() && callback != null) {
                     printLogScannedLog();
                     printLogTimeout();
-                    callback.onScanTimeout();
+                    callback.onScanStop();
                 }
                 needProcessScan.set(false);
             }
