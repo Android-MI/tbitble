@@ -7,7 +7,12 @@ import android.bluetooth.BluetoothDevice;
  */
 
 public interface ScannerCallback {
+
+    void onScanStart();
+
     void onScanStop();
+
+    void onScanCanceled();
 
     void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes);
 }

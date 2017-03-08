@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
@@ -17,10 +18,10 @@ import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.services.BluetoothIO;
+import com.tbit.tbitblesdk.services.scanner.BikeScanHelper;
 import com.tbit.tbitblesdk.services.scanner.BikeScanner;
-import com.tbit.tbitblesdk.services.scanner.ScanDecorator;
-import com.tbit.tbitblesdk.services.scanner.ScanRequestBuilder;
-import com.tbit.tbitblesdk.services.scanner.Scanner;
+import com.tbit.tbitblesdk.services.scanner.ScanHelper;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -48,7 +49,8 @@ class TbitBleInstance {
     private OtaConnector otaConnector;
     private boolean isConnectResponse = false;
     private ConnectTimeoutHandler timeoutHandler;
-    private BikeScanner bikeScanner;
+    private BikeScanHelper bikeScanHelper;
+    private ScanHelper scanHelper;
     private BluetoothAdapter bluetoothAdapter;
 
     TbitBleInstance(Context context) {
@@ -142,7 +144,7 @@ class TbitBleInstance {
     }
 
     void reConnect() {
-        if (bikeScanner == null) {
+        if (bikeScanHelper == null) {
             listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
             return;
         }
@@ -169,22 +171,34 @@ class TbitBleInstance {
         if (!isBluetoothOpened())
             return;
         resetTimeout();
-        if (bikeScanner == null) {
-            bikeScanner = new BikeScanner(macAddr, bluetoothAdapter);
+        if (bikeScanHelper == null) {
+            bikeScanHelper = new BikeScanHelper(bluetoothAdapter, bluetoothIO);
         }
-        bluetoothIO.scanAndConnectByMac(bikeScanner);
+        bikeScanHelper.scanAndConnect(macAddr);
     }
 
-    void startScan(ScanResponse response) {
-        if (response == null)
-            return;
-        bluetoothIO.scan(response);
+    int startScan(ScannerCallback callback, long timeout) {
+        if (callback == null)
+            return ResultCode.FAILED;
+        if (!bluetoothAdapter.isEnabled()) {
+            return ResultCode.BLE_NOT_OPENED;
+        }
+        if (scanHelper == null) {
+            scanHelper = new ScanHelper(bluetoothAdapter);
+        }
+        if (scanHelper.isScanning()) {
+            return ResultCode.PROCESSING;
+        }
+        scanHelper.start(callback, timeout);
+        return ResultCode.SUCCEED;
     }
 
     void stopScan() {
         if (!isBluetoothOpened())
             return;
-
+        if (scanHelper == null)
+            return;
+        scanHelper.stop();
     }
 
     void destroy() {

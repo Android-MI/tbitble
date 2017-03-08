@@ -15,10 +15,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.tbit.tbitblesdk.ScanResponse;
 import com.tbit.tbitblesdk.protocol.BluEvent;
-import com.tbit.tbitblesdk.services.scanner.Scanner;
-import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -43,7 +40,6 @@ public class BluetoothIO {
     private EventBus bus;
     private BluetoothManager bluetoothManager;
     private BluetoothGatt bluetoothGatt;
-    private boolean isAutoReconnectEnable = true;
     //    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -76,7 +72,7 @@ public class BluetoothIO {
                 bus.post(new BluEvent.DiscoveredSucceed());
             } else {
                 refreshDeviceCache(gatt);
-                disconnectInside();
+                disconnectInternal();
                 bus.post(new BluEvent.CommonFailedReport("onServicesDiscovered",
                         "status : " + status));
             }
@@ -126,30 +122,25 @@ public class BluetoothIO {
         bus = EventBus.getDefault();
     }
 
-    public void scanAndConnectByMac(Scanner scanner) {
-        isAutoReconnectEnable = true;
-        connectionState = STATE_SCANNING;
-        disconnectInside();
-        scanner.start(new ScannerCallback() {
-            @Override
-            public void onScanStop() {
-                connectionState = STATE_DISCONNECTED;
-                bus.post(new BluEvent.ScanTimeOut());
-            }
-
-            @Override
-            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
-//                BluetoothGatt connect = connect(bluetoothDevice, false, coreGattCallback);
-//                refreshDeviceCache(connect);
-//                connect.connect();
-                connect(bluetoothDevice, false, coreGattCallback);
-            }
-        });
-    }
-
-    public void scan(ScanResponse response) {
-
-    }
+//    public void scanAndConnectByMac(Scanner scanner) {
+//        connectionState = STATE_SCANNING;
+//        disconnectInternal();
+//        scanner.start(new ScannerCallback() {
+//            @Override
+//            public void onScanStop() {
+//                connectionState = STATE_DISCONNECTED;
+//                bus.post(new BluEvent.ScanTimeOut());
+//            }
+//
+//            @Override
+//            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+////                BluetoothGatt connect = connect(bluetoothDevice, false, coreGattCallback);
+////                refreshDeviceCache(connect);
+////                connect.connect();
+//                connect(bluetoothDevice, false);
+//            }
+//        });
+//    }
 
     public boolean isInScanning() {
         return connectionState == STATE_SCANNING;
@@ -176,26 +167,25 @@ public class BluetoothIO {
     }
 
     public void connect(final BluetoothDevice device,
-                        final boolean autoConnect,
-                        BluetoothGattCallback callback) {
+                        final boolean autoConnect) {
+        disconnectInternal();
         Log.i(TAG, "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            bluetoothGatt = device.connectGatt(context, autoConnect, callback, BluetoothDevice.TRANSPORT_LE);
+            bluetoothGatt = device.connectGatt(context, autoConnect, coreGattCallback, BluetoothDevice.TRANSPORT_LE);
         } else {
-            bluetoothGatt = device.connectGatt(context, autoConnect, callback);
+            bluetoothGatt = device.connectGatt(context, autoConnect, coreGattCallback);
         }
 //        refreshDeviceCache(bluetoothGatt);
 //        bluetoothGatt.connect();
     }
 
     public void disconnect() {
-        isAutoReconnectEnable = false;
-        disconnectInside();
+        disconnectInternal();
     }
 
-    private void disconnectInside() {
+    private void disconnectInternal() {
         if (bluetoothGatt == null) {
             Log.w(TAG, "--BluetoothAdapter not initialized");
             return;
@@ -209,38 +199,8 @@ public class BluetoothIO {
         }
     }
 
-//    public void reconnect() {
-//        isAutoReconnectEnable = true;
-//        scanAndConnectByMac(lastConnectedDeviceMac);
-//    }
-
-//    private void tryAutoReconnect() {
-//        if (isAutoReconnectEnable /*&& hasVerified*/) {
-//            autoReconnect();
-//        } else {
-//            bus.post(new BluEvent.DisConnected());
-//        }
-//    }
-
-//    private void autoReconnect() {
-//        isAutoReconnectEnable = true;
-//        disconnectInside();
-//        scanner.start(new ScannerCallback() {
-//            @Override
-//            public void onScanStop() {
-//                stopScanInternal();
-//                bus.post(new BluEvent.DisConnected());
-//            }
-//
-//            @Override
-//            public void onDeviceFounded(final BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
-//                connect(bluetoothDevice, false, coreGattCallback);
-//            }
-//        });
-//    }
-
     public void close() {
-        disconnectInside();
+        disconnectInternal();
     }
 
     // Clears the device cache. After uploading new hello4 the DFU target will have other services than before.

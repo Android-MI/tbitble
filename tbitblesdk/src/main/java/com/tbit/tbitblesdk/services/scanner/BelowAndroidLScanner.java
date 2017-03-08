@@ -11,6 +11,7 @@ import com.tbit.tbitblesdk.protocol.BluEvent;
 import org.greenrobot.eventbus.EventBus;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by Salmon on 2017/3/3 0003.
@@ -18,26 +19,39 @@ import java.lang.ref.WeakReference;
 
 public class BelowAndroidLScanner implements Scanner {
     private static final int HANDLE_STOP = 0;
+    private static final int HANDLE_TIMEOUT = 1;
+
     private ScannerCallback callback;
     private BluetoothAdapter bluetoothAdapter;
     private ScanHandler handler;
+    private AtomicBoolean needProcess = new AtomicBoolean(false);
+    private long timeoutMillis;
+
     private BluetoothAdapter.LeScanCallback bleCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice bluetoothDevice, final int i, final byte[] bytes) {
-
             if (callback != null)
                 callback.onDeviceFounded(bluetoothDevice, i, bytes);
         }
     };
 
     public BelowAndroidLScanner(BluetoothAdapter bluetoothAdapter) {
+        this(Long.MAX_VALUE, bluetoothAdapter);
+    }
+
+    public BelowAndroidLScanner(long timeoutMillis, BluetoothAdapter bluetoothAdapter) {
         this.bluetoothAdapter = bluetoothAdapter;
-        handler = new ScanHandler(this);
+        this.timeoutMillis = timeoutMillis;
+        this.handler = new ScanHandler(this);
     }
 
     @Override
     public void start(final ScannerCallback callback) {
         this.callback = callback;
+        needProcess.set(true);
+        if (callback != null)
+            callback.onScanStart();
+        handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, timeoutMillis);
         bluetoothAdapter.startLeScan(bleCallback);
     }
 
@@ -46,13 +60,42 @@ public class BelowAndroidLScanner implements Scanner {
         handler.sendEmptyMessage(HANDLE_STOP);
     }
 
+    @Override
+    public void setTimeout(long timeout) {
+        this.timeoutMillis = timeout;
+    }
+
+    @Override
+    public boolean isScanning() {
+        return needProcess.get();
+    }
+
     private void stopInternal() {
+        if (!needProcess.get())
+            return;
+        needProcess.set(false);
+        if (callback != null)
+            callback.onScanCanceled();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             EventBus.getDefault().post(new BluEvent.BleNotOpened());
             return;
         }
+        handler.removeCallbacksAndMessages(null);
         bluetoothAdapter.stopLeScan(bleCallback);
-        callback.onScanStop();
+    }
+
+    private void timeUp() {
+        if (!needProcess.get())
+            return;
+        needProcess.set(false);
+        if (callback != null)
+            callback.onScanStop();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            EventBus.getDefault().post(new BluEvent.BleNotOpened());
+            return;
+        }
+        handler.removeCallbacksAndMessages(null);
+        bluetoothAdapter.stopLeScan(bleCallback);
     }
 
     static class ScanHandler extends Handler {
@@ -71,6 +114,9 @@ public class BelowAndroidLScanner implements Scanner {
             switch (msg.what) {
                 case HANDLE_STOP:
                     scanner.stopInternal();
+                    break;
+                case HANDLE_TIMEOUT:
+                    scanner.timeUp();
                     break;
                 default:
                     break;

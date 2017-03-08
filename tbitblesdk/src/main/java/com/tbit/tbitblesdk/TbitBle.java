@@ -1,8 +1,11 @@
 package com.tbit.tbitblesdk;
 
+import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 
 import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.services.scanner.Scanner;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 
 import java.io.File;
 
@@ -36,6 +39,16 @@ public class TbitBle {
     public static void connect(String macAddr, String key) {
         checkInstanceNotNull();
         instance.connect(macAddr, key);
+    }
+
+    public static int startScan(ScannerCallback callback, long timeout) {
+        checkInstanceNotNull();
+        return instance.startScan(callback, timeout);
+    }
+
+    public static void stopScan() {
+        checkInstanceNotNull();
+        instance.stopScan();
     }
 
     public static void commonCommand(byte commandId, byte key, Byte[] value) {

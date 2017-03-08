@@ -9,4 +9,8 @@ public interface Scanner {
     void start(ScannerCallback callback);
 
     void stop();
+
+    void setTimeout(long timeout);
+
+    boolean isScanning();
 }
