@@ -1,9 +1,11 @@
-package com.tbit.tbitblesdk.protocol;
+package com.tbit.tbitblesdk.services;
 
 import android.bluetooth.BluetoothGatt;
 import android.util.Log;
 
-import com.tbit.tbitblesdk.services.BluetoothIO;
+import com.tbit.tbitblesdk.protocol.BluEvent;
+import com.tbit.tbitblesdk.protocol.OtaFile;
+import com.tbit.tbitblesdk.protocol.ResultCode;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;

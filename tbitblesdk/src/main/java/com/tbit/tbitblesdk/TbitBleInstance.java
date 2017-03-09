@@ -11,7 +11,7 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
-import com.tbit.tbitblesdk.protocol.OtaConnector;
+import com.tbit.tbitblesdk.services.OtaConnector;
 import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.services.BikeBleConnector;
