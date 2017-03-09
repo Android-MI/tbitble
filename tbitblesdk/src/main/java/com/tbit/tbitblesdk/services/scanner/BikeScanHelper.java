@@ -93,8 +93,8 @@ public class BikeScanHelper {
             ParsedAd ad = ParsedAd.parseData(bytes);
             byte[] data = ad.getManufacturer();
             ManufacturerAd manufacturerAd = ManufacturerAd.resolveManufacturerAd(data);
-            final int hard = manufacturerAd.getHardware();
-            final int firm = manufacturerAd.getSoftware();
+            final int hard = manufacturerAd.getHardwareVersion();
+            final int firm = manufacturerAd.getSoftwareVersion();
             EventBus.getDefault().post(new BluEvent.VersionResponse(hard, firm));
         } catch (Exception e) {
             e.printStackTrace();

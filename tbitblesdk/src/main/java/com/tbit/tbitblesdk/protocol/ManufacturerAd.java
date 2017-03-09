@@ -13,8 +13,8 @@ public class ManufacturerAd {
     private byte[] maskId = new byte[1];
     private String machineId = "";
     private byte[] reverse = new byte[1];
-    private int hardware;
-    private int software;
+    private int hardwareVersion;
+    private int softwareVersion;
     private int type;
 
     public byte[] getManuId() {
@@ -49,20 +49,20 @@ public class ManufacturerAd {
         this.reverse = reverse;
     }
 
-    public int getHardware() {
-        return hardware;
+    public int getHardwareVersion() {
+        return hardwareVersion;
     }
 
-    public void setHardware(int hardware) {
-        this.hardware = hardware;
+    public void setHardwareVersion(int hardwareVersion) {
+        this.hardwareVersion = hardwareVersion;
     }
 
-    public int getSoftware() {
-        return software;
+    public int getSoftwareVersion() {
+        return softwareVersion;
     }
 
-    public void setSoftware(int software) {
-        this.software = software;
+    public void setSoftwareVersion(int softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 
     public int getType() {
@@ -82,8 +82,8 @@ public class ManufacturerAd {
         String machineId = ByteUtil.bytesToHexStringWithoutSpace(Arrays.copyOfRange(data, 2, 8));
         manufacturerAd.setMachineId(machineId);
         manufacturerAd.setReverse(new byte[]{data[8]});
-        manufacturerAd.setHardware(data[9]);
-        manufacturerAd.setSoftware(data[10]);
+        manufacturerAd.setHardwareVersion(data[9]);
+        manufacturerAd.setSoftwareVersion(data[10]);
         manufacturerAd.setType(data[11]);
         return manufacturerAd;
     }
