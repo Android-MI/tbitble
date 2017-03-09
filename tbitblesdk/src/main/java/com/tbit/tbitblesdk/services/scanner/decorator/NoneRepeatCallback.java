@@ -21,6 +21,7 @@ public class NoneRepeatCallback extends BaseCallback {
 
     @Override
     public void onScanStart() {
+        addressList.clear();
         callback.onScanStart();
     }
 
