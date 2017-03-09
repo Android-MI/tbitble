@@ -169,6 +169,16 @@ public class ByteUtil {
         return null;
     }
 
+    public static String bytesToHexStringWithoutSpace(byte[] bytes) {
+        if (bytes == null)
+            return "";
+        StringBuilder builder = new StringBuilder();
+        for (byte b : bytes) {
+            builder.append(String.format("%02X", b));
+        }
+        return builder.toString();
+    }
+
     public static String bytesToHexString(byte[] bytes) {
         if (bytes == null)
             return "";

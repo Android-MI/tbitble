@@ -1,7 +1,6 @@
 package com.tbit.tbitblesdk;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
@@ -19,7 +18,6 @@ import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.services.BluetoothIO;
 import com.tbit.tbitblesdk.services.scanner.BikeScanHelper;
-import com.tbit.tbitblesdk.services.scanner.BikeScanner;
 import com.tbit.tbitblesdk.services.scanner.ScanHelper;
 import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 import com.tbit.tbitblesdk.util.ByteUtil;
@@ -174,7 +172,10 @@ class TbitBleInstance {
         if (bikeScanHelper == null) {
             bikeScanHelper = new BikeScanHelper(bluetoothAdapter, bluetoothIO);
         }
-        bikeScanHelper.scanAndConnect(macAddr);
+        boolean result = bikeScanHelper.scanAndConnect(macAddr);
+        if (!result) {
+            listener.onConnectResponse(ResultCode.PROCESSING);
+        }
     }
 
     int startScan(ScannerCallback callback, long timeout) {
