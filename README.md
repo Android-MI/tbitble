@@ -66,7 +66,7 @@ public static final int OTA_FAILED_TO_READ_FROM_EXTERNAL_MEM = -4011;
 ```
 
 ### 使用
-##### 关于权限
+#### 关于权限
 在Android 6.0 及以上系统，除了需要申请文中说明的权限，最好也将该开关打开
 ```
 LocationManager locationManager =
@@ -78,7 +78,7 @@ if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
     Toast.makeText(MainActivity.this, "请开启", Toast.LENGTH_LONG).show();
 }
 ```
-##### 初始化
+#### 初始化
 
 在程序**入口**的Activity中初始化
 ```
@@ -108,7 +108,7 @@ private boolean isMainProcess() {
     return TextUtils.equals(BuildConfig.APPLICATION_ID, processNameString);
 }
 ```
-##### 操作
+#### 操作
 ```
 // 如果是Android 6.0以上需要在权限被同意之后再做初始化工作以下操作
 
@@ -130,14 +130,14 @@ TbitBle.destroy();
 ```
 以上操作均需要在**主线程**执行
 
-##### 直接可以获得的参数
+#### 直接可以获得的参数
 ```
 // 获得当前蓝牙连接状态
 TbitBle.getBleConnectionState();
 // 获得最后一次更新的车辆状态信息(需要更新请执行更新操作并等待相应回调)
 TbitBle.getState()
 ```
-##### 蓝牙状态信息
+#### 蓝牙状态信息
 ```
 public static final int STATE_DISCONNECTED = 0;
 public static final int STATE_SCANNING = 1;
@@ -146,7 +146,7 @@ public static final int STATE_CONNECTED = 3;
 public static final int STATE_SERVICES_DISCOVERED = 4;
 ```
 
-##### 车辆状态字段
+#### 车辆状态字段
 ```
 // 电量
 private float battery;
@@ -187,7 +187,7 @@ private int[] version = new int[]{0, 0};
 private ControllerState controllerState;
 ```
 
-##### 控制器状态字段
+#### 控制器状态字段
 ```
 // 总里程，单位是 KM
 private int totalMillage;
@@ -213,7 +213,7 @@ private int battery;
 private int[] errCode = new int[]{0,0,0,0,0,0,0,0};
 ```
 
-##### 结果回调
+#### 结果回调
 
 ```
 TbitListener listener = new TbitListener() {
@@ -263,10 +263,37 @@ TbitListener listener = new TbitListener() {
 * **onConnectResponse**方法可能会被多次回调，相应的逻辑在这里要做判断避免重复被执行
 
 
-##### 扫描设备
+#### 扫描设备
 
 ```
+// 最终得到的结果的回调
+ScannerCallback scannerCallback = new ScannerCallback() {
+    @Override
+    public void onScanStart() {
+        Log.d(TAG, "onScanStart: ");
+    }
+
+    @Override
+    public void onScanStop() {
+        Log.d(TAG, "onScanStop: ");
+    }
+
+    @Override
+    public void onScanCanceled() {
+        Log.d(TAG, "onScanCanceled: ");
+    }
+
+    @Override
+    public void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+        String machineId = BikeUtil.resolveMachineIdByAdData(bytes);
+        if (!TextUtils.isEmpty(machineId)) {
+            showLog("扫描到设备: " + bluetoothDevice.getAddress()+ " | " + machineId);
+        }
+    }
+};
+
 // 添加装饰器
+
 // 方式一：
 // 过滤设备名字的装饰器
 FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
@@ -274,7 +301,6 @@ FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scan
 NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
 // 收集日志的装饰器，这个最好放在最外层包裹
 LogCallback logCallback = new LogCallback(noneRepeatCallback);
-
 
 // 方式二：(与上述效果相同)
 ScanBuilder builder = new ScanBuilder(scannerCallback);
