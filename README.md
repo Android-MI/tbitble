@@ -262,6 +262,36 @@ TbitListener listener = new TbitListener() {
 * 请求更新状态的时候，会得到请求成功的回调**onUpdateResponse**，但是状态更新需要等到**onStateUpdated**才获得最新的状态。
 * **onConnectResponse**方法可能会被多次回调，相应的逻辑在这里要做判断避免重复被执行
 
+
+##### 扫描设备
+
+```
+// 添加装饰器
+// 方式一：
+// 过滤设备名字的装饰器
+FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
+// 确保结果非重复的装饰器
+NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
+// 收集日志的装饰器，这个最好放在最外层包裹
+LogCallback logCallback = new LogCallback(noneRepeatCallback);
+
+
+// 方式二：(与上述效果相同)
+ScanBuilder builder = new ScanBuilder(scannerCallback);
+ScannerCallback decoratedCallback = builder
+        .setFilter(DEVICE_NAME)
+        .setRepeatable(false)
+        .setLogMode(true)
+        .build();
+
+// 开始扫描(目前同一时间仅支持启动一个扫描),返回状态码
+int code = TbitBle.startScan(logCallback, 10000);
+
+// 结束当前扫描
+TbitBle.stopScan();
+```
+
+
 ### 添加依赖到项目
 ----------------------
 在项目根目录的build.gradle添加
@@ -278,7 +308,7 @@ allprojects {
 
 ``` gradle
 dependencies {
-        compile 'com.github.billy96322:tbitble:0.5.1'
+        compile 'com.github.billy96322:tbitble:0.5.3'
     }
 ```
 
