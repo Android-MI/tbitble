@@ -34,6 +34,7 @@ public class NoneRepeatCallback extends BaseCallback {
         }
     }
 
+    @Override
     public void onScanStop() {
         callback.onScanStop();
     }
