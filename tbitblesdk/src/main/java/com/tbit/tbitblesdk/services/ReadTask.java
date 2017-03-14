@@ -54,6 +54,7 @@ public class ReadTask extends AsyncTask<Void, byte[], Void> {
                     e.printStackTrace();
                 }
             }
+            SystemClock.sleep(100l);
         }
         return null;
     }

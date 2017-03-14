@@ -7,6 +7,7 @@ import com.tbit.tbitblesdk.protocol.ManufacturerAd;
 import com.tbit.tbitblesdk.protocol.ParsedAd;
 import com.tbit.tbitblesdk.services.scanner.Scanner;
 import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
+import com.tbit.tbitblesdk.util.BikeUtil;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -21,11 +22,17 @@ public class BikeCallback implements ScannerCallback {
     private EventBus bus;
     private String encryptedMachineId;
     private BluetoothIO bluetoothIO;
+    private String machineId;
 
     public BikeCallback(Scanner scanner, BluetoothIO bluetoothIO) {
         this.scanner = scanner;
         this.bus = EventBus.getDefault();
         this.bluetoothIO = bluetoothIO;
+    }
+
+    public void setMachineId(String machineId) {
+        this.machineId = machineId;
+        this.encryptedMachineId = BikeUtil.encryptStr(machineId);
     }
 
     @Override

@@ -38,6 +38,7 @@ public class BikeScanHelper {
             this.encryptedMachineId = BikeUtil.encryptStr(machineId);
         }
         bluetoothIO.disconnect();
+        bikeCallback.setMachineId(machineId);
         scanner.start(callback);
         return true;
     }

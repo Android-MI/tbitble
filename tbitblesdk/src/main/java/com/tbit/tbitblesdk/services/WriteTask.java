@@ -48,8 +48,10 @@ public class WriteTask extends AsyncTask<Void, byte[], Void> {
     protected Void doInBackground(Void... voids) {
 
         while (!isCancelled()) {
-            if (dataQueue.size() == 0)
+            if (dataQueue.size() == 0) {
+                SystemClock.sleep(100l);
                 continue;
+            }
             currentData = dataQueue.remove(0);
             process();
         }

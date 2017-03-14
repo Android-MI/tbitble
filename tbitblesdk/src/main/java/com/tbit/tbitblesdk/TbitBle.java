@@ -31,6 +31,11 @@ public class TbitBle {
         instance.setListener(listener);
     }
 
+    public static void unSetListener() {
+        if (instance != null)
+            instance.setListener(null);
+    }
+
     public static void setDebugListener(TbitDebugListener listener) {
         checkInstanceNotNull();
         instance.setDebugListener(listener);
