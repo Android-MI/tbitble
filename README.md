@@ -19,7 +19,7 @@
 ```
 // 操作成功
 public static final int SUCCEED = 0;
-// 操作失败
+// 操作失败 (未知原因)
 public static final int FAILED = -1;
 // 手机蓝牙未开启
 public static final int BLE_NOT_OPENED = -1001;
@@ -29,7 +29,7 @@ public static final int BLE_NOT_SUPPORTED = -1002;
 public static final int PERMISSION_DENIED = -1003;
 // 未连接或连接已断开
 public static final int DISCONNECTED = -1004;
-// 该指令正在发送中，请稍后发送
+// 该指令正在处理中，请稍后发送(部分指令不能短时间重复发送，会收到此条状态)
 public static final int PROCESSING = -1005;
 // 低于API18
 public static final int LOWER_THAN_API_18 = -1006;
@@ -37,30 +37,18 @@ public static final int LOWER_THAN_API_18 = -1006;
 public static final int MAC_ADDRESS_ILLEGAL = -2001;
 // 未找到设备
 public static final int DEVICE_NOT_FOUNDED = -2002;
-// 密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
+// 连接错误 - sdk层检测密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
 public static final int KEY_ILLEGAL = -2003;
 // 连接超时
 public static final int CONNECT_TIME_OUT = -2004;
-// 验证密钥超时
+// 连接超时 - 验证密钥指令响应超时
 public static final int VERIFICATION_RESPONSE_TIME_OUT = -2005;
-// 解锁失败
-public static final int UNLOCK_FAILED = -3001;
-// 上锁失败
-public static final int LOCK_FAILED = -3002;
-// 获取终端状态失败
-public static final int UPDATE_STATUS_FAILED = -3003;
-// 指令非法
-public static final int ILLEGAL_COMMAND = -3004;
-// 运动状态
-public static final int MOTION_STATE = -3005;
-// 非绑定状态
-public static final int NOT_BINDING = -3006;
-// 断开连接
-public static final int NOT_CONNECTING = -3007;
-// 重启终端失败
-public static final int RESTART_FAILED = -3008;
-// 恢复原厂失败
-public static final int FACTORING_FAILED = -3009;
+// 控制指令错误 - 指令非法
+public static final int ILLEGAL_COMMAND = -3001;
+// 控制指令错误 - 运动状态
+public static final int MOTION_STATE = -3002;
+// 控制指令错误 - 非绑定状态
+public static final int NOT_BINDING = -3003;
 // OTA升级文件不合法
 public static final int OTA_FILE_ILLEGAL = -4001;
 // OTA升级失败 - 电量不足
@@ -89,7 +77,7 @@ public static final int CONNECT_FAILED_UNKNOWN = -8000;
 public static final int CONNECT_FAILED_ILLEGAL_KEY = -8001;
 // 连接失败，数据校验非法
 public static final int CONNECT_DATA_VERIFICATION_FAILED = -8002;
-// 连接失败，已有设备连接
+// 连接失败，指令不支持
 public static final int CONNECT_COMMAND_NOT_SUPPORT= -8003;
 // 连接失败，已有设备连接
 public static final int CONNECT_ALREADY_CONNECTED= -8004;
