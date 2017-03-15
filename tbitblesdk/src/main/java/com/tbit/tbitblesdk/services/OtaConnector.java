@@ -1,6 +1,9 @@
 package com.tbit.tbitblesdk.services;
 
 import android.bluetooth.BluetoothGatt;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
@@ -18,7 +21,7 @@ import java.util.UUID;
  * Created by Salmon on 2017/1/9 0009.
  */
 
-public class OtaConnector {
+public class OtaConnector implements Handler.Callback {
     // ota相关
     public static final UUID SPOTA_SERVICE_UUID = UUID.fromString("0000fef5-0000-1000-8000-00805f9b34fb");
     public static final UUID SPOTA_MEM_DEV_UUID = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc34");
@@ -32,6 +35,8 @@ public class OtaConnector {
     public static final int END_SIGNAL = 0xfe000000;
     public static final int REBOOT_SIGNAL = 0xfd000000;
 
+    private static final int HANDLE_UPDATE_DELAY = 1;
+    private static final int UPDATE_DELAY_TIMEOUT = 1000;
     private static final String TAG = "OtaHelper";
     private static final int MAX_RETRY_COUNT = 3;
     boolean lastBlock = false;
@@ -44,6 +49,7 @@ public class OtaConnector {
     private int retryCount = 0;
     private Step step = Step.MemDev;
     private OtaFile otaFile;
+    private Handler handler;
 
     int chunkCounter = -1;
     int blockCounter = 0;
@@ -53,6 +59,7 @@ public class OtaConnector {
         bus.register(this);
         this.bluetoothIO = bluetoothIO;
         this.otaFile = file;
+        this.handler = new Handler(Looper.getMainLooper());
         setBlockSize();
     }
 
@@ -172,6 +179,10 @@ public class OtaConnector {
     }
 
     public void update() {
+        handler.sendEmptyMessageDelayed(HANDLE_UPDATE_DELAY, UPDATE_DELAY_TIMEOUT);
+    }
+
+    private void doUpdate() {
         bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
         bluetoothIO.setCharacteristicNotification(OtaConnector.SPOTA_SERVICE_UUID,
                 OtaConnector.SPOTA_SERV_STATUS_UUID, SPOTA_DESCRIPTOR_UUID, true);
@@ -303,7 +314,7 @@ public class OtaConnector {
     }
 
     private void notifySucceed() {
-        bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+//        bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         sendRebootSignal();
         bus.post(new BluEvent.Ota(BluEvent.OtaState.SUCCEED));
     }
@@ -339,6 +350,16 @@ public class OtaConnector {
         }
     }
 
+    @Override
+    public boolean handleMessage(Message msg) {
+        switch (msg.what) {
+            case HANDLE_UPDATE_DELAY:
+                doUpdate();
+                break;
+        }
+        return true;
+    }
+
     public enum Step {
         MemDev, GpioMap, PatchLength, WriteData
     }
@@ -360,6 +381,7 @@ public class OtaConnector {
     }
 
     public void destroy() {
+        handler.removeCallbacksAndMessages(null);
         if (otaFile != null)
             otaFile.close();
         bus.unregister(this);
