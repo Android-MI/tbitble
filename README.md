@@ -41,6 +41,26 @@ public static final int DEVICE_NOT_FOUNDED = -2002;
 public static final int KEY_ILLEGAL = -2003;
 // 连接超时
 public static final int CONNECT_TIME_OUT = -2004;
+// 验证密钥超时
+public static final int VERIFICATION_RESPONSE_TIME_OUT = -2005;
+// 解锁失败
+public static final int UNLOCK_FAILED = -3001;
+// 上锁失败
+public static final int LOCK_FAILED = -3002;
+// 获取终端状态失败
+public static final int UPDATE_STATUS_FAILED = -3003;
+// 指令非法
+public static final int ILLEGAL_COMMAND = -3004;
+// 运动状态
+public static final int MOTION_STATE = -3005;
+// 非绑定状态
+public static final int NOT_BINDING = -3006;
+// 断开连接
+public static final int NOT_CONNECTING = -3007;
+// 重启终端失败
+public static final int RESTART_FAILED = -3008;
+// 恢复原厂失败
+public static final int FACTORING_FAILED = -3009;
 // OTA升级文件不合法
 public static final int OTA_FILE_ILLEGAL = -4001;
 // OTA升级失败 - 电量不足
@@ -63,6 +83,16 @@ public static final int OTA_FAILED_PRODUCT_HEADER = -4009;
 public static final int OTA_FAILED_SAME_IMAGE = -4010;
 // OTA升级失败 - Failed to read from external memory device
 public static final int OTA_FAILED_TO_READ_FROM_EXTERNAL_MEM = -4011;
+// 连接失败，未知原因
+public static final int CONNECT_FAILED_UNKNOWN = -8000;
+// 连接失败，密钥非法
+public static final int CONNECT_FAILED_ILLEGAL_KEY = -8001;
+// 连接失败，数据校验非法
+public static final int CONNECT_DATA_VERIFICATION_FAILED = -8002;
+// 连接失败，已有设备连接
+public static final int CONNECT_COMMAND_NOT_SUPPORT= -8003;
+// 连接失败，已有设备连接
+public static final int CONNECT_ALREADY_CONNECTED= -8004;
 ```
 
 ### 使用
