@@ -435,16 +435,16 @@ class TbitBleInstance {
                     if (event.failCode != 0)
                         listener.onUnlockResponse(event.failCode);
                     else
-                        listener.onUnlockResponse(ResultCode.UNLOCK_FAILED);
+                        listener.onUnlockResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_LOCK:
                     if (event.failCode != 0)
                         listener.onLockResponse(event.failCode);
                     else
-                        listener.onLockResponse(ResultCode.LOCK_FAILED);
+                        listener.onLockResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_UPDATE:
-                    listener.onUpdateResponse(ResultCode.UPDATE_STATUS_FAILED);
+                    listener.onUpdateResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
                     if (!isConnectResponse) {

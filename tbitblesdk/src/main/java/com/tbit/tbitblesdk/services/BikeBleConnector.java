@@ -574,7 +574,7 @@ public class BikeBleConnector implements Reader, Writer {
         if (state == BluEvent.State.SUCCEED) {
             bus.post(new BluEvent.WriteData(sequence, state));
         } else {
-            int resultCode = ResultCode.UNLOCK_FAILED;
+            int resultCode = ResultCode.FAILED;
             switch (value[0]) {
                 case 0x01:
                     resultCode = ResultCode.ILLEGAL_COMMAND;
@@ -606,7 +606,7 @@ public class BikeBleConnector implements Reader, Writer {
                 doLock();
             }
             else {
-                int resultCode = ResultCode.UNLOCK_FAILED;
+                int resultCode = ResultCode.FAILED;
                 switch (value[0]) {
                     case 0x01:
                         resultCode = ResultCode.ILLEGAL_COMMAND;
