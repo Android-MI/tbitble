@@ -567,18 +567,28 @@ public class BikeBleConnector implements Reader, Writer {
             case 0x82:
                 sequence = Constant.REQUEST_UNLOCK;
                 break;
-            case 0x83:
-                break;
-            case 0x84:
-                break;
         }
         if (sequence == -1)
             return;
         handler.removeMessages(sequence);
-        bus.post(new BluEvent.WriteData(sequence, state));
-        if (state == BluEvent.State.FAILED) {
-//            bus.post(new BluEvent.UpdateBikeState());
+        if (state == BluEvent.State.SUCCEED) {
+            bus.post(new BluEvent.WriteData(sequence, state));
+        } else {
+            int resultCode = ResultCode.UNLOCK_FAILED;
+            switch (value[0]) {
+                case 0x01:
+                    resultCode = ResultCode.ILLEGAL_COMMAND;
+                    break;
+                case 0x02:
+                    resultCode = ResultCode.MOTION_STATE;
+                    break;
+                case 0x03:
+                    resultCode = ResultCode.NOT_BINDING;
+                    break;
+            }
+            bus.post(new BluEvent.WriteData(sequence, resultCode));
         }
+
     }
 
     private void resolveLockResponse(int key, Byte[] value) {
@@ -596,8 +606,19 @@ public class BikeBleConnector implements Reader, Writer {
                 doLock();
             }
             else {
-                bus.post(new BluEvent.WriteData(Constant.REQUEST_LOCK, state));
-//                bus.post(new BluEvent.UpdateBikeState());
+                int resultCode = ResultCode.UNLOCK_FAILED;
+                switch (value[0]) {
+                    case 0x01:
+                        resultCode = ResultCode.ILLEGAL_COMMAND;
+                        break;
+                    case 0x02:
+                        resultCode = ResultCode.MOTION_STATE;
+                        break;
+                    case 0x03:
+                        resultCode = ResultCode.NOT_BINDING;
+                        break;
+                }
+                bus.post(new BluEvent.WriteData(Constant.REQUEST_LOCK, resultCode));
             }
         }
     }

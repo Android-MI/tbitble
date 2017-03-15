@@ -432,13 +432,19 @@ class TbitBleInstance {
         } else {
             switch (event.requestId) {
                 case Constant.REQUEST_UNLOCK:
-                    listener.onUnlockResponse(ResultCode.FAILED);
+                    if (event.failCode != 0)
+                        listener.onUnlockResponse(event.failCode);
+                    else
+                        listener.onUnlockResponse(ResultCode.UNLOCK_FAILED);
                     break;
                 case Constant.REQUEST_LOCK:
-                    listener.onLockResponse(ResultCode.FAILED);
+                    if (event.failCode != 0)
+                        listener.onLockResponse(event.failCode);
+                    else
+                        listener.onLockResponse(ResultCode.LOCK_FAILED);
                     break;
                 case Constant.REQUEST_UPDATE:
-                    listener.onUpdateResponse(ResultCode.FAILED);
+                    listener.onUpdateResponse(ResultCode.UPDATE_STATUS_FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
                     if (!isConnectResponse) {
