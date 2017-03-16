@@ -495,7 +495,7 @@ class TbitBleInstance {
                 return;
             if (!instance.isConnectResponse) {
                 instance.isConnectResponse = true;
-                instance.listener.onConnectResponse(ResultCode.CONNECT_TIME_OUT);
+                instance.listener.onConnectResponse(ResultCode.TIMEOUT);
                 instance.disConnect();
             }
         }
