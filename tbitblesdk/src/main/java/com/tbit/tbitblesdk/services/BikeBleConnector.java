@@ -795,7 +795,7 @@ public class BikeBleConnector implements Reader, Writer {
             if (msg.what == Constant.REQUEST_COMMON) {
 //                connector.bus.post(new BluEvent.CommonResponse(ResultCode.FAILED));
             } else if (msg.what == Constant.REQUEST_CONNECT){
-                connector.bus.post(new BluEvent.WriteData(msg.what, ResultCode.VERIFICATION_RESPONSE_TIME_OUT));
+                connector.bus.post(new BluEvent.WriteData(msg.what, ResultCode.TIMEOUT));
             } else {
                 connector.bus.post(new BluEvent.WriteData(msg.what, BluEvent.State.FAILED));
             }
