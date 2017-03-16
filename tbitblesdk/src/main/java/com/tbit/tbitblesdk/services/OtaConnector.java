@@ -36,7 +36,7 @@ public class OtaConnector implements Handler.Callback {
     public static final int REBOOT_SIGNAL = 0xfd000000;
 
     private static final int HANDLE_UPDATE_DELAY = 1;
-    private static final int UPDATE_DELAY_TIMEOUT = 1000;
+    private static final int UPDATE_DELAY_TIMEOUT = 3000;
     private static final String TAG = "OtaHelper";
     private static final int MAX_RETRY_COUNT = 3;
     boolean lastBlock = false;
@@ -59,7 +59,7 @@ public class OtaConnector implements Handler.Callback {
         bus.register(this);
         this.bluetoothIO = bluetoothIO;
         this.otaFile = file;
-        this.handler = new Handler(Looper.getMainLooper());
+        this.handler = new Handler(Looper.getMainLooper(), this);
         setBlockSize();
     }
 
