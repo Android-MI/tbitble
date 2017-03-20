@@ -184,6 +184,21 @@ class TbitBleInstance {
         common(new CommonCommand(resultCallback, packetCallback, packet));
     }
 
+    void common(byte commandId, byte key, Byte[] value) {
+        common(commandId, key, value, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode != ResultCode.SUCCEED)
+                    listener.onCommonCommandResponse(resultCode, null);
+            }
+        }, new PacketCallback() {
+            @Override
+            public void onPacketReceived(Packet packet) {
+                listener.onCommonCommandResponse(ResultCode.SUCCEED, packet.getPacketValue());
+            }
+        });
+    }
+
     void reConnect(ResultCallback resultCallback, StateCallback stateCallback) {
         if (!isDeviceIdLegal(this.deviceId)) {
             resultCallback.onResult(ResultCode.MAC_ADDRESS_ILLEGAL);

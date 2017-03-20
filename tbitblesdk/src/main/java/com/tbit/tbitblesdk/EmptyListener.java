@@ -39,6 +39,11 @@ public class EmptyListener implements TbitListener {
 
     }
 
+    @Override
+    public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
+
+    }
+
     public static class EmptyDebugListener implements TbitDebugListener {
 
         @Override

@@ -72,6 +72,12 @@ public class TbitBle {
         instance.common(commandId, key, value, resultCallback, packetCallback);
     }
 
+    @Deprecated
+    public static void commonCommand(byte commandId, byte key, Byte[] value) {
+        checkInstanceNotNull();
+        instance.common(commandId, key, value);
+    }
+
     public static void unlock() {
         checkInstanceNotNull();
         instance.unlock();
