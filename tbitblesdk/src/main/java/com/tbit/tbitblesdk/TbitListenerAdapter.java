@@ -38,9 +38,4 @@ public abstract class TbitListenerAdapter implements TbitListener {
     public void onDisconnected(int resultCode) {
 
     }
-
-    @Override
-    public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
-
-    }
 }

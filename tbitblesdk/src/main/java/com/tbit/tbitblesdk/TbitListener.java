@@ -14,5 +14,4 @@ public interface TbitListener {
     void onUpdateResponse(int resultCode);
     void onStateUpdated(BikeState state);
     void onDisconnected(int resultCode);
-    void onCommonCommandResponse(int resultCode, PacketValue packetValue);
 }
