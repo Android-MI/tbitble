@@ -73,6 +73,19 @@ public class ManufacturerAd {
         this.type = type;
     }
 
+    @Override
+    public String toString() {
+        return "ManufacturerAd{" +
+                "manuId=" + Arrays.toString(manuId) +
+                ", maskId=" + Arrays.toString(maskId) +
+                ", machineId='" + machineId + '\'' +
+                ", reverse=" + Arrays.toString(reverse) +
+                ", hardwareVersion=" + hardwareVersion +
+                ", softwareVersion=" + softwareVersion +
+                ", type=" + type +
+                '}';
+    }
+
     public static ManufacturerAd resolveManufacturerAd(byte[] data) {
         ManufacturerAd manufacturerAd = new ManufacturerAd();
         if (data == null || data.length != 12)

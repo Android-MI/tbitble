@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import com.tbit.tbitblesdk.BleGlob;
 import com.tbit.tbitblesdk.protocol.BluEvent;
 
 import org.greenrobot.eventbus.EventBus;
@@ -35,12 +36,12 @@ public class BelowAndroidLScanner implements Scanner {
         }
     };
 
-    public BelowAndroidLScanner(BluetoothAdapter bluetoothAdapter) {
-        this(Long.MAX_VALUE, bluetoothAdapter);
+    public BelowAndroidLScanner() {
+        this(Long.MAX_VALUE);
     }
 
-    public BelowAndroidLScanner(long timeoutMillis, BluetoothAdapter bluetoothAdapter) {
-        this.bluetoothAdapter = bluetoothAdapter;
+    public BelowAndroidLScanner(long timeoutMillis) {
+        this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
         this.timeoutMillis = timeoutMillis;
         this.handler = new ScanHandler(this);
     }

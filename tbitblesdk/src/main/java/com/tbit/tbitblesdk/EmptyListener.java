@@ -39,28 +39,10 @@ public class EmptyListener implements TbitListener {
 
     }
 
-    @Override
-    public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
-
-    }
-
     public static class EmptyDebugListener implements TbitDebugListener {
 
         @Override
         public void onLogStrReceived(String logStr) {
-
-        }
-    }
-
-    public static class EmptyOtaListener implements OtaListener {
-
-        @Override
-        public void onOtaResponse(int code) {
-
-        }
-
-        @Override
-        public void onOtaProgress(int progress) {
 
         }
     }

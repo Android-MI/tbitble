@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.BleGlob;
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
@@ -36,9 +37,7 @@ public class BluetoothIO {
     public static final int STATE_SERVICES_DISCOVERED = 4;
     private static final String TAG = "BluetoothIO";
     private int connectionState = STATE_DISCONNECTED;
-    private Context context;
     private EventBus bus;
-    private BluetoothManager bluetoothManager;
     private BluetoothGatt bluetoothGatt;
     //    private boolean hasVerified = false;
     private Handler handler = new Handler(Looper.getMainLooper());
@@ -115,10 +114,7 @@ public class BluetoothIO {
         }
     };
 
-    public BluetoothIO(Context context) {
-        super();
-        this.context = context.getApplicationContext();
-        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+    public BluetoothIO() {
         bus = EventBus.getDefault();
     }
 
@@ -173,9 +169,9 @@ public class BluetoothIO {
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            bluetoothGatt = device.connectGatt(context, autoConnect, coreGattCallback, BluetoothDevice.TRANSPORT_LE);
+            bluetoothGatt = device.connectGatt(BleGlob.getContext(), autoConnect, coreGattCallback, BluetoothDevice.TRANSPORT_LE);
         } else {
-            bluetoothGatt = device.connectGatt(context, autoConnect, coreGattCallback);
+            bluetoothGatt = device.connectGatt(BleGlob.getContext(), autoConnect, coreGattCallback);
         }
 //        refreshDeviceCache(bluetoothGatt);
 //        bluetoothGatt.connect();

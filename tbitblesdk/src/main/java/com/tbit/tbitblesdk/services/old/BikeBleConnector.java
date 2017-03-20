@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.services;
+package com.tbit.tbitblesdk.services.old;
 
 import android.bluetooth.BluetoothGatt;
 import android.os.AsyncTask;
@@ -16,6 +16,9 @@ import com.tbit.tbitblesdk.protocol.ControllerState;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.ResultCode;
+import com.tbit.tbitblesdk.services.BluetoothIO;
+import com.tbit.tbitblesdk.services.ReadTask;
+import com.tbit.tbitblesdk.services.WriteTask;
 import com.tbit.tbitblesdk.util.ByteUtil;
 
 import org.greenrobot.eventbus.EventBus;
@@ -348,27 +351,27 @@ public class BikeBleConnector implements Reader, Writer {
 
     // 判断终端是否进入ota模式成功
     private void isOTASuccessful(Byte[] data) {
-        byte dataOne = data[0];
-        byte dataTwo = data[1];
-        if (dataOne == (byte) 0x00) {
-            //进入ota成功，下载升级文件，发送文件到硬件
-            Log.i(TAG, "--进入ota模式成功");
-            bus.post(new BluEvent.Ota(BluEvent.OtaState.START));
-        } else if (dataOne == (byte) 0x01) {
-            if (dataTwo == (byte) 0x01) {
-                //电量过低
-                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_LOW_POWER));
-                Log.i(TAG, "--进入ota模式失败，电池电量过低");
-            } else if (dataTwo == (byte)0x02) {
-                //密钥错误
-                Log.i(TAG, "--进入ota模式失败，密钥错误");
-                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_ERR_KEY));
-            } else {
-                //未知原因
-                Log.i(TAG, "--进入ota模式失败，发生未知错误");
-                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_UNKNOWN));
-            }
-        }
+//        byte dataOne = data[0];
+//        byte dataTwo = data[1];
+//        if (dataOne == (byte) 0x00) {
+//            //进入ota成功，下载升级文件，发送文件到硬件
+//            Log.i(TAG, "--进入ota模式成功");
+//            bus.post(new BluEvent.Ota(BluEvent.OtaState.START));
+//        } else if (dataOne == (byte) 0x01) {
+//            if (dataTwo == (byte) 0x01) {
+//                //电量过低
+//                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_LOW_POWER));
+//                Log.i(TAG, "--进入ota模式失败，电池电量过低");
+//            } else if (dataTwo == (byte)0x02) {
+//                //密钥错误
+//                Log.i(TAG, "--进入ota模式失败，密钥错误");
+//                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_ERR_KEY));
+//            } else {
+//                //未知原因
+//                Log.i(TAG, "--进入ota模式失败，发生未知错误");
+//                bus.post(BluEvent.Ota.getFailedInstance(ResultCode.OTA_FAILED_UNKNOWN));
+//            }
+//        }
     }
 
     // 判断硬件与APP是否唯一匹配
@@ -756,14 +759,14 @@ public class BikeBleConnector implements Reader, Writer {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onVersionResponse(BluEvent.VersionResponse response) {
-        Log.d(TAG, "onVersionResponse: hard: " + response.deviceVersion +
-                " || soft: " + response.firmwareVersion);
-        int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
-        bikeState.setVersion(version);
-        updateVersion(response.deviceVersion, response.firmwareVersion);
-    }
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onVersionResponse(BluEvent.VersionResponse response) {
+//        Log.d(TAG, "onVersionResponse: hard: " + response.deviceVersion +
+//                " || soft: " + response.firmwareVersion);
+//        int[] version = new int[]{response.deviceVersion, response.firmwareVersion};
+//        bikeState.setVersion(version);
+//        updateVersion(response.deviceVersion, response.firmwareVersion);
+//    }
 
     private void updateVersion(int hardVersion, int softVersion) {
         if (softVersion < 3) {

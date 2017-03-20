@@ -1,10 +1,13 @@
 package com.tbit.tbitblesdk;
 
-import android.bluetooth.le.ScanCallback;
 import android.content.Context;
 
 import com.tbit.tbitblesdk.protocol.BikeState;
-import com.tbit.tbitblesdk.services.scanner.Scanner;
+import com.tbit.tbitblesdk.services.command.Command;
+import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
+import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
+import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 
 import java.io.File;
@@ -22,10 +25,12 @@ public class TbitBle {
 
     public static void initialize(Context context) {
         if (instance == null) {
-            instance = new TbitBleInstance(context.getApplicationContext());
+            instance = new TbitBleInstance();
+            BleGlob.setContext(context);
         }
     }
 
+    @Deprecated
     public static void setListener(TbitListener listener) {
         checkInstanceNotNull();
         instance.setListener(listener);
@@ -56,9 +61,15 @@ public class TbitBle {
         instance.stopScan();
     }
 
-    public static void commonCommand(byte commandId, byte key, Byte[] value) {
+    public static void commonCommand(Command command) {
         checkInstanceNotNull();
-        instance.common(commandId, key, value);
+        instance.common(command);
+    }
+
+    public static void commonCommand(byte commandId, byte key, Byte[] value,
+                                     ResultCallback resultCallback, PacketCallback packetCallback) {
+        checkInstanceNotNull();
+        instance.common(commandId, key, value, resultCallback, packetCallback);
     }
 
     public static void unlock() {
@@ -74,6 +85,11 @@ public class TbitBle {
     public static void update() {
         checkInstanceNotNull();
         instance.update();
+    }
+
+    public static void reconnect(ResultCallback resultCallback, StateCallback stateCallback) {
+        checkInstanceNotNull();
+        instance.reConnect(resultCallback, stateCallback);
     }
 
     public static void reconnect() {
@@ -96,14 +112,16 @@ public class TbitBle {
         instance.disConnect();
     }
 
-    public static void ota(File file, OtaListener otaListener) {
+    public static void ota(File file, ResultCallback resultCallback,
+                           ProgressCallback progressCallback) {
         checkInstanceNotNull();
-        instance.ota(file, otaListener);
+        instance.ota(file, resultCallback, progressCallback);
     }
 
-    public static void connectiveOta(String machineNo, String key, File file, OtaListener listener) {
+    public static void connectiveOta(String machineNo, String key, File file,
+                                     ResultCallback resultCallback, ProgressCallback progressCallback) {
         checkInstanceNotNull();
-        instance.connectiveOta(machineNo, key, file, listener);
+        instance.connectiveOta(machineNo, key, file, resultCallback, progressCallback);
     }
 
     public static void destroy() {

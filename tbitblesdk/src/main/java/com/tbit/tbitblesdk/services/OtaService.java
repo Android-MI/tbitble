@@ -9,6 +9,8 @@ import android.util.Log;
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
+import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
+import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -21,7 +23,7 @@ import java.util.UUID;
  * Created by Salmon on 2017/1/9 0009.
  */
 
-public class OtaConnector implements Handler.Callback {
+public class OtaService implements Handler.Callback {
     // ota相关
     public static final UUID SPOTA_SERVICE_UUID = UUID.fromString("0000fef5-0000-1000-8000-00805f9b34fb");
     public static final UUID SPOTA_MEM_DEV_UUID = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc34");
@@ -44,7 +46,6 @@ public class OtaConnector implements Handler.Callback {
     boolean preparedForLastBlock = false;
     boolean endSignalSent = false;
     boolean rebootsignalSent = false;
-    private EventBus bus;
     private BluetoothIO bluetoothIO;
     private int retryCount = 0;
     private Step step = Step.MemDev;
@@ -54,12 +55,17 @@ public class OtaConnector implements Handler.Callback {
     int chunkCounter = -1;
     int blockCounter = 0;
 
-    public OtaConnector(BluetoothIO bluetoothIO, OtaFile file) {
-        bus = EventBus.getDefault();
-        bus.register(this);
+    private ResultCallback resultCallback;
+    private ProgressCallback progressCallback;
+
+    public OtaService(BluetoothIO bluetoothIO, OtaFile file, ResultCallback resultCallback,
+                      ProgressCallback progressCallback) {
+        EventBus.getDefault().register(this);
         this.bluetoothIO = bluetoothIO;
         this.otaFile = file;
         this.handler = new Handler(Looper.getMainLooper(), this);
+        this.resultCallback = resultCallback;
+        this.progressCallback = progressCallback;
         setBlockSize();
     }
 
@@ -111,7 +117,7 @@ public class OtaConnector implements Handler.Callback {
             this.step = Step.WriteData;
             dispatch();
             final float progress = ((float) (blockCounter + 1) / (float) otaFile.getNumberOfBlocks()) * 100;
-            bus.post(BluEvent.Ota.getProgressInstance((int) progress));
+            progressCallback.onProgress((int) progress);
         } else if (stringValue.trim().equals("0x3") || stringValue.trim().equals("0x1")) {
             memDevValue = value;
         } else {
@@ -173,7 +179,7 @@ public class OtaConnector implements Handler.Callback {
         Log.d(TAG, "onDescriptor" + event.state + ": "
                 + event.characterUuid +
                 " || " + event.status);
-        if (OtaConnector.SPOTA_SERV_STATUS_UUID.equals(event.characterUuid)) {
+        if (OtaService.SPOTA_SERV_STATUS_UUID.equals(event.characterUuid)) {
             start();
         }
     }
@@ -184,8 +190,8 @@ public class OtaConnector implements Handler.Callback {
 
     private void doUpdate() {
         bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
-        bluetoothIO.setCharacteristicNotification(OtaConnector.SPOTA_SERVICE_UUID,
-                OtaConnector.SPOTA_SERV_STATUS_UUID, SPOTA_DESCRIPTOR_UUID, true);
+        bluetoothIO.setCharacteristicNotification(OtaService.SPOTA_SERVICE_UUID,
+                OtaService.SPOTA_SERV_STATUS_UUID, SPOTA_DESCRIPTOR_UUID, true);
     }
 
     private void start() {
@@ -306,7 +312,7 @@ public class OtaConnector implements Handler.Callback {
     }
 
     private void notifyFailed(int errCode) {
-        bus.post(BluEvent.Ota.getFailedInstance(errCode));
+        resultCallback.onResult(errCode);
     }
 
     private void notifyFailed() {
@@ -316,7 +322,7 @@ public class OtaConnector implements Handler.Callback {
     private void notifySucceed() {
 //        bluetoothIO.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         sendRebootSignal();
-        bus.post(new BluEvent.Ota(BluEvent.OtaState.SUCCEED));
+        resultCallback.onResult(ResultCode.SUCCEED);
     }
 
     private void dispatch() {
@@ -343,11 +349,16 @@ public class OtaConnector implements Handler.Callback {
             if (retryCount < MAX_RETRY_COUNT) {
                 Log.d(TAG, "dispatch: " + step + " failed");
                 retryCount++;
-                OtaConnector.this.dispatch();
+                OtaService.this.dispatch();
             } else {
                 notifyFailed();
             }
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBleNotOpened(BluEvent.OtaStart otaStart) {
+        update();
     }
 
     @Override
@@ -384,6 +395,6 @@ public class OtaConnector implements Handler.Callback {
         handler.removeCallbacksAndMessages(null);
         if (otaFile != null)
             otaFile.close();
-        bus.unregister(this);
+        EventBus.getDefault().unregister(this);
     }
 }

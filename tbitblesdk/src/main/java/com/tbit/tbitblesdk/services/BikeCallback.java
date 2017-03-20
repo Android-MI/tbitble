@@ -66,9 +66,7 @@ public class BikeCallback implements ScannerCallback {
             ParsedAd ad = ParsedAd.parseData(bytes);
             byte[] data = ad.getManufacturer();
             ManufacturerAd manufacturerAd = ManufacturerAd.resolveManufacturerAd(data);
-            final int hard = manufacturerAd.getHardwareVersion();
-            final int firm = manufacturerAd.getSoftwareVersion();
-            EventBus.getDefault().post(new BluEvent.VersionResponse(hard, firm));
+            EventBus.getDefault().post(new BluEvent.BleBroadcast(manufacturerAd));
         } catch (Exception e) {
             e.printStackTrace();
         }

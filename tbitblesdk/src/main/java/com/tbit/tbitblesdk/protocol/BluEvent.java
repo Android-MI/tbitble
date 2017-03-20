@@ -1,7 +1,5 @@
 package com.tbit.tbitblesdk.protocol;
 
-import android.bluetooth.BluetoothGattDescriptor;
-
 import java.util.UUID;
 
 /**
@@ -16,10 +14,6 @@ public class BluEvent {
 
     public enum State {
         SUCCEED, FAILED
-    }
-
-    public enum OtaState {
-        START, FAILED, SUCCEED, UPDATING
     }
 
     public static class ConnectionStateChange {
@@ -133,16 +127,10 @@ public class BluEvent {
     }
 
     public static class BleNotOpened {
-
     }
 
-//    public static class Verified {
-//        public State state;
-//
-//        public Verified(State state) {
-//            this.state = state;
-//        }
-//    }
+    public static class OtaStart {
+    }
 
     public static class DebugLogEvent {
         private String key;
@@ -162,51 +150,18 @@ public class BluEvent {
         }
     }
 
-    public static class Ota {
-        private OtaState state;
-        private int progress;
-        private int failedCode;
-
-        public Ota(OtaState state) {
-            this.state = state;
-        }
-
-        public static Ota getProgressInstance(int progress) {
-            Ota ota = new Ota(OtaState.UPDATING);
-            ota.progress = progress;
-            return ota;
-        }
-
-        public static Ota getFailedInstance(int failedCode) {
-            Ota ota = new Ota(OtaState.FAILED);
-            ota.failedCode = failedCode;
-            return ota;
-        }
-
-        public OtaState getState() {
-            return state;
-        }
-
-        public int getProgress() {
-            return progress;
-        }
-
-        public int getFailedCode() {
-            return failedCode;
-        }
-    }
 
     public static class UpdateBikeState {
 
     }
 
-    public static class VersionResponse {
-        public int deviceVersion;
-        public int firmwareVersion;
 
-        public VersionResponse(int deviceVersion, int firmwareVersion) {
-            this.deviceVersion = deviceVersion;
-            this.firmwareVersion = firmwareVersion;
+    public static class BleBroadcast {
+        public ManufacturerAd manufacturerAd;
+
+        public BleBroadcast(ManufacturerAd manufacturerAd) {
+            this.manufacturerAd = manufacturerAd;
         }
     }
+
 }

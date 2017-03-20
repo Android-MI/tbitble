@@ -1,26 +1,35 @@
 package com.tbit.tbitblesdk;
 
-import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Constant;
-import com.tbit.tbitblesdk.services.OtaConnector;
+import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.services.BikeService;
+import com.tbit.tbitblesdk.services.OtaService;
 import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
-import com.tbit.tbitblesdk.services.BikeBleConnector;
 import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.services.BluetoothIO;
+import com.tbit.tbitblesdk.services.command.Command;
+import com.tbit.tbitblesdk.services.command.OtaCommand;
+import com.tbit.tbitblesdk.services.command.OtaConnectCommand;
+import com.tbit.tbitblesdk.services.command.bikecommand.CommonCommand;
+import com.tbit.tbitblesdk.services.command.bikecommand.ConnectCommand;
+import com.tbit.tbitblesdk.services.command.bikecommand.LockCommand;
+import com.tbit.tbitblesdk.services.command.bikecommand.UnlockCommand;
+import com.tbit.tbitblesdk.services.command.bikecommand.UpdateCommand;
+import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
+import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
+import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.services.scanner.BikeScanHelper;
 import com.tbit.tbitblesdk.services.scanner.ScanHelper;
 import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
 import com.tbit.tbitblesdk.util.ByteUtil;
+import com.tbit.tbitblesdk.util.PacketUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -28,7 +37,6 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 
 /**
  * Created by Salmon on 2016/12/5 0005.
@@ -36,31 +44,25 @@ import java.lang.ref.WeakReference;
 
 class TbitBleInstance {
     private static final String TAG = "TbitBleInstance";
-    private Context context;
-    private Byte[] key;
-    private String macAddr;
     private TbitListener listener;
-    private OtaListener otaListener;
     private TbitDebugListener debugListener;
     private BluetoothIO bluetoothIO;
-    private BikeBleConnector bikeBleConnector;
-    private OtaConnector otaConnector;
-    private boolean isConnectResponse = false;
-    private ConnectTimeoutHandler timeoutHandler;
+    private BikeService bikeService;
+    private OtaService otaService;
     private BikeScanHelper bikeScanHelper;
     private ScanHelper scanHelper;
-    private BluetoothAdapter bluetoothAdapter;
 
-    TbitBleInstance(Context context) {
-        this.context = context;
+    private String deviceId;
+    private Byte[] key;
+
+    private ResultCallback connectResultCallback;
+    private StateCallback connectStateCallback;
+
+    TbitBleInstance() {
         EventBus.getDefault().register(this);
-        key = new Byte[]{};
         listener = new EmptyListener();
-        otaListener = new EmptyListener.EmptyOtaListener();
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        bluetoothIO = new BluetoothIO(context);
-        bikeBleConnector = new BikeBleConnector(bluetoothIO);
-        timeoutHandler = new ConnectTimeoutHandler(Looper.getMainLooper(), this);
+        bluetoothIO = new BluetoothIO();
+        bikeService = new BikeService(bluetoothIO);
     }
 
     void setListener(TbitListener listener) {
@@ -73,119 +75,179 @@ class TbitBleInstance {
         this.debugListener = debugListener;
     }
 
-    void connect(String macAddr, String key) {
+    void connect(String deviceId, String keyStr, ResultCallback resultCallback, StateCallback stateCallback) {
         if (Build.VERSION.SDK_INT < 18) {
-            listener.onConnectResponse(ResultCode.LOWER_THAN_API_18);
+            resultCallback.onResult(ResultCode.LOWER_THAN_API_18);
             return;
         }
-        this.macAddr = macAddr;
-        this.key = resolve(key, 32);
-        if (!isMacAddrLegal()) {
-            listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
+        if (!isBluetoothEnabled()) {
+            resultCallback.onResult(ResultCode.BLE_NOT_OPENED);
             return;
         }
-        if (!isKeyLegal()) {
-            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+        Byte[] key = resolve(keyStr, 32);
+        if (!isDeviceIdLegal(deviceId)) {
+            resultCallback.onResult(ResultCode.MAC_ADDRESS_ILLEGAL);
             return;
         }
-        bikeBleConnector.setConnectKey(this.key);
-        bikeBleConnector.setConnectMode(BikeBleConnector.ConnectMode.NORMAL);
-        scanInternal();
+        if (!isKeyLegal(key)) {
+            resultCallback.onResult(ResultCode.KEY_ILLEGAL);
+            return;
+        }
+
+        this.deviceId = deviceId;
+        this.key = key;
+
+        this.connectResultCallback = resultCallback;
+        this.connectStateCallback = stateCallback;
+
+        Command connectCommand = new ConnectCommand(resultCallback, stateCallback, key,
+                bikeService.getBikeState());
+        bikeService.setConnectCommand(connectCommand);
+
+        scanBikeInternal(deviceId);
+    }
+
+    void connect(String macAddr, String key) {
+        connect(macAddr, key, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                listener.onConnectResponse(resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                listener.onStateUpdated(bikeState);
+            }
+        });
+    }
+
+    void unlock(ResultCallback resultCallback) {
+        if (!baseCheck(resultCallback))
+            return;
+        Command command = new UnlockCommand(resultCallback);
+        bikeService.addCommand(command);
     }
 
     void unlock() {
-        if (!isBluetoothOpened())
+        unlock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                listener.onUnlockResponse(resultCode);
+            }
+        });
+    }
+
+    void lock(ResultCallback resultCallback) {
+        if (!baseCheck(resultCallback))
             return;
-        if (!bluetoothIO.isConnected()) {
-            listener.onUnlockResponse(ResultCode.DISCONNECTED);
-            return;
-        }
-        boolean result = bikeBleConnector.unlock();
-        if (!result)
-            listener.onUnlockResponse(ResultCode.PROCESSING);
+        Command command = new LockCommand(resultCallback);
+        bikeService.addCommand(command);
     }
 
     void lock() {
-        if (!isBluetoothOpened())
+        lock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                listener.onLockResponse(resultCode);
+            }
+        });
+    }
+
+    void update(ResultCallback resultCallback, StateCallback stateCallback) {
+        if (!baseCheck(resultCallback))
             return;
-        if (!bluetoothIO.isConnected()) {
-            listener.onLockResponse(ResultCode.DISCONNECTED);
-            return;
-        }
-        boolean result = bikeBleConnector.lock();
-        if (!result)
-            listener.onLockResponse(ResultCode.PROCESSING);
+        Command command = new UpdateCommand(resultCallback, stateCallback, bikeService.getBikeState());
+        bikeService.addCommand(command);
     }
 
     void update() {
-        if (!isBluetoothOpened())
-            return;
-        if (!bluetoothIO.isConnected()) {
-            listener.onUpdateResponse(ResultCode.DISCONNECTED);
-            return;
-        }
-        boolean result = bikeBleConnector.update();
-        if (!result)
-            listener.onUpdateResponse(ResultCode.PROCESSING);
+        update(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                listener.onUpdateResponse(resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                listener.onStateUpdated(bikeState);
+            }
+        });
     }
 
-    void common(byte commandId, byte key, Byte[] value) {
-        if (!isBluetoothOpened())
-            return;
-        if (!bluetoothIO.isConnected()) {
-            listener.onCommonCommandResponse(ResultCode.DISCONNECTED, null);
+    void common(Command command) {
+        bikeService.addCommand(command);
+    }
+
+    void common(byte commandId, byte key, Byte[] value,
+                ResultCallback resultCallback, PacketCallback packetCallback) {
+        Packet packet = PacketUtil.createPacket(128, commandId, key, value);
+        common(new CommonCommand(resultCallback, packetCallback, packet));
+    }
+
+    void reConnect(ResultCallback resultCallback, StateCallback stateCallback) {
+        if (!isDeviceIdLegal(this.deviceId)) {
+            resultCallback.onResult(ResultCode.MAC_ADDRESS_ILLEGAL);
             return;
         }
-        boolean result = bikeBleConnector.common(commandId, key, value);
-        if (!result)
-            listener.onCommonCommandResponse(ResultCode.PROCESSING, null);
+        if (!isKeyLegal(this.key)) {
+            resultCallback.onResult(ResultCode.KEY_ILLEGAL);
+            return;
+        }
+        if (!isBluetoothEnabled()) {
+            resultCallback.onResult(ResultCode.BLE_NOT_OPENED);
+            return;
+        }
+
+        Command connectCommand = new ConnectCommand(resultCallback, stateCallback, key,
+                bikeService.getBikeState());
+        bikeService.setConnectCommand(connectCommand);
+
+        scanBikeInternal(this.deviceId);
     }
 
     void reConnect() {
-        if (bikeScanHelper == null) {
-            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
+        if (connectResultCallback == null || connectStateCallback == null) {
             return;
         }
-        if (!isMacAddrLegal() || !isKeyLegal()) {
-            listener.onConnectResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
-            return;
-        }
-        scanInternal();
+        reConnect(this.connectResultCallback, this.connectStateCallback);
     }
 
     void disConnect() {
-        bikeBleConnector.disConnect();
+//        bikeBleConnector.disConnect();
+        bluetoothIO.disconnect();
     }
 
     BikeState getState() {
-        return bikeBleConnector.getState();
+//        return bikeBleConnector.getState();
+        return bikeService.getBikeState();
     }
 
     int getBleConnectionState() {
         return bluetoothIO.getConnectionState();
     }
 
-    private void scanInternal() {
-        if (!isBluetoothOpened())
-            return;
-        resetTimeout();
+    private void scanBikeInternal(String deviceId) {
         if (bikeScanHelper == null) {
-            bikeScanHelper = new BikeScanHelper(bluetoothAdapter, bluetoothIO);
+            bikeScanHelper = new BikeScanHelper(bluetoothIO);
         }
-        boolean result = bikeScanHelper.scanAndConnect(macAddr);
+        boolean result = bikeScanHelper.scanAndConnect(deviceId);
         if (!result) {
             listener.onConnectResponse(ResultCode.PROCESSING);
         }
     }
 
+    private boolean isBluetoothEnabled() {
+        return BleGlob.getBluetoothAdapter().isEnabled();
+    }
+
     int startScan(ScannerCallback callback, long timeout) {
         if (callback == null)
             return ResultCode.FAILED;
-        if (!bluetoothAdapter.isEnabled()) {
+        if (!isBluetoothEnabled()) {
             return ResultCode.BLE_NOT_OPENED;
         }
         if (scanHelper == null) {
-            scanHelper = new ScanHelper(bluetoothAdapter);
+            scanHelper = new ScanHelper();
         }
         if (scanHelper.isScanning()) {
             return ResultCode.PROCESSING;
@@ -195,7 +257,7 @@ class TbitBleInstance {
     }
 
     void stopScan() {
-        if (!isBluetoothOpened())
+        if (!isBluetoothEnabled())
             return;
         if (scanHelper == null)
             return;
@@ -203,93 +265,102 @@ class TbitBleInstance {
     }
 
     void destroy() {
-        bikeBleConnector.destroy();
+//        bikeBleConnector.destroy();
+        bikeService.destroy();
         bluetoothIO.close();
-        if (otaConnector != null)
-            otaConnector.destroy();
+        if (otaService != null)
+            otaService.destroy();
+        if (connectResultCallback != null)
+            connectResultCallback = null;
+        if (connectStateCallback != null)
+            connectStateCallback = null;
         EventBus.getDefault().unregister(this);
     }
 
-    void connectiveOta(String machineNo, String key, File file, OtaListener otaListener) {
-        if (!isBluetoothOpened())
+    void connectiveOta(String deviceId, String keyStr, File file,
+                       ResultCallback resultCallback, ProgressCallback progressCallback) {
+        if (!isBluetoothEnabled()) {
+            resultCallback.onResult(ResultCode.BLE_NOT_OPENED);
             return;
-        this.macAddr = machineNo;
-        this.key = resolve(key, 16);
-        this.otaListener = otaListener == null ? new EmptyListener.EmptyOtaListener() :
-                otaListener;
+        }
+        Byte[] key = resolve(keyStr, 16);
 
-        if (!isMacAddrLegal()) {
-            otaListener.onOtaResponse(ResultCode.MAC_ADDRESS_ILLEGAL);
+        if (!isDeviceIdLegal(deviceId)) {
+            resultCallback.onResult(ResultCode.MAC_ADDRESS_ILLEGAL);
             return;
         }
-        if (!isKeyLegal()) {
-            otaListener.onOtaResponse(ResultCode.KEY_ILLEGAL);
+        if (!isKeyLegal(key)) {
+            resultCallback.onResult(ResultCode.KEY_ILLEGAL);
             return;
         }
-        bikeBleConnector.setConnectKey(this.key);
         if (!isOtaFileLegal(file)) {
-            this.otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             return;
         }
+        Command otaConnectCommand = new OtaConnectCommand(resultCallback, key);
+
+        bikeService.setConnectCommand(otaConnectCommand);
+
         try {
             OtaFile otaFile = OtaFile.getByFile(file);
-            if (otaConnector != null) {
-                otaConnector.destroy();
+            if (otaService != null) {
+                otaService.destroy();
             }
-            this.otaConnector = new OtaConnector(bluetoothIO, otaFile);
-            this.bikeBleConnector.setConnectMode(BikeBleConnector.ConnectMode.OTA);
-            scanInternal();
+            this.otaService = new OtaService(bluetoothIO, otaFile, resultCallback, progressCallback);
+
+            scanBikeInternal(deviceId);
         } catch (IOException e) {
-            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             e.printStackTrace();
         }
     }
 
-    void ota(File file, OtaListener otaListener) {
-        if (!isBluetoothOpened())
+    void ota(File file, ResultCallback resultCallback, ProgressCallback progressCallback) {
+        if (!baseCheck(resultCallback))
             return;
-        this.otaListener = otaListener == null ? new EmptyListener.EmptyOtaListener() :
-                otaListener;
         if (!isOtaFileLegal(file)) {
-            this.otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             return;
         }
+        Command otaConnectCommand = new OtaCommand(resultCallback);
+
+        bikeService.addCommand(otaConnectCommand);
+
         try {
             OtaFile otaFile = OtaFile.getByFile(file);
-            if (otaConnector != null) {
-                otaConnector.destroy();
+            if (otaService != null) {
+                otaService.destroy();
             }
-            this.otaConnector = new OtaConnector(bluetoothIO, otaFile);
-            boolean result = bikeBleConnector.ota();
-            if (!result)
-                this.otaListener.onOtaResponse(ResultCode.PROCESSING);
+            this.otaService = new OtaService(bluetoothIO, otaFile, resultCallback, progressCallback);
+
         } catch (IOException e) {
-            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
+            resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             e.printStackTrace();
         }
     }
 
-    private void resetTimeout() {
-        isConnectResponse = false;
-//        timeoutHandler.removeCallbacksAndMessages(null);
-//        timeoutHandler.sendEmptyMessageDelayed(0, 11 * 1000);
+    private boolean baseCheck(ResultCallback resultCallback) {
+        boolean result;
+        if (!isBluetoothEnabled()) {
+            result = false;
+            resultCallback.onResult(ResultCode.BLE_NOT_OPENED);
+        } else if (!bluetoothIO.isConnected()) {
+            result = false;
+            resultCallback.onResult(ResultCode.DISCONNECTED);
+        } else {
+            result = true;
+        }
+        return result;
     }
 
-    private boolean isBluetoothOpened() {
-        boolean isOpened = bluetoothAdapter.isEnabled();
-        if (!isOpened && listener != null)
-            listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
-        return isOpened;
-    }
-
-    private boolean isKeyLegal() {
+    private boolean isKeyLegal(Byte[] key) {
         if (key == null || key.length == 0)
             return false;
         return true;
     }
 
-    private boolean isMacAddrLegal() {
-        return !TextUtils.isEmpty(macAddr);
+    private boolean isDeviceIdLegal(String deviceID) {
+        return !TextUtils.isEmpty(deviceID);
     }
 
     private Byte[] resolve(String keyStr, int length) {
@@ -336,13 +407,11 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onBleNotOpened(BluEvent.BleNotOpened event) {
-        isConnectResponse = true;
         listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onScanTimeOut(BluEvent.ScanTimeOut event) {
-        isConnectResponse = true;
         listener.onConnectResponse(ResultCode.DEVICE_NOT_FOUNDED);
     }
 
@@ -354,12 +423,7 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
-        if (!isConnectResponse) {
-            isConnectResponse = true;
-            listener.onConnectResponse(ResultCode.DISCONNECTED);
-        } else {
-            listener.onDisconnected(ResultCode.DISCONNECTED);
-        }
+        listener.onDisconnected(ResultCode.DISCONNECTED);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -377,39 +441,15 @@ class TbitBleInstance {
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onUartNotSupport(BluEvent.DeviceUartNotSupported event) {
         Log.i(TAG, "onUartNotSupport: " + event.message);
-        isConnectResponse = true;
         bluetoothIO.disconnect();
         listener.onConnectResponse(ResultCode.BLE_NOT_SUPPORTED);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onOta(BluEvent.Ota event) {
-        Log.d(TAG, "onOta: " + event.getState());
-        if (otaConnector == null) {
-            otaListener.onOtaResponse(ResultCode.OTA_FILE_ILLEGAL);
-        } else {
-            switch (event.getState()) {
-                case START:
-                    otaConnector.update();
-                    break;
-                case UPDATING:
-                    otaListener.onOtaProgress(event.getProgress());
-                    break;
-                case FAILED:
-                    otaListener.onOtaResponse(event.getFailedCode());
-                    break;
-                case SUCCEED:
-                    otaListener.onOtaResponse(ResultCode.SUCCEED);
-                    break;
-            }
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onWriteDone(BluEvent.WriteData event) {
-        if (!bikeBleConnector.removeFromQueue(event.requestId)) {
-            return;
-        }
+//        if (!bikeBleConnector.removeFromQueue(event.requestId)) {
+//            return;
+//        }
         if (event.state == BluEvent.State.SUCCEED) {
             switch (event.requestId) {
                 case Constant.REQUEST_UNLOCK:
@@ -423,10 +463,7 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.SUCCEED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    if (!isConnectResponse) {
-                        listener.onConnectResponse(ResultCode.SUCCEED);
-                        isConnectResponse = true;
-                    }
+                    listener.onConnectResponse(ResultCode.SUCCEED);
                     break;
             }
         } else {
@@ -447,13 +484,10 @@ class TbitBleInstance {
                     listener.onUpdateResponse(ResultCode.FAILED);
                     break;
                 case Constant.REQUEST_CONNECT:
-                    if (!isConnectResponse) {
-                        if (event.failCode != 0)
-                            listener.onConnectResponse(event.failCode);
-                        else
-                            listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
-                        isConnectResponse = true;
-                    }
+                    if (event.failCode != 0)
+                        listener.onConnectResponse(event.failCode);
+                    else
+                        listener.onConnectResponse(ResultCode.KEY_ILLEGAL);
                     break;
             }
         }
@@ -461,10 +495,9 @@ class TbitBleInstance {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onCommonResponse(BluEvent.CommonResponse response) {
-        if (!bikeBleConnector.removeFromQueue(Constant.REQUEST_COMMON)) {
-            return;
-        }
-        listener.onCommonCommandResponse(response.code, response.packetValue);
+//        if (!bikeBleConnector.removeFromQueue(Constant.REQUEST_COMMON)) {
+//            return;
+//        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -480,24 +513,4 @@ class TbitBleInstance {
         }
     }
 
-    static class ConnectTimeoutHandler extends Handler {
-        WeakReference<TbitBleInstance> instanceReference;
-
-        public ConnectTimeoutHandler(Looper looper, TbitBleInstance instance) {
-            super(looper);
-            this.instanceReference = new WeakReference<>(instance);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            final TbitBleInstance instance = instanceReference.get();
-            if (instance == null)
-                return;
-            if (!instance.isConnectResponse) {
-                instance.isConnectResponse = true;
-                instance.listener.onConnectResponse(ResultCode.TIMEOUT);
-                instance.disConnect();
-            }
-        }
-    }
 }

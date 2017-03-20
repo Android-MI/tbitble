@@ -8,33 +8,33 @@ import android.os.Build;
  */
 
 public class ScanHelper implements Scanner {
-    private Scanner scanner;
     public static final int DEFAULT_SCAN_TIMEOUT = 10000;
+    private Scanner scanner;
 
     public ScanHelper(Scanner scanner) {
         this.scanner = scanner;
     }
 
-    public ScanHelper(BluetoothAdapter bluetoothAdapter, long timeout) {
-        this(getScanner(bluetoothAdapter, timeout));
+    public ScanHelper(long timeout) {
+        this(getScanner(timeout));
     }
 
-    public ScanHelper(BluetoothAdapter bluetoothAdapter) {
-        this(bluetoothAdapter, DEFAULT_SCAN_TIMEOUT);
+    public ScanHelper() {
+        this(DEFAULT_SCAN_TIMEOUT);
     }
 
-    public static Scanner getScanner(BluetoothAdapter bluetoothAdapter, long timeout) {
+    public static Scanner getScanner(long timeout) {
         Scanner scanner;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            scanner = new AndroidLScanner(timeout, bluetoothAdapter);
+            scanner = new AndroidLScanner(timeout);
         } else {
-            scanner = new BelowAndroidLScanner(timeout, bluetoothAdapter);
+            scanner = new BelowAndroidLScanner(timeout);
         }
         return scanner;
     }
 
     public static Scanner getScanner(BluetoothAdapter bluetoothAdapter) {
-        return getScanner(bluetoothAdapter, Long.MAX_VALUE);
+        return getScanner(Long.MAX_VALUE);
     }
 
     @Override

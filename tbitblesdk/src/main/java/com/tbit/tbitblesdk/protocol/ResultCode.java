@@ -29,6 +29,8 @@ public class ResultCode {
     public static final int DEVICE_NOT_FOUNDED = -2002;
     // 连接错误 - sdk层检测密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
     public static final int KEY_ILLEGAL = -2003;
+    // 连接错误 - 广播数据包解析错误
+    public static final int BROARCAST_RESOLUTION_FAILED = -2004;
     // 控制指令错误 - 指令非法
     public static final int ILLEGAL_COMMAND = -3001;
     // 控制指令错误 - 运动状态

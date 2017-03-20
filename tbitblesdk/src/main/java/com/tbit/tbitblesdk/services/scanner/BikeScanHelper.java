@@ -1,13 +1,10 @@
 package com.tbit.tbitblesdk.services.scanner;
 
-import android.bluetooth.BluetoothAdapter;
 import android.text.TextUtils;
 
 import com.tbit.tbitblesdk.services.BikeCallback;
 import com.tbit.tbitblesdk.services.BluetoothIO;
 import com.tbit.tbitblesdk.util.BikeUtil;
-
-import org.greenrobot.eventbus.EventBus;
 
 /**
  * Created by Salmon on 2017/3/8 0008.
@@ -16,17 +13,15 @@ import org.greenrobot.eventbus.EventBus;
 public class BikeScanHelper {
     public static final String DEFAULT_DEVICE_NAME = "[TBIT_WA-205]";
     private BluetoothIO bluetoothIO;
-    private EventBus bus;
     private ScannerCallback callback;
     private String machineId;
     private Scanner scanner;
     private BikeCallback bikeCallback;
     private String encryptedMachineId;
 
-    public BikeScanHelper(BluetoothAdapter bluetoothAdapter, BluetoothIO bluetoothIO) {
+    public BikeScanHelper(BluetoothIO bluetoothIO) {
         this.bluetoothIO = bluetoothIO;
-        this.bus = EventBus.getDefault();
-        scanner = ScanHelper.getScanner(bluetoothAdapter, ScanHelper.DEFAULT_SCAN_TIMEOUT);
+        scanner = ScanHelper.getScanner(ScanHelper.DEFAULT_SCAN_TIMEOUT);
         initCallback();
     }
 
