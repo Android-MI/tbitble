@@ -21,6 +21,8 @@
 public static final int SUCCEED = 0;
 // 操作失败 (未知原因)
 public static final int FAILED = -1;
+// 超时
+public static final int TIMEOUT = -2;
 // 手机蓝牙未开启
 public static final int BLE_NOT_OPENED = -1001;
 // 设备不支持蓝牙BLE或非指定终端
@@ -39,10 +41,8 @@ public static final int MAC_ADDRESS_ILLEGAL = -2001;
 public static final int DEVICE_NOT_FOUNDED = -2002;
 // 连接错误 - sdk层检测密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
 public static final int KEY_ILLEGAL = -2003;
-// 连接超时
-public static final int CONNECT_TIME_OUT = -2004;
-// 连接超时 - 验证密钥指令响应超时
-public static final int VERIFICATION_RESPONSE_TIME_OUT = -2005;
+// 连接错误 - 广播数据包解析错误
+public static final int BROARCAST_RESOLUTION_FAILED = -2004;
 // 控制指令错误 - 指令非法
 public static final int ILLEGAL_COMMAND = -3001;
 // 控制指令错误 - 运动状态
