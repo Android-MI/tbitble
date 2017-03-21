@@ -6,14 +6,14 @@ import com.tbit.tbitblesdk.services.command.comparator.CommandInsideComparator;
 import java.util.UUID;
 
 /**
- * Created by Salmon on 2017/3/20 0020.
+ * Created by Salmon on 2017/3/21 0021.
  */
 
-public class Config205D implements BikeConfig {
+public class Config_205D implements BikeConfig {
     private Uuid uuid;
     private CommandComparator commandComparator;
 
-    public Config205D() {
+    public Config_205D() {
         uuid = new Uuid();
         uuid.SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
         uuid.SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");

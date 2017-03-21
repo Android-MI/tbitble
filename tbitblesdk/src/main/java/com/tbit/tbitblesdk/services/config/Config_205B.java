@@ -9,12 +9,12 @@ import java.util.UUID;
  * Created by Salmon on 2017/3/20 0020.
  */
 
-public class Config205B implements BikeConfig {
+public class Config_205B implements BikeConfig {
 
     private Uuid uuid;
     private CommandComparator commandComparator;
 
-    public Config205B() {
+    public Config_205B() {
         uuid = new Uuid();
         uuid.SPS_SERVICE_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb7");
         uuid.SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");

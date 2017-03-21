@@ -28,23 +28,23 @@ public class BikeConfigDispatcher {
                     case 0:
                     case 1:
                     case 2:
-                        result = new Config205B();
+                        result = new Config_205B();
                         break;
                     case 3:
                     case 4:
-                        result = new Config205D();
+                        result = new Config_205D();
                         break;
                     default:
-                        result = new Config205D();
+                        result = new Config_205D();
                         break;
                 }
                 break;
             }
             case 1:
-                result = new Config206();
+                result = new Config_206();
                 break;
             default:
-                result = new Config206();
+                result = new Config_206();
                 break;
         }
 
