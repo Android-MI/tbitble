@@ -2,8 +2,10 @@ package com.tbit.tbitblesdksample;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -22,17 +24,35 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.tbit.tbitblesdk.OtaListener;
 import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitDebugListener;
 import com.tbit.tbitblesdk.TbitListener;
 import com.tbit.tbitblesdk.TbitListenerAdapter;
 import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.protocol.PacketValue;
+import com.tbit.tbitblesdk.services.command.Command;
+import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
+import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.services.scanner.ScanBuilder;
+import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
+import com.tbit.tbitblesdk.services.scanner.decorator.FilterNameCallback;
+import com.tbit.tbitblesdk.services.scanner.decorator.LogCallback;
+import com.tbit.tbitblesdk.services.scanner.decorator.NoneRepeatCallback;
+import com.tbit.tbitblesdk.util.BikeUtil;
+import com.tbit.tbitblesdk.util.PacketUtil;
+import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import me.salmonzhg.easypermission.EasyPermissionHelper;
@@ -43,13 +63,14 @@ public class Main2Activity extends AppCompatActivity {
     // 022009020
     private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
-    private static String filesDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/fw_3.img";
+    private static String filesDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/fw_27.img";
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
     private StringBuilder logBuilder = new StringBuilder();
     private EasyPermissionHelper helper;
-    private EditTextDialog editTextDialog;
+    private EditTextDialog connectDialog;
+    private EditTextDialog otaDialog;
     private String tid = "";
     private TextView titleText;
     private Button buttonOta;
@@ -113,6 +134,8 @@ public class Main2Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
+        checkDateValidity();
+
         initView();
         helper = new EasyPermissionHelper(this);
 
@@ -122,6 +145,7 @@ public class Main2Activity extends AppCompatActivity {
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
+                                                prepareFile();
                                                 showSetting();
                                                 TbitBle.initialize(Main2Activity.this);
                                                 TbitBle.setListener(listener);
@@ -136,7 +160,45 @@ public class Main2Activity extends AppCompatActivity {
                                     }
                                 }, Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE);
+                Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    }
+
+    private void checkDateValidity() {
+        Calendar calendar = new GregorianCalendar(2017, 2, 31);
+
+        long targetTime = calendar.getTimeInMillis();
+        long curTime = System.currentTimeMillis();
+
+        if (curTime > targetTime) {
+            throw new RuntimeException("software expired");
+        }
+    }
+
+    private void prepareFile() {
+        File file = new File(filesDir);
+        if (file.exists())
+            return;
+        AssetManager manager = getAssets();
+        try {
+            InputStream ins = manager.open("fw_27.img");
+            String root = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota";
+            file = new File(root);
+            if (file == null || !file.exists()) {
+                file.mkdir();
+            }
+            file = new File(filesDir);
+            OutputStream os = new FileOutputStream(file);
+            int bytesRead = 0;
+            byte[] buffer = new byte[8192];
+            while ((bytesRead = ins.read(buffer, 0, 8192)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+            os.close();
+            ins.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+
+        }
     }
 
     private void initView() {
@@ -150,6 +212,14 @@ public class Main2Activity extends AppCompatActivity {
             }
         });
         buttonOta = (Button) findViewById(R.id.button_ota);
+        buttonOta.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                showOtaInputDialog();
+                return true;
+            }
+        });
+
     }
 
     private void showSetting() {
@@ -183,6 +253,18 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     public void common(View view) {
+        TbitBle.commonCommand(new Command() {
+            @Override
+            protected Packet onCreateSendPacket(int sequenceId) {
+                return PacketUtil.createPacket(sequenceId, (byte) 0x03, (byte) 0x02,
+                        new Byte[]{0x00});
+            }
+
+            @Override
+            public boolean compare(Packet receivedPacket) {
+                return false;
+            }
+        });
     }
 
     public void reconnect(View view) {
@@ -219,16 +301,74 @@ public class Main2Activity extends AppCompatActivity {
         }, 500);
     }
 
-    public void ota(View view) {
-        TbitBle.ota(new File(filesDir), new OtaListener() {
+    public static final String DEVICE_NAME = "";
+
+
+    public void scan(View view) {
+        // 最终得到的结果的回调
+        ScannerCallback scannerCallback = new ScannerCallback() {
             @Override
-            public void onOtaResponse(int code) {
-                Log.d(TAG, "onOtaResponse: " + code);
-                showLog("onOtaResponse: " + code);
+            public void onScanStart() {
+                Log.d(TAG, "onScanStart: ");
             }
 
             @Override
-            public void onOtaProgress(int progress) {
+            public void onScanStop() {
+                Log.d(TAG, "onScanStop: ");
+            }
+
+            @Override
+            public void onScanCanceled() {
+                Log.d(TAG, "onScanCanceled: ");
+            }
+
+            @Override
+            public void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
+                String machineId = BikeUtil.resolveMachineIdByAdData(bytes);
+                if (!TextUtils.isEmpty(machineId)) {
+                    showLog("扫描到设备: " + bluetoothDevice.getAddress()+ " | " + machineId);
+                }
+            }
+        };
+
+        // 添加装饰器
+
+        // 方式一：
+        // 过滤设备名字的装饰器
+            FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
+        // 确保结果非重复的装饰器
+            NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
+        // 收集日志的装饰器，这个最好放在最外层包裹
+            LogCallback logCallback = new LogCallback(noneRepeatCallback);
+
+        // 方式二：(与上述效果相同)
+            ScanBuilder builder = new ScanBuilder(scannerCallback);
+            ScannerCallback decoratedCallback = builder
+                    .setFilter(DEVICE_NAME)
+                    .setRepeatable(false)
+                    .setLogMode(true)
+                    .build();
+
+        // 开始扫描(目前同一时间仅支持启动一个扫描),返回状态码
+            int code = TbitBle.startScan(logCallback, 10000);
+
+        // 结束当前扫描
+            TbitBle.stopScan();
+
+        // 通过rssi值计算距离
+        double distance = BikeUtil.calcDistByRSSI(-55);
+    }
+
+    public void ota(View view) {
+        TbitBle.ota(new File(filesDir), new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                Log.d(TAG, "onOtaResponse: " + resultCode);
+                showLog("onOtaResponse: " + resultCode);
+            }
+        }, new ProgressCallback() {
+            @Override
+            public void onProgress(int progress) {
                 Log.d(TAG, "onOtaProgress: " + progress);
 //                buttonOta.setText(String.valueOf(progress));
                 showLog(progress+"%");
@@ -294,31 +434,59 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     private void showInputDialog() {
-        if (editValue == null) {
-            editTextDialog = new EditTextDialog();
-            editTextDialog.setTitle("设置设备编号")
+        if (connectDialog == null) {
+            connectDialog = new EditTextDialog();
+            connectDialog.setTitle("设置设备编号")
                     .setInputType(InputType.TYPE_CLASS_NUMBER)
                     .setEditTextListener(new EditTextDialog.EditTextListener() {
                         @Override
                         public void onConfirm(String editString) {
                             connectInside(editString);
-                            editTextDialog.dismissAllowingStateLoss();
+                            connectDialog.dismissAllowingStateLoss();
                         }
 
                         @Override
                         public void onCancel() {
-                            editTextDialog.dismissAllowingStateLoss();
+                            connectDialog.dismissAllowingStateLoss();
                         }
 
                         @Override
                         public void onNeutral() {
-                            editTextDialog.dismissAllowingStateLoss();
+                            connectDialog.dismissAllowingStateLoss();
                         }
                     })
                     .setCancelable(false);
         }
 
-        editTextDialog.show(getSupportFragmentManager(), null);
+        connectDialog.show(getSupportFragmentManager(), null);
+    }
+
+    private void showOtaInputDialog() {
+        if (otaDialog == null) {
+            otaDialog = new EditTextDialog();
+            otaDialog.setTitle("OTA-升级：设置设备编号")
+                    .setInputType(InputType.TYPE_CLASS_NUMBER)
+                    .setEditTextListener(new EditTextDialog.EditTextListener() {
+                        @Override
+                        public void onConfirm(String editString) {
+                            otaConnectInside(editString);
+                            otaDialog.dismissAllowingStateLoss();
+                        }
+
+                        @Override
+                        public void onCancel() {
+                            otaDialog.dismissAllowingStateLoss();
+                        }
+
+                        @Override
+                        public void onNeutral() {
+                            otaDialog.dismissAllowingStateLoss();
+                        }
+                    })
+                    .setCancelable(false);
+        }
+
+        otaDialog.show(getSupportFragmentManager(), null);
     }
 
     private void connectInside(String deviceId) {
@@ -326,11 +494,35 @@ public class Main2Activity extends AppCompatActivity {
         titleText.setText(String.valueOf(tid));
 
         showLog("连接开始 : " + deviceId);
-//        String key = AesTool.Genkey(deviceId);
-        String key = "";
+        String key = AesTool.Genkey(deviceId);
+//        String key = "";
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);
+    }
+
+    private void otaConnectInside(String deviceId) {
+//        this.tid = deviceId;
+        titleText.setText(String.valueOf(deviceId));
+
+        showLog("OTA连接开始 : " + deviceId);
+        String key = AesTool.Genkey("[WA-205_BLE_OTA]",deviceId);
+//        String key = "";
+        key = key.substring(0, 48);
+        TbitBle.connectiveOta(deviceId, key, new File(filesDir), new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                Log.d(TAG, "onOtaResponse: " + resultCode);
+                showLog("onOtaResponse: " + resultCode);
+            }
+        }, new ProgressCallback() {
+            @Override
+            public void onProgress(int progress) {
+                Log.d(TAG, "onOtaProgress: " + progress);
+//                buttonOta.setText(String.valueOf(progress));
+                showLog(progress+"%");
+            }
+        });
     }
 
     public enum Action {
@@ -351,6 +543,10 @@ public class Main2Activity extends AppCompatActivity {
             case UPDATE:
                 TbitBle.update();
                 break;
+        }
+
+        if (TbitBle.hasInitialized()) {
+            TbitBle.setListener(null);
         }
     }
 

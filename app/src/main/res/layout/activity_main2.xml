@@ -93,8 +93,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:onClick="reset"
-            android:text="重置蓝牙" />
+            android:onClick="update"
+            android:text="更新" />
 
         <Button
             android:id="@+id/button_ota"
@@ -102,7 +102,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:onClick="ota"
-            android:text="ota" />
+            android:text="ota升级" />
 
     </LinearLayout>
 

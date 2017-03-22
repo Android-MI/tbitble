@@ -30,5 +30,6 @@ dependencies {
 
     compile 'com.github.billy96322:EasyPermission:0.0.1'
     compile 'com.journeyapps:zxing-android-embedded:3.4.0'
+//    compile 'com.github.billy96322:tbitble:0.5.5'
     compile project(':tbitblesdk')
 }

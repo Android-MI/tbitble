@@ -30,6 +30,12 @@ import com.tbit.tbitblesdk.TbitBle;
 import com.tbit.tbitblesdk.TbitDebugListener;
 import com.tbit.tbitblesdk.TbitListener;
 import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.protocol.PacketValue;
+import com.tbit.tbitblesdk.services.command.Command;
+import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
+import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -85,8 +91,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onCommonCommandResponse(int resultCode) {
+        public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
+
         }
+
     };
 
     TbitDebugListener debugListener = new TbitDebugListener() {
@@ -171,16 +179,135 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void unlock(View view) {
-        showLog("解锁按下");
-        TbitBle.unlock();
+        showLog("开锁按下");
+        TbitBle.commonCommand((byte) 0x03, (byte) 0x02, new Byte[]{0x00},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("开锁回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
     }
 
     public void lock(View view) {
-        showLog("上锁按下");
-        TbitBle.lock();
+        showLog("关锁按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("关锁回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+
     }
 
     public void common(View view) {
+    }
+
+    public void powerUnlock(View view) {
+        showLog("开电池锁按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x05, new Byte[]{0x01},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("开电池锁回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+    }
+
+    public void powerLock(View view) {
+        showLog("关电池锁按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x05, new Byte[]{0x00},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("关电池锁回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+    }
+
+    public void setDefence(View view) {
+        showLog("设防按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x01, new Byte[]{0x01},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("设防回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+    }
+
+    public void unSetDefence(View view) {
+        showLog("撤防按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x01, new Byte[]{0x00},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("开锁回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+    }
+
+    public void findCarOn(View view) {
+        showLog("开一键寻车按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x04, new Byte[]{0x01},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("开寻车回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
+    }
+
+    public void findCarOff(View view) {
+        showLog("关一键寻车按下");
+        TbitBle.commonCommand((byte)0x03, (byte)0x04, new Byte[]{0x00},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                        showLog("关寻车回应： " + resultCode);
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+
+                    }
+                });
     }
 
     public void reconnect(View view) {
@@ -348,6 +475,7 @@ public class MainActivity extends AppCompatActivity {
     private void connectInside(String deviceId) {
         showLog("连接开始 : " + deviceId);
         String key = "";
+        key = AesTool.Genkey(deviceId);
         if (TextUtils.isEmpty(key))
             key = KEY;
         TbitBle.connect(deviceId, key);

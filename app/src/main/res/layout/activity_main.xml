@@ -26,60 +26,141 @@
     </ScrollView>
 
     <LinearLayout
-        android:id="@+id/linear_origin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/button_connect"
+        <LinearLayout
+            android:id="@+id/linear_origin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="connect"
-            android:text="扫描二维码" />
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/button_unlock"
+            <Button
+                android:id="@+id/button_connect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="connect"
+                android:visibility="gone"
+                android:text="扫描二维码" />
+
+            <Button
+                android:id="@+id/button_unlock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="unlock"
+                android:text="解锁" />
+
+            <Button
+                android:id="@+id/button_lock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="lock"
+                android:text="上锁" />
+
+            <Button
+                android:id="@+id/button_common"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="common"
+                android:text="common"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/button_reconnect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="update"
+                android:text="更新状态" />
+
+            <Button
+                android:id="@+id/button_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="reset"
+                android:text="重置蓝牙" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="unlock"
-            android:text="解锁" />
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginLeft="15dp"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/button_lock"
+
+            <Button
+                android:id="@+id/button_power_unlock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="powerUnlock"
+                android:text="开电池锁" />
+
+            <Button
+                android:id="@+id/button_power_lock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="powerLock"
+                android:text="关电池锁" />
+
+            <Button
+                android:id="@+id/button_set_defence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="setDefence"
+                android:text="设防" />
+
+            <Button
+                android:id="@+id/button_unset_defence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="unSetDefence"
+                android:text="撤防" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="lock"
-            android:text="上锁" />
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginLeft="15dp"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/button_common"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="common"
-            android:text="common"
-            android:visibility="gone" />
 
-        <Button
-            android:id="@+id/button_reconnect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="update"
-            android:text="更新状态" />
+            <Button
+                android:id="@+id/button_find_on"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="findCarOn"
+                android:text="一键寻车开" />
 
-        <Button
-            android:id="@+id/button_reset"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:onClick="reset"
-            android:text="重置蓝牙" />
+            <Button
+                android:id="@+id/button_find_off"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:onClick="findCarOff"
+                android:text="一键寻车关" />
+
+
+
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -117,6 +198,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:onClick="switchFac"
+            android:visibility="gone"
             android:orientation="horizontal">
 
             <CheckBox
