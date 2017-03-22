@@ -63,7 +63,8 @@ public class Main2Activity extends AppCompatActivity {
     // 022009020
     private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
-    private static String filesDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/fw_27.img";
+    private static String IMAGE_FILE_NAME = "fw_28.img";
+    private String imagePath = Environment.getExternalStorageDirectory().getAbsolutePath();
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
@@ -81,7 +82,7 @@ public class Main2Activity extends AppCompatActivity {
             if (resultCode == 0)
                 showLog("连接回应: 成功");
             else
-            showLog("连接回应: " + resultCode);
+                showLog("连接回应: " + resultCode);
         }
 
         @Override
@@ -156,7 +157,9 @@ public class Main2Activity extends AppCompatActivity {
 
                                     @Override
                                     public void atLeastOneDenied(List<String> list, List<String> list1) {
-
+                                        Toast.makeText(Main2Activity.this, "请同意全部权限", Toast.LENGTH_SHORT)
+                                                .show();
+                                        finish();
                                     }
                                 }, Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA,
@@ -175,18 +178,16 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     private void prepareFile() {
-        File file = new File(filesDir);
-        if (file.exists())
-            return;
+        String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/" + getPackageName();
+        imagePath = filePath + "/" +IMAGE_FILE_NAME;
         AssetManager manager = getAssets();
         try {
-            InputStream ins = manager.open("fw_27.img");
-            String root = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota";
-            file = new File(root);
+            InputStream ins = manager.open(IMAGE_FILE_NAME);
+            File file = new File(filePath);
             if (file == null || !file.exists()) {
-                file.mkdir();
+                file.mkdirs();
             }
-            file = new File(filesDir);
+            file = new File(imagePath);
             OutputStream os = new FileOutputStream(file);
             int bytesRead = 0;
             byte[] buffer = new byte[8192];
@@ -335,32 +336,32 @@ public class Main2Activity extends AppCompatActivity {
 
         // 方式一：
         // 过滤设备名字的装饰器
-            FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
+        FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
         // 确保结果非重复的装饰器
-            NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
+        NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
         // 收集日志的装饰器，这个最好放在最外层包裹
-            LogCallback logCallback = new LogCallback(noneRepeatCallback);
+        LogCallback logCallback = new LogCallback(noneRepeatCallback);
 
         // 方式二：(与上述效果相同)
-            ScanBuilder builder = new ScanBuilder(scannerCallback);
-            ScannerCallback decoratedCallback = builder
-                    .setFilter(DEVICE_NAME)
-                    .setRepeatable(false)
-                    .setLogMode(true)
-                    .build();
+        ScanBuilder builder = new ScanBuilder(scannerCallback);
+        ScannerCallback decoratedCallback = builder
+                .setFilter(DEVICE_NAME)
+                .setRepeatable(false)
+                .setLogMode(true)
+                .build();
 
         // 开始扫描(目前同一时间仅支持启动一个扫描),返回状态码
-            int code = TbitBle.startScan(logCallback, 10000);
+        int code = TbitBle.startScan(logCallback, 10000);
 
         // 结束当前扫描
-            TbitBle.stopScan();
+        TbitBle.stopScan();
 
         // 通过rssi值计算距离
         double distance = BikeUtil.calcDistByRSSI(-55);
     }
 
     public void ota(View view) {
-        TbitBle.ota(new File(filesDir), new ResultCallback() {
+        TbitBle.ota(new File(imagePath), new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
                 Log.d(TAG, "onOtaResponse: " + resultCode);
@@ -385,7 +386,8 @@ public class Main2Activity extends AppCompatActivity {
     @Override
     public void finish() {
         super.finish();
-        TbitBle.destroy();
+        if (TbitBle.hasInitialized())
+            TbitBle.destroy();
     }
 
     @Override
@@ -509,7 +511,7 @@ public class Main2Activity extends AppCompatActivity {
         String key = AesTool.Genkey("[WA-205_BLE_OTA]",deviceId);
 //        String key = "";
         key = key.substring(0, 48);
-        TbitBle.connectiveOta(deviceId, key, new File(filesDir), new ResultCallback() {
+        TbitBle.connectiveOta(deviceId, key, new File(imagePath), new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
                 Log.d(TAG, "onOtaResponse: " + resultCode);
