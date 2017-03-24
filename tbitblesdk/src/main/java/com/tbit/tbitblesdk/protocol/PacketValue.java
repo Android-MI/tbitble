@@ -1,16 +1,17 @@
 package com.tbit.tbitblesdk.protocol;
 
-import android.util.Log;
+import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * Created by Salmon on 2016/5/17 0017.
  */
 public class PacketValue implements Cloneable {
-    List<Byte> aPacketValue = new ArrayList<>();
-    List<DataBean> mData = new ArrayList<>();
+    List<Byte> aPacketValue = new LinkedList<>();
+    List<DataBean> mData = new LinkedList<>();
 
     private final String TAG = "PacketValue";
 
@@ -18,8 +19,12 @@ public class PacketValue implements Cloneable {
 
     }
 
-    public PacketValue(List<Byte> aData) {
-        aPacketValue = aData;
+    public int getSize() {
+        return aPacketValue.size();
+    }
+
+    public PacketValue(byte[] data) {
+        aPacketValue.addAll(Arrays.asList(ByteUtil.byteArrayToBoxed(data)));
         initData();
     }
 
@@ -27,12 +32,6 @@ public class PacketValue implements Cloneable {
         if (aPacketValue.size() < 5) {
             return;
         }
-
-        StringBuilder sb = new StringBuilder();
-        for (Byte b : aPacketValue) {
-            sb.append(String.format("%02x ", b));
-        }
-        Log.d(TAG, "initData: " + sb.toString());
 
         int cursor = 2;
         int size = aPacketValue.size();
@@ -89,10 +88,15 @@ public class PacketValue implements Cloneable {
         return aPacketValue;
     }
 
-    public Byte[] toArray() {
+    public byte[] toArray() {
         Byte[] value = new Byte[aPacketValue.size()];
         aPacketValue.toArray(value);
-        return value;
+        return ByteUtil.byteArrayToUnBoxed(value);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(toArray());
     }
 
     @Override
