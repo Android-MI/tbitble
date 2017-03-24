@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike;
+package com.tbit.tbitblesdk.bike;
 
 /**
  * Created by Salmon on 2016/12/5 0005.

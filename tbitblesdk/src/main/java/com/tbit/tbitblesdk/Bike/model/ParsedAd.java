@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.model;
+package com.tbit.tbitblesdk.bike.model;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

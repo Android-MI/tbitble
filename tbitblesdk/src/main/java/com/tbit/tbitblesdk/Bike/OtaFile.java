@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike;
+package com.tbit.tbitblesdk.bike;
 
 import android.content.Context;
 import android.os.Environment;

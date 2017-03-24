@@ -1,7 +1,7 @@
-package com.tbit.tbitblesdk.Bike.services.command.comparator;
+package com.tbit.tbitblesdk.bike.services.command.comparator;
 
 import com.tbit.tbitblesdk.protocol.Packet;
-import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.bike.services.command.Command;
 
 /**
  * Created by Salmon on 2017/3/16 0016.

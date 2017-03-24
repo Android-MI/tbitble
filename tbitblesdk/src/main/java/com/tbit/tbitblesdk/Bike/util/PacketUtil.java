@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.util;
+package com.tbit.tbitblesdk.bike.util;
 
 import com.tbit.tbitblesdk.protocol.Constant;
 import com.tbit.tbitblesdk.protocol.CrcUtil;

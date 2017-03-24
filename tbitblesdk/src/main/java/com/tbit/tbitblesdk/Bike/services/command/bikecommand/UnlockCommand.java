@@ -1,11 +1,11 @@
-package com.tbit.tbitblesdk.Bike.services.command.bikecommand;
+package com.tbit.tbitblesdk.bike.services.command.bikecommand;
 
-import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.bike.services.command.Command;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
-import com.tbit.tbitblesdk.Bike.ResultCode;
+import com.tbit.tbitblesdk.bike.ResultCode;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-import com.tbit.tbitblesdk.Bike.util.PacketUtil;
+import com.tbit.tbitblesdk.bike.util.PacketUtil;
 
 import java.util.List;
 

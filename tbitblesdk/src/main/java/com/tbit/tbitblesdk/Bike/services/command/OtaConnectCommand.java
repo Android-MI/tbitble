@@ -1,8 +1,8 @@
-package com.tbit.tbitblesdk.Bike.services.command;
+package com.tbit.tbitblesdk.bike.services.command;
 
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-import com.tbit.tbitblesdk.Bike.util.PacketUtil;
+import com.tbit.tbitblesdk.bike.util.PacketUtil;
 
 /**
  * Created by Salmon on 2017/3/16 0016.

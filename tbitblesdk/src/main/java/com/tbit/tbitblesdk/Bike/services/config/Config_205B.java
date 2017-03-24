@@ -1,7 +1,7 @@
-package com.tbit.tbitblesdk.Bike.services.config;
+package com.tbit.tbitblesdk.bike.services.config;
 
-import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandComparator;
-import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandInsideComparator;
+import com.tbit.tbitblesdk.bike.services.command.comparator.CommandComparator;
+import com.tbit.tbitblesdk.bike.services.command.comparator.CommandInsideComparator;
 
 import java.util.UUID;
 

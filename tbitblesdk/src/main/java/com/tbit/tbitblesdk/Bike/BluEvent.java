@@ -1,6 +1,6 @@
-package com.tbit.tbitblesdk.Bike;
+package com.tbit.tbitblesdk.bike;
 
-import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
+import com.tbit.tbitblesdk.bike.model.ManufacturerAd;
 
 /**
  * Created by Salmon on 2016/12/6 0006.

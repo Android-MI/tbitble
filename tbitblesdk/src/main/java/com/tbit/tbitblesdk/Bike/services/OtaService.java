@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.services;
+package com.tbit.tbitblesdk.bike.services;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -12,9 +12,9 @@ import com.tbit.tbitblesdk.bluetooth.BleClient;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteDescriptorListener;
-import com.tbit.tbitblesdk.Bike.BluEvent;
-import com.tbit.tbitblesdk.Bike.OtaFile;
-import com.tbit.tbitblesdk.Bike.ResultCode;
+import com.tbit.tbitblesdk.bike.BluEvent;
+import com.tbit.tbitblesdk.bike.OtaFile;
+import com.tbit.tbitblesdk.bike.ResultCode;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 

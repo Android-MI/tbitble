@@ -1,11 +1,11 @@
-package com.tbit.tbitblesdk.Bike.services.command;
+package com.tbit.tbitblesdk.bike.services.command;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
-import com.tbit.tbitblesdk.Bike.ResultCode;
-import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+import com.tbit.tbitblesdk.bike.ResultCode;
+import com.tbit.tbitblesdk.bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.request.BleRequest;

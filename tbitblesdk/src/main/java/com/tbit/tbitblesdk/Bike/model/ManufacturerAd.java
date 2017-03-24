@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.model;
+package com.tbit.tbitblesdk.bike.model;
 
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 

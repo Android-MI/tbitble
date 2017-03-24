@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.util.proxy;
+package com.tbit.tbitblesdk.bike.util.proxy;
 
 import java.lang.reflect.Method;
 
