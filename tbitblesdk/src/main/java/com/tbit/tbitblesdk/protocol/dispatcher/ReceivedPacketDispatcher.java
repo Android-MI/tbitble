@@ -88,11 +88,11 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         int dataPacketLen = receivedData.get(PACKET_LENGTH_INDEX) & 0xFF;
 
         // 数据包长度不足
-        if (receivedData.size() - 8 < dataPacketLen)
+        if (receivedData.size() - HEAD_LENGTH < dataPacketLen)
             return;
 
         // 数据包长度足够，取出数据包
-        int totalLength = 8 + dataPacketLen;
+        int totalLength = HEAD_LENGTH + dataPacketLen;
         byte[] data = new byte[totalLength];
         for (int i = 0; i < totalLength; i++) {
             data[i] = receivedData.remove(0);
