@@ -19,7 +19,7 @@ public class Packet {
 
     public Packet(byte[] raw) {
         this.header = new PacketHeader(Arrays.copyOfRange(raw, 0, 8));
-        this.packetValue = new PacketValue(raw);
+        this.packetValue = new PacketValue(Arrays.copyOfRange(raw, 8, raw.length));
     }
 
     public Packet(PacketHeader header) {
