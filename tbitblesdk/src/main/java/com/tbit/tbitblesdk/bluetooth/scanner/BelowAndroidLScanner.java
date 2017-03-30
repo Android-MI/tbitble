@@ -7,9 +7,6 @@ import android.os.Looper;
 import android.os.Message;
 
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
-import com.tbit.tbitblesdk.Bike.BluEvent;
-
-import org.greenrobot.eventbus.EventBus;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -78,7 +75,7 @@ public class BelowAndroidLScanner implements Scanner {
         if (callback != null)
             callback.onScanCanceled();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            EventBus.getDefault().post(new BluEvent.BleNotOpened());
+            // TODO: 2017/3/27 0027 notify bluetoothAdapter not enabled
             return;
         }
         handler.removeCallbacksAndMessages(null);
@@ -92,7 +89,7 @@ public class BelowAndroidLScanner implements Scanner {
         if (callback != null)
             callback.onScanStop();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            EventBus.getDefault().post(new BluEvent.BleNotOpened());
+            // TODO: 2017/3/27 0027 notify bluetoothAdapter not enabled
             return;
         }
         handler.removeCallbacksAndMessages(null);

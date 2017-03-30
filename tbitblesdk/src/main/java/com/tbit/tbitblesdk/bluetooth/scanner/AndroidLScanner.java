@@ -14,9 +14,6 @@ import android.os.Looper;
 import android.os.Message;
 
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
-import com.tbit.tbitblesdk.Bike.BluEvent;
-
-import org.greenrobot.eventbus.EventBus;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -35,17 +32,6 @@ public class AndroidLScanner implements Scanner {
     private AndroidLScannerHandler handler;
     private AtomicBoolean needProcess = new AtomicBoolean(false);
     private long timeoutMillis;
-
-    public AndroidLScanner() {
-        this(Long.MAX_VALUE);
-    }
-
-    public AndroidLScanner(long timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
-        this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
-        handler = new AndroidLScannerHandler(this);
-    }
-
     private ScanCallback bleCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, final ScanResult result) {
@@ -59,6 +45,16 @@ public class AndroidLScanner implements Scanner {
         }
 
     };
+
+    public AndroidLScanner() {
+        this(Long.MAX_VALUE);
+    }
+
+    public AndroidLScanner(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+        this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
+        handler = new AndroidLScannerHandler(this);
+    }
 
     @Override
     public void start(final ScannerCallback callback) {
@@ -101,7 +97,7 @@ public class AndroidLScanner implements Scanner {
         if (callback != null)
             callback.onScanCanceled();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            EventBus.getDefault().post(new BluEvent.BleNotOpened());
+            // TODO: 2017/3/27 0027 notify bluetoothAdapter not enabled
             return;
         }
         handler.removeCallbacksAndMessages(null);
@@ -117,7 +113,7 @@ public class AndroidLScanner implements Scanner {
         if (callback != null)
             callback.onScanStop();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            EventBus.getDefault().post(new BluEvent.BleNotOpened());
+            // TODO: 2017/3/27 0027 notify bluetoothAdapter not enabled
             return;
         }
         handler.removeCallbacksAndMessages(null);
@@ -128,6 +124,7 @@ public class AndroidLScanner implements Scanner {
 
     private static class AndroidLScannerHandler extends Handler {
         WeakReference<AndroidLScanner> scannerReference;
+
         public AndroidLScannerHandler(AndroidLScanner androidLScanner) {
             super(Looper.getMainLooper());
             scannerReference = new WeakReference<>(androidLScanner);

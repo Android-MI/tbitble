@@ -1,6 +1,5 @@
 package com.tbit.tbitblesdk.bluetooth.scanner;
 
-import android.bluetooth.BluetoothAdapter;
 import android.os.Build;
 
 /**
