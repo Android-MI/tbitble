@@ -62,10 +62,6 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         bleClient.getListenerManager().removeChangeCharacterListener(this);
     }
 
-    public void finish() {
-        bleClient.getListenerManager().removeChangeCharacterListener(this);
-    }
-
     private void tryResolve() {
         //0xAA才是数据包的头
         if (!receivedData.get(0).equals(HEAD_FLAG)) {
@@ -79,7 +75,6 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
                 }
             }
         }
-
         // 等待头长度足够
         if (receivedData.size() < HEAD_LENGTH)
             return;
