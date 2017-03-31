@@ -107,10 +107,13 @@ class TbitBleInstance {
         scanBikeInternal(deviceId);
     }
 
+    private boolean connectResponsed = true;
     void connect(String macAddr, String key) {
+        connectResponsed = false;
         connect(macAddr, key, new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
+                connectResponsed = true;
                 listener.onConnectResponse(resultCode);
             }
         }, new StateCallback() {
@@ -439,6 +442,8 @@ class TbitBleInstance {
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
         listener.onDisconnected(ResultCode.DISCONNECTED);
+        if (!connectResponsed)
+            listener.onConnectResponse(ResultCode.DISCONNECTED);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
