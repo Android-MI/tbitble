@@ -26,15 +26,14 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.tbit.tbitblesdk.TbitBle;
-import com.tbit.tbitblesdk.TbitDebugListener;
-import com.tbit.tbitblesdk.TbitListener;
-import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.Bike.TbitBle;
+import com.tbit.tbitblesdk.Bike.TbitDebugListener;
+import com.tbit.tbitblesdk.Bike.TbitListener;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
-import com.tbit.tbitblesdk.services.command.Command;
-import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
-import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
+import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.text.DateFormat;

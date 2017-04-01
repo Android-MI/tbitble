@@ -24,23 +24,22 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.tbit.tbitblesdk.TbitBle;
-import com.tbit.tbitblesdk.TbitDebugListener;
-import com.tbit.tbitblesdk.TbitListener;
-import com.tbit.tbitblesdk.TbitListenerAdapter;
-import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.Bike.TbitBle;
+import com.tbit.tbitblesdk.Bike.TbitDebugListener;
+import com.tbit.tbitblesdk.Bike.TbitListener;
+import com.tbit.tbitblesdk.Bike.TbitListenerAdapter;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.protocol.Packet;
-import com.tbit.tbitblesdk.protocol.PacketValue;
-import com.tbit.tbitblesdk.services.command.Command;
-import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
-import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
-import com.tbit.tbitblesdk.services.scanner.ScanBuilder;
-import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.FilterNameCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.LogCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.NoneRepeatCallback;
-import com.tbit.tbitblesdk.util.BikeUtil;
-import com.tbit.tbitblesdk.util.PacketUtil;
+import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
+import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.ScanBuilder;
+import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.FilterNameCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.LogCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.NoneRepeatCallback;
+import com.tbit.tbitblesdk.Bike.util.BikeUtil;
+import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.io.File;
@@ -254,18 +253,7 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     public void common(View view) {
-        TbitBle.commonCommand(new Command() {
-            @Override
-            protected Packet onCreateSendPacket(int sequenceId) {
-                return PacketUtil.createPacket(sequenceId, (byte) 0x03, (byte) 0x02,
-                        new Byte[]{0x00});
-            }
 
-            @Override
-            public boolean compare(Packet receivedPacket) {
-                return false;
-            }
-        });
     }
 
     public void reconnect(View view) {
