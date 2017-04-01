@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.bike.services.command;
+package com.tbit.tbitblesdk.Bike.services.command;
 
 /**
  * Created by Salmon on 2017/3/14 0014.

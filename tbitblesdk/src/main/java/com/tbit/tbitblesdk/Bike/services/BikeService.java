@@ -53,9 +53,12 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
 
     public void setBikeConfig(BikeConfig bikeConfig) {
         this.bikeConfig = bikeConfig;
+        this.receivedPacketDispatcher.setServiceUuid(bikeConfig.getUuid().SPS_SERVICE_UUID);
+        this.receivedPacketDispatcher.setCharacterUuid(bikeConfig.getUuid().SPS_TX_UUID);
     }
 
     public void addCommand(Command command) {
+        command.setBleClient(bleClient);
         command.setRequestDispatcher(requestDispatcher);
         command.setReceivedPacketDispatcher(receivedPacketDispatcher);
         command.setBikeConfig(bikeConfig);

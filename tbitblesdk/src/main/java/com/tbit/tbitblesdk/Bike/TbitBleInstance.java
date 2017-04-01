@@ -8,6 +8,7 @@ import android.util.Log;
 import com.tbit.tbitblesdk.Bike.services.OtaService;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
+import com.tbit.tbitblesdk.bluetooth.scanner.Scanner;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.bluetooth.BleClient;
@@ -49,6 +50,7 @@ class TbitBleInstance implements ConnectStateChangeListener {
     private BikeService bikeService;
     private OtaService otaService;
     private BikeScanHelper bikeScanHelper;
+    private Scanner scanner;
     private ScanHelper scanHelper;
 
     private String deviceId;
@@ -414,21 +416,6 @@ class TbitBleInstance implements ConnectStateChangeListener {
             return false;
         }
         return true;
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onBleNotOpened(BluEvent.BleNotOpened event) {
-        listener.onConnectResponse(ResultCode.BLE_NOT_OPENED);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onScanTimeOut(BluEvent.ScanTimeOut event) {
-        listener.onConnectResponse(ResultCode.DEVICE_NOT_FOUNDED);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onConnectionStateChange(BluEvent.ConnectionStateChange event) {
-        Log.i(TAG, "onConnectionStateChange: from " + event.status + " to " + event.newState);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

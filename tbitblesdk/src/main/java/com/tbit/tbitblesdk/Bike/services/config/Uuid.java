@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.bike.services.config;
+package com.tbit.tbitblesdk.Bike.services.config;
 
 import java.util.UUID;
 

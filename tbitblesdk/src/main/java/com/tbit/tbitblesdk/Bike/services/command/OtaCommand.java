@@ -6,7 +6,6 @@ import com.tbit.tbitblesdk.Bike.BluEvent;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.Bike.ResultCode;
-import com.tbit.tbitblesdk.Bike.services.command.bikecommand.BikeCommand;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 
@@ -18,7 +17,7 @@ import java.util.List;
  * Created by Salmon on 2017/3/17 0017.
  */
 
-public class OtaCommand extends BikeCommand {
+public class OtaCommand extends Command {
 
     private static final String TAG = "OtaCommand";
     protected EventBus bus;

@@ -1,6 +1,6 @@
-package com.tbit.tbitblesdk.bike.services.config;
+package com.tbit.tbitblesdk.Bike.services.config;
 
-import com.tbit.tbitblesdk.bike.model.ManufacturerAd;
+import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 
 /**
  * Created by Salmon on 2017/3/20 0020.

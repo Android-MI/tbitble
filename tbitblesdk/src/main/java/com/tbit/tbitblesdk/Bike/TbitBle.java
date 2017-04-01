@@ -1,14 +1,14 @@
-package com.tbit.tbitblesdk.bike;
+package com.tbit.tbitblesdk.Bike;
 
 import android.content.Context;
 
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
-import com.tbit.tbitblesdk.bike.model.BikeState;
-import com.tbit.tbitblesdk.bike.services.command.Command;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-import com.tbit.tbitblesdk.bike.services.command.callback.StateCallback;
+import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
 
 import java.io.File;

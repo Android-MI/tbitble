@@ -29,11 +29,6 @@ public class ConnectBikeExecutor extends Executor {
         this.bleClient.connect(this.bluetoothDevice, false);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDiscovered(BluEvent.DiscoveredSucceed event) {
-
-    }
-
     @Override
     public void finish() {
         if (EventBus.getDefault().isRegistered(this))

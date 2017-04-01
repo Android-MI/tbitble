@@ -1,43 +1,12 @@
-package com.tbit.tbitblesdk.bike;
+package com.tbit.tbitblesdk.Bike;
 
-import com.tbit.tbitblesdk.bike.model.ManufacturerAd;
+import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 
 /**
  * Created by Salmon on 2016/12/6 0006.
  */
 
 public class BluEvent {
-
-    public enum CharState {
-        CHANGE, READ, WRITE
-    }
-
-    public enum State {
-        SUCCEED, FAILED
-    }
-
-    public static class ConnectionStateChange {
-        public int status;
-        public int newState;
-
-        public ConnectionStateChange(int status, int newState) {
-            this.status = status;
-            this.newState = newState;
-        }
-    }
-
-    public static class DisConnected {
-    }
-
-    public static class DiscoveredSucceed {
-    }
-
-
-    public static class ScanTimeOut {
-    }
-
-    public static class BleNotOpened {
-    }
 
     public static class OtaStart {
     }
@@ -58,11 +27,6 @@ public class BluEvent {
         public String getKey() {
             return key;
         }
-    }
-
-
-    public static class UpdateBikeState {
-
     }
 
 

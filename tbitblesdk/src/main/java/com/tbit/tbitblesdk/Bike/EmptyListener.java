@@ -1,6 +1,6 @@
-package com.tbit.tbitblesdk.bike;
+package com.tbit.tbitblesdk.Bike;
 
-import com.tbit.tbitblesdk.bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 
 /**

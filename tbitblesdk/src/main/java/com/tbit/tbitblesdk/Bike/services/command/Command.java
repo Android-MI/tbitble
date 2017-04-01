@@ -1,12 +1,13 @@
-package com.tbit.tbitblesdk.bike.services.command;
+package com.tbit.tbitblesdk.Bike.services.command;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
-import com.tbit.tbitblesdk.bike.ResultCode;
-import com.tbit.tbitblesdk.bike.services.config.BikeConfig;
+import com.tbit.tbitblesdk.Bike.ResultCode;
+import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.bluetooth.Code;
+import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.request.BleRequest;
 import com.tbit.tbitblesdk.bluetooth.request.BleResponse;
@@ -36,6 +37,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     protected RequestDispatcher requestDispatcher;
     protected ReceivedPacketDispatcher receivedPacketDispatcher;
     protected BikeConfig bikeConfig;
+    protected IBleClient bleClient;
     private Packet sendPacket;
 
     public Command(ResultCallback resultCallback) {
@@ -43,6 +45,10 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         this.handler = new Handler(Looper.getMainLooper(), this);
         this.state = NOT_EXECUTE_YET;
         this.resultCallback = resultCallback;
+    }
+
+    public void setBleClient(IBleClient bleClient) {
+        this.bleClient = bleClient;
     }
 
     public void setBikeConfig(BikeConfig bikeConfig) {
@@ -76,7 +82,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         return true;
     }
 
-    protected void sendCommand(){
+    protected void sendCommand() {
         BleRequest writeRequest = new WriterRequest(bikeConfig.getUuid().SPS_SERVICE_UUID,
                 bikeConfig.getUuid().SPS_RX_UUID, sendPacket.toByteArray(), false, this);
         requestDispatcher.addRequest(writeRequest);

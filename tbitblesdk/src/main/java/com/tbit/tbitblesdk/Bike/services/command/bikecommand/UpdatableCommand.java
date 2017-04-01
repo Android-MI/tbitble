@@ -1,11 +1,11 @@
-package com.tbit.tbitblesdk.bike.services.command.bikecommand;
+package com.tbit.tbitblesdk.Bike.services.command.bikecommand;
 
 
-import com.tbit.tbitblesdk.bike.model.BikeState;
-import com.tbit.tbitblesdk.bike.services.command.Command;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-import com.tbit.tbitblesdk.bike.services.command.callback.StateCallback;
-import com.tbit.tbitblesdk.bike.util.StateUpdateHelper;
+import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
+import com.tbit.tbitblesdk.Bike.util.StateUpdateHelper;
 
 /**
  * Created by Salmon on 2017/3/15 0015.
