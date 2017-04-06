@@ -120,6 +120,8 @@ public class BikeService implements Reader, Writer, CommandHolder {
         byte[] data = received;
         Packet receivedPacket = new Packet(data);
         Log.i(TAG, "ReceivedPacket Value：" + receivedPacket.toString());
+        this.bus.post(new BluEvent.DebugLogEvent("ReceivedPacket Value：",
+                receivedPacket.toString()));
         int checkResult = receivedPacket.checkPacket();
         receivedPacket.print();
 
@@ -255,8 +257,8 @@ public class BikeService implements Reader, Writer, CommandHolder {
         Log.d(TAG, "onCharacteristicChanged: " + event.state.name() + "\nvalue: " +
                 ByteUtil.bytesToHexString(event.value) + "\nstatus: " + status);
 
-//        bus.post(new BluEvent.DebugLogEvent("character", "onCharacteristicChanged: " + event.state.name() + "\nvalue: " +
-//                ByteUtil.bytesToHexString(event.value) + "\nstatus: " + status));
+        bus.post(new BluEvent.DebugLogEvent("character", "onCharacteristicChanged: " + event.state.name() + "\nvalue: " +
+                ByteUtil.bytesToHexString(event.value) + "\nstatus: " + status));
 
         if (status != BluetoothGatt.GATT_SUCCESS) {
             bus.post(new BluEvent.CommonFailedReport(event.characterUuid + "\nonCharacteristicWrite",
