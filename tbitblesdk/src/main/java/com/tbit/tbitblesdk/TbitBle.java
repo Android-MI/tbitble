@@ -7,6 +7,7 @@ import com.tbit.tbitblesdk.services.command.Command;
 import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
 import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
 import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.services.command.callback.RssiCallback;
 import com.tbit.tbitblesdk.services.command.callback.SimpleCommonCallback;
 import com.tbit.tbitblesdk.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
@@ -118,6 +119,11 @@ public class TbitBle {
     public static BikeState getState() {
         checkInstanceNotNull();
         return instance.getState();
+    }
+
+    public static void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
+        checkInstanceNotNull();
+        instance.readRssi(resultCallback, rssiCallback);
     }
 
     public static void disConnect() {

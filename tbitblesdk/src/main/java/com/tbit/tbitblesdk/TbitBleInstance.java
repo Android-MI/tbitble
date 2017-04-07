@@ -13,6 +13,7 @@ import com.tbit.tbitblesdk.protocol.OtaFile;
 import com.tbit.tbitblesdk.protocol.ResultCode;
 import com.tbit.tbitblesdk.protocol.BikeState;
 import com.tbit.tbitblesdk.services.BluetoothIO;
+import com.tbit.tbitblesdk.services.ReadRssiTask;
 import com.tbit.tbitblesdk.services.command.Command;
 import com.tbit.tbitblesdk.services.command.OtaCommand;
 import com.tbit.tbitblesdk.services.command.OtaConnectCommand;
@@ -24,6 +25,7 @@ import com.tbit.tbitblesdk.services.command.bikecommand.UpdateCommand;
 import com.tbit.tbitblesdk.services.command.callback.PacketCallback;
 import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
 import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
+import com.tbit.tbitblesdk.services.command.callback.RssiCallback;
 import com.tbit.tbitblesdk.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.services.scanner.BikeScanHelper;
 import com.tbit.tbitblesdk.services.scanner.ScanHelper;
@@ -280,6 +282,13 @@ class TbitBleInstance {
         if (scanHelper == null)
             return;
         scanHelper.stop();
+    }
+
+    void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
+        ReadRssiTask readRssiTask = new ReadRssiTask(bluetoothIO);
+        readRssiTask.setResultCallback(resultCallback);
+        readRssiTask.setRssiCallback(rssiCallback);
+        readRssiTask.start();
     }
 
     void destroy() {

@@ -65,9 +65,11 @@ public class BluEvent {
 
     public static class ReadRssi {
         public int rssi;
+        public boolean isSuccess;
 
-        public ReadRssi(int rssi) {
+        public ReadRssi(int rssi, boolean isSuccess) {
             this.rssi = rssi;
+            this.isSuccess = isSuccess;
         }
     }
 

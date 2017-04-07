@@ -98,12 +98,7 @@ public class BluetoothIO {
         @Override
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
             super.onReadRemoteRssi(gatt, rssi, status);
-            if (BluetoothGatt.GATT_SUCCESS == status) {
-                bus.post(new BluEvent.ReadRssi(rssi));
-            } else {
-                bus.post(new BluEvent.CommonFailedReport("onReadRemoteRssi",
-                        "status : " + status));
-            }
+            bus.post(new BluEvent.ReadRssi(rssi, BluetoothGatt.GATT_SUCCESS == status));
         }
 
         @Override
@@ -193,6 +188,10 @@ public class BluetoothIO {
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean readRssi() {
+        return bluetoothGatt.readRemoteRssi();
     }
 
     public void close() {
