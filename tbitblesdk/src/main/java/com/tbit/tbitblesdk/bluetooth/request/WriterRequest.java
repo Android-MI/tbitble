@@ -34,7 +34,6 @@ public class WriterRequest extends BleRequest implements WriteCharacterListener 
     public WriterRequest(UUID serviceUuid, UUID characterUuid, byte[] value, boolean withResponse,
                          BleResponse bleResponse, int timeout) {
         super(bleResponse);
-        bleClient.getListenerManager().addWriteCharacterListener(this);
 
         this.serviceUuid = serviceUuid;
         this.characterUuid = characterUuid;
@@ -47,6 +46,12 @@ public class WriterRequest extends BleRequest implements WriteCharacterListener 
             response(Code.REQUEST_FAILED);
 
         prepareList();
+    }
+
+    @Override
+    protected void onPrepare() {
+        super.onPrepare();
+        bleClient.getListenerManager().addWriteCharacterListener(this);
     }
 
     private void prepareList() {

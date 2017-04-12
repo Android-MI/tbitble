@@ -24,8 +24,8 @@ public class CommonCommand extends Command {
 
     @Override
     protected void onResult(Packet receivedPacket) {
-        resultCallback.onResult(ResultCode.SUCCEED);
         packetCallback.onPacketReceived(receivedPacket);
+        response(ResultCode.SUCCEED);
     }
 
     @Override

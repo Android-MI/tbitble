@@ -30,8 +30,8 @@ public class UpdateCommand extends UpdatableCommand {
             Byte[] value = b.value;
             if (key == 0x85) {
                 parseAll(value);
-                resultCallback.onResult(ResultCode.SUCCEED);
                 stateCallback.onStateUpdated(bikeState);
+                response(ResultCode.SUCCEED);
                 break;
             }
         }

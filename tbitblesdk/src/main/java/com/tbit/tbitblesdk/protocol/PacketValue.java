@@ -96,7 +96,7 @@ public class PacketValue implements Cloneable {
 
     @Override
     public String toString() {
-        return Arrays.toString(toArray());
+        return ByteUtil.bytesToHexString(toArray());
     }
 
     @Override

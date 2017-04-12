@@ -27,7 +27,7 @@ import java.util.List;
  */
 
 public class BikeService implements CommandHolder, PacketResponseListener, ConnectStateChangeListener {
-    private static final String TAG = "NewBikeConnector";
+    private static final String TAG = "BikeService";
     private static final int SEQUENCE_ID_START = 128;
 
     private int sequenceId;
@@ -39,13 +39,13 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
     private RequestDispatcher requestDispatcher;
     private ReceivedPacketDispatcher receivedPacketDispatcher;
 
-    public BikeService(IBleClient bleClient) {
+    public BikeService(IBleClient bleClient, RequestDispatcher requestDispatcher) {
         this.bleClient = bleClient;
         this.bikeState = new BikeState();
         this.commandList = new LinkedList<>();
         this.sequenceId = SEQUENCE_ID_START;
         this.receivedPacketDispatcher = new ReceivedPacketDispatcher(bleClient);
-        this.requestDispatcher = new RequestDispatcher(bleClient);
+        this.requestDispatcher = requestDispatcher;
 
         this.receivedPacketDispatcher.addPacketResponseListener(this);
         this.bleClient.getListenerManager().addConnectStateChangeListener(this);
@@ -67,7 +67,7 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
     }
 
     public void notifyCommandAdded() {
-        if (currentCommand.getState() != Command.FINISHED)
+        if (currentCommand != null && currentCommand.getState() != Command.FINISHED)
             return;
         if (commandList.size() == 0)
             return;
@@ -88,10 +88,6 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
 
     public BikeState getBikeState() {
         return bikeState;
-    }
-
-    public void disConnect() {
-        bleClient.disconnect();
     }
 
     private void sendACK(int sequenceId, boolean error) {

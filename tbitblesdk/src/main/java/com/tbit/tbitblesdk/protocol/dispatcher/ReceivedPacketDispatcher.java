@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
@@ -22,6 +23,7 @@ import java.util.UUID;
  */
 
 public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handler.Callback {
+    private static final String TAG = "ReceivedPacketDispatche";
 
     private static final int HEAD_LENGTH = 8;
     private static final Byte HEAD_FLAG = new Byte((byte) 0xAA);
@@ -106,14 +108,15 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
 
     @Override
     public void onCharacterChange(BluetoothGattCharacteristic characteristic, final byte[] value) {
-        if (serviceUuid != null && !serviceUuid.equals(characteristic.getService().getUuid()))
+        if (!serviceUuid.equals(characteristic.getService().getUuid()))
             return;
-        if (characterUuid != null && !characteristic.equals(characteristic.getUuid()))
+        if (!characterUuid.equals(characteristic.getUuid()))
             return;
         handler.post(new Runnable() {
             @Override
             public void run() {
                 Byte[] data = ByteUtil.byteArrayToBoxed(value);
+                Log.d(TAG, "onCharacterChange: " + ByteUtil.bytesToHexString(data));
                 receivedData.addAll(Arrays.asList(data));
                 tryResolve();
             }

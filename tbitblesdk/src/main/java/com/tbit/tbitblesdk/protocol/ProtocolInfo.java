@@ -1,12 +1,11 @@
 package com.tbit.tbitblesdk.protocol;
 
 /**
- * Created by Kenny on 2016/2/23 17:01.
- * Desc：
+ * Created by Salmon on 2017/3/9 0009.
  */
-public class Constant {
+public class ProtocolInfo {
 
-    public final static int[] crcTable = {
+    public static int[] packetCrcTable = {
             0X0000, 0X1189, 0X2312, 0X329B, 0X4624, 0X57AD, 0X6536, 0X74BF, 0X8C48, 0X9DC1, 0XAF5A, 0XBED3, 0XCA6C,
             0XDBE5, 0XE97E, 0XF8F7, 0X1081, 0X0108, 0X3393, 0X221A, 0X56A5, 0X472C, 0X75B7, 0X643E, 0X9CC9, 0X8D40,
             0XBFDB, 0XAE52, 0XDAED, 0XCB64, 0XF9FF, 0XE876, 0X2102, 0X308B, 0X0210, 0X1399, 0X6726, 0X76AF, 0X4434,
@@ -29,4 +28,9 @@ public class Constant {
             0X8330, 0X7BC7, 0X6A4E, 0X58D5, 0X495C, 0X3DE3, 0X2C6A, 0X1EF1, 0X0F78,
     };
 
+    public static int maxEncryptCount = 95;
+
+    public static char[] adKey = {
+            0x35, 0x41, 0x32, 0x42, 0x33, 0x43, 0x36, 0x44, 0x39, 0x45,
+            0x38, 0x46, 0x37, 0x34, 0x31, 0x30};
 }

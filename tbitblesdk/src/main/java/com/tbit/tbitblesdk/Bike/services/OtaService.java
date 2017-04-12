@@ -9,6 +9,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.bluetooth.BleClient;
+import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteDescriptorListener;
@@ -53,7 +54,7 @@ public class OtaService implements Handler.Callback,
     boolean preparedForLastBlock = false;
     boolean endSignalSent = false;
     boolean rebootsignalSent = false;
-    private BleClient bleClient;
+    private IBleClient bleClient;
     private int retryCount = 0;
     private Step step = Step.MemDev;
     private OtaFile otaFile;
@@ -65,7 +66,7 @@ public class OtaService implements Handler.Callback,
     private ResultCallback resultCallback;
     private ProgressCallback progressCallback;
 
-    public OtaService(BleClient bleClient, OtaFile file, ResultCallback resultCallback,
+    public OtaService(IBleClient bleClient, OtaFile file, ResultCallback resultCallback,
                       ProgressCallback progressCallback) {
         EventBus.getDefault().register(this);
         this.bleClient = bleClient;

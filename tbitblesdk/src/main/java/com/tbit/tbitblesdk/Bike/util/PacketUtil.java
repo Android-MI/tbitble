@@ -1,6 +1,6 @@
 package com.tbit.tbitblesdk.Bike.util;
 
-import com.tbit.tbitblesdk.protocol.Constant;
+import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 import com.tbit.tbitblesdk.protocol.CrcUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketHeader;
@@ -12,24 +12,25 @@ import com.tbit.tbitblesdk.protocol.PacketValue;
 
 public class PacketUtil {
 
-    public static Packet createPacket(int requestCode, byte commandId, byte key, Byte[] data) {
-        return createPacket(requestCode, commandId, new PacketValue.DataBean(key, data));
+    public static Packet createPacket(int sequenceId, byte commandId, byte key, Byte[] data) {
+        return createPacket(sequenceId, commandId, new PacketValue.DataBean(key, data));
     }
 
-    public static Packet createPacket(int requestCode, byte commandId, PacketValue.DataBean... dataBeans) {
+    public static Packet createPacket(int sequenceId, byte commandId, PacketValue.DataBean... dataBeans) {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId(commandId);
         packetValue.addData(dataBeans);
 
         short valueLength = (short) packetValue.getSize();
-        byte crc16 = (byte) CrcUtil.crcTable(Constant.crcTable, packetValue.toArray());
+        int crc16 = CrcUtil.crcTable(ProtocolInfo.packetCrcTable, packetValue.toArray());
 
         PacketHeader header = new PacketHeader.HeaderBuilder()
                 .setLength(valueLength)
                 .setSystemState((byte) 0x00)
+                .setSequenceId((byte) sequenceId)
                 .setAck(false)
                 .setError(false)
-                .setCRC16(crc16)
+                .setCRC16((short) crc16)
                 .build();
 
 

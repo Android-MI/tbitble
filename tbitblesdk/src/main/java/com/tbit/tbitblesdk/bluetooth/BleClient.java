@@ -310,6 +310,15 @@ public class BleClient implements IBleClient {
         return status;
     }
 
+    @Override
+    public boolean readRssi() {
+        if (bluetoothGatt == null) {
+            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
+            return false;
+        }
+        return bluetoothGatt.readRemoteRssi();
+    }
+
     private void printServices(BluetoothGatt gatt) {
         if (gatt != null) {
             for (BluetoothGattService service : gatt.getServices()) {

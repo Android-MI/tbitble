@@ -24,5 +24,7 @@ public interface IBleClient {
 
     boolean write(UUID serviceUUID, UUID characteristicUUID, byte[] value, boolean withResponse);
 
+    boolean readRssi();
+
     boolean requestConnectionPriority(int connectionPriority);
 }

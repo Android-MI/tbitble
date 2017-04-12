@@ -50,9 +50,8 @@ public abstract class BleRequest implements Handler.Callback {
             response(Code.BLE_NOT_SUPPORTED);
         } else if (!BleGlob.isBluetoothEnabled()) {
             response(Code.BLE_DISABLED);
-        } else if (bleClient.getConnectionState() < 3) {
-            response(Code.BLE_NOT_CONNECTED);
         } else {
+            onPrepare();
             onRequest();
         }
     }
@@ -64,6 +63,8 @@ public abstract class BleRequest implements Handler.Callback {
     protected void stopTiming() {
         handler.removeMessages(HANDLE_TIMEOUT);
     }
+
+    protected void onPrepare() {}
 
     protected abstract void onRequest();
 

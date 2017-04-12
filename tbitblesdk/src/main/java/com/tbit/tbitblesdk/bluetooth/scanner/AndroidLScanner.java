@@ -47,28 +47,19 @@ public class AndroidLScanner implements Scanner {
     };
 
     public AndroidLScanner() {
-        this(Long.MAX_VALUE);
-    }
-
-    public AndroidLScanner(long timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
         this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
         handler = new AndroidLScannerHandler(this);
     }
 
     @Override
-    public void start(final ScannerCallback callback) {
+    public void start(final ScannerCallback callback, long timeoutMillis) {
         this.callback = callback;
+        this.timeoutMillis = timeoutMillis;
         needProcess.set(true);
         if (callback != null)
             callback.onScanStart();
         handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, timeoutMillis);
         bluetoothAdapter.getBluetoothLeScanner().startScan(getFilters(), getSettings(), bleCallback);
-    }
-
-    @Override
-    public void setTimeout(long timeout) {
-        this.timeoutMillis = timeout;
     }
 
     private List<ScanFilter> getFilters() {

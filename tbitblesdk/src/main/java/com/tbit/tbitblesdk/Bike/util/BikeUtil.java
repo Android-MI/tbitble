@@ -1,8 +1,13 @@
 package com.tbit.tbitblesdk.Bike.util;
 
 
+import android.text.TextUtils;
+
 import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 import com.tbit.tbitblesdk.Bike.model.ParsedAd;
+import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
+
+import java.io.File;
 
 /**
  * Created by Salmon on 2017/3/9 0009.
@@ -77,5 +82,47 @@ public class BikeUtil {
 //            e.printStackTrace();
             return "";
         }
+    }
+
+    public static Byte[] resolveKey(String keyStr, int length) {
+        length = length * 2;
+        Byte[] result = new Byte[]{};
+        keyStr = keyStr.replace(" ", "");
+        if (keyStr.length() != length)
+            return result;
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < length; j += 2) {
+            sb.append(keyStr.substring(j, j + 2));
+            if (j == length - 2)
+                continue;
+            sb.append(" ");
+        }
+        try {
+            result = ByteUtil.stringToBytes(sb.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static boolean isOtaFileLegal(File file) {
+        if (file == null)
+            return false;
+        if (!file.exists()) {
+            return false;
+        }
+        String filename = file.getName();
+        if (TextUtils.isEmpty(filename))
+            return false;
+        int dot = filename.lastIndexOf('.');
+        if ((dot > -1) && (dot < (filename.length() - 1))) {
+            String extName = filename.substring(dot + 1);
+            if (!TextUtils.equals(extName, "img")) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
     }
 }

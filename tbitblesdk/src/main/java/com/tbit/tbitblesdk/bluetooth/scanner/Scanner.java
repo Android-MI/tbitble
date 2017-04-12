@@ -6,11 +6,9 @@ package com.tbit.tbitblesdk.bluetooth.scanner;
 
 public interface Scanner {
 
-    void start(ScannerCallback callback);
+    void start(ScannerCallback callback, long timeout);
 
     void stop();
-
-    void setTimeout(long timeout);
 
     boolean isScanning();
 }

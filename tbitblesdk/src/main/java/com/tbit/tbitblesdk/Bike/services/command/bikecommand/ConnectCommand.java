@@ -1,5 +1,7 @@
 package com.tbit.tbitblesdk.Bike.services.command.bikecommand;
 
+import android.util.Log;
+
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
@@ -26,6 +28,7 @@ public class ConnectCommand extends UpdatableCommand {
 
     @Override
     protected void onResult(Packet resultPacket) {
+        Log.d("ConnectCommand", "onResult: " + resultPacket.toString());
         PacketValue packetValue = resultPacket.getPacketValue();
         List<PacketValue.DataBean> resolvedData = packetValue.getData();
 
@@ -38,7 +41,7 @@ public class ConnectCommand extends UpdatableCommand {
                 case 0x02:
                     //用户连接返回
                     if (value[0] == (byte) 0x01) {
-                        resultCallback.onResult(ResultCode.SUCCEED);
+                        resultCode = ResultCode.SUCCEED;
                     }
                     break;
                 case 0x81:

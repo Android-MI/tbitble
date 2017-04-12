@@ -5,6 +5,8 @@ import android.content.Context;
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.protocol.ProtocolAdapter;
+import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
@@ -24,10 +26,14 @@ public class TbitBle {
     private TbitBle() {
     }
 
-    public static void initialize(Context context) {
+    public static void initialize(Context context, ProtocolAdapter adapter) {
         if (instance == null) {
             instance = new TbitBleInstance();
             BleGlob.setContext(context);
+
+            ProtocolInfo.packetCrcTable = adapter.getPacketCrcTable();
+            ProtocolInfo.adKey = adapter.getAdKey();
+            ProtocolInfo.maxEncryptCount = adapter.getMaxAdEncryptedCount();
         }
     }
 

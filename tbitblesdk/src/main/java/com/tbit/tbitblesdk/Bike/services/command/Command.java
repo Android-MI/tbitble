@@ -1,5 +1,6 @@
 package com.tbit.tbitblesdk.Bike.services.command;
 
+import android.bluetooth.BluetoothProfile;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -9,6 +10,7 @@ import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
+import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.request.BleRequest;
 import com.tbit.tbitblesdk.bluetooth.request.BleResponse;
 import com.tbit.tbitblesdk.bluetooth.request.WriterRequest;
@@ -21,7 +23,8 @@ import com.tbit.tbitblesdk.protocol.dispatcher.ReceivedPacketDispatcher;
  * Created by Salmon on 2017/3/14 0014.
  */
 
-public abstract class Command implements Handler.Callback, BleResponse, PacketResponseListener {
+public abstract class Command implements Handler.Callback, BleResponse, PacketResponseListener, ConnectStateChangeListener {
+    private static final String TAG = "Command";
     public static final int NOT_EXECUTE_YET = 0;
     public static final int PROCESSING = 1;
     public static final int FINISHED = 2;
@@ -29,11 +32,11 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     private static final int DEFAULT_COMMAND_TIMEOUT = 10000;
     private static final int HANDLE_TIMEOUT = 0;
 
+    private ResultCallback resultCallback;
     protected Handler handler;
     protected int state;
     protected int retryCount;
     protected CommandHolder commandHolder;
-    protected ResultCallback resultCallback;
     protected RequestDispatcher requestDispatcher;
     protected ReceivedPacketDispatcher receivedPacketDispatcher;
     protected BikeConfig bikeConfig;
@@ -73,11 +76,18 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
 
         this.sendPacket = onCreateSendPacket(sequenceId);
 
-        handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
+        receivedPacketDispatcher.addPacketResponseListener(this);
+
+        bleClient.getListenerManager().addConnectStateChangeListener(this);
+
+        if (bleClient.getConnectionState() < 3) {
+            response(ResultCode.DISCONNECTED);
+            return true;
+        }
 
         sendCommand();
 
-        receivedPacketDispatcher.addPacketResponseListener(this);
+        handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
 
         return true;
     }
@@ -86,6 +96,20 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         BleRequest writeRequest = new WriterRequest(bikeConfig.getUuid().SPS_SERVICE_UUID,
                 bikeConfig.getUuid().SPS_RX_UUID, sendPacket.toByteArray(), false, this);
         requestDispatcher.addRequest(writeRequest);
+    }
+
+    @Override
+    public void onConnectionStateChange(int status, int newState) {
+        if (!isProcessable())
+            return;
+        if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    response(ResultCode.DISCONNECTED);
+                }
+            });
+        }
     }
 
     @Override
@@ -115,11 +139,14 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
 
     @Override
     public boolean onPacketReceived(Packet packet) {
-        if (bikeConfig.getComparator().compare(this, packet)) {
-            if (packet.getHeader().isAck())
+        if (packet.getHeader().isAck()) {
+            boolean isMyAck = packet.getHeader().getSequenceId() == getSendPacket().getHeader().getSequenceId();
+            if (isMyAck)
                 onAck(packet);
-            else
-                onResult(packet);
+            return isMyAck;
+        }
+        if (bikeConfig.getComparator().compare(this, packet)) {
+            onResult(packet);
             return true;
         }
         return false;
@@ -168,18 +195,20 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     }
 
     protected void onFinish() {
+        state = FINISHED;
         receivedPacketDispatcher.removePacketResponseListener(this);
+        bleClient.getListenerManager().removeConnectStateChangeListener(this);
     }
 
     protected int getRetryTimes() {
-        return DEFAULT_COMMAND_TIMEOUT;
+        return 3;
     }
 
     protected void onTimeout() {
         response(ResultCode.TIMEOUT);
     }
 
-    protected Packet getSendPacket() {
+    public Packet getSendPacket() {
         return this.sendPacket;
     }
 

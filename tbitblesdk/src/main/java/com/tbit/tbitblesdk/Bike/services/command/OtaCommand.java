@@ -42,16 +42,16 @@ public class OtaCommand extends Command {
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
                 //电量过低
-                resultCallback.onResult(ResultCode.OTA_FAILED_LOW_POWER);
+                response(ResultCode.OTA_FAILED_LOW_POWER);
                 Log.i(TAG, "--进入ota模式失败，电池电量过低");
             } else if (dataTwo == (byte) 0x02) {
                 //密钥错误
                 Log.i(TAG, "--进入ota模式失败，密钥错误");
-                resultCallback.onResult(ResultCode.OTA_FAILED_ERR_KEY);
+                response(ResultCode.OTA_FAILED_ERR_KEY);
             } else {
                 //未知原因
                 Log.i(TAG, "--进入ota模式失败，发生未知错误");
-                resultCallback.onResult(ResultCode.OTA_FAILED_UNKNOWN);
+                response(ResultCode.OTA_FAILED_UNKNOWN);
             }
         }
     }

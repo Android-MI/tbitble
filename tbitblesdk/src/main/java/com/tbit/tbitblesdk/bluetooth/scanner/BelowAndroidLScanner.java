@@ -34,17 +34,13 @@ public class BelowAndroidLScanner implements Scanner {
     };
 
     public BelowAndroidLScanner() {
-        this(Long.MAX_VALUE);
-    }
-
-    public BelowAndroidLScanner(long timeoutMillis) {
         this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
-        this.timeoutMillis = timeoutMillis;
         this.handler = new ScanHandler(this);
     }
 
     @Override
-    public void start(final ScannerCallback callback) {
+    public void start(final ScannerCallback callback, long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
         this.callback = callback;
         needProcess.set(true);
         if (callback != null)
@@ -56,11 +52,6 @@ public class BelowAndroidLScanner implements Scanner {
     @Override
     public void stop() {
         handler.sendEmptyMessage(HANDLE_STOP);
-    }
-
-    @Override
-    public void setTimeout(long timeout) {
-        this.timeoutMillis = timeout;
     }
 
     @Override

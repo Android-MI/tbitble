@@ -99,7 +99,7 @@ public class PacketHeader {
 
     @Override
     public String toString() {
-        return Arrays.toString(header);
+        return ByteUtil.bytesToHexString(header);
     }
 
     public static class HeaderBuilder {

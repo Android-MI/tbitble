@@ -30,6 +30,11 @@ public class ConnectRequest extends BleRequest implements ConnectStateChangeList
 
         this.maxRetryTimes = maxRetryTimes;
         this.bluetoothDevice = bluetoothDevice;
+    }
+
+    @Override
+    protected void onPrepare() {
+        super.onPrepare();
         bleClient.getListenerManager().addConnectStateChangeListener(this);
         bleClient.getListenerManager().addServiceDiscoverListener(this);
     }
@@ -73,8 +78,10 @@ public class ConnectRequest extends BleRequest implements ConnectStateChangeList
             public void run() {
                 if (status != BluetoothGatt.GATT_SUCCESS)
                     tryReconnect();
-                else
+                else {
+                    stopTiming();
                     response(Code.REQUEST_SUCCESS);
+                }
             }
         });
     }

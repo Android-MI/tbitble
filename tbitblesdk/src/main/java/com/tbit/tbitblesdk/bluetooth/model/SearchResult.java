@@ -1,4 +1,4 @@
-package com.tbit.tbitblesdk.Bike.model;
+package com.tbit.tbitblesdk.bluetooth.model;
 
 import android.bluetooth.BluetoothDevice;
 
