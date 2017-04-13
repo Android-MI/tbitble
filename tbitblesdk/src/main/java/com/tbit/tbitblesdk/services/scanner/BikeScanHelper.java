@@ -38,6 +38,10 @@ public class BikeScanHelper {
         return true;
     }
 
+    public boolean isScanning() {
+        return scanner.isScanning();
+    }
+
     public void setTimeout(long timeout) {
         scanner.setTimeout(timeout);
     }
