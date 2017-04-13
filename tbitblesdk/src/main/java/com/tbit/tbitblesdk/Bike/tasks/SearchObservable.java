@@ -48,7 +48,11 @@ public class SearchObservable implements ObservableOnSubscribe<SearchResult>, Sc
     @Override
     public void subscribe(@NonNull ObservableEmitter<SearchResult> e) throws Exception {
         this.emitter = e;
-        scanner.start(decoratedCallback, 10000);
+        if (!scanner.isScanning())
+            scanner.start(decoratedCallback, 10000);
+        else
+            emitter.onError(new ResultCodeThrowable("SearchObservable: scanning", ResultCode.PROCESSING));
+
     }
 
     @Override
