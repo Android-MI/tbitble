@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                                             @Override
                                             public void run() {
                                                 showSetting();
-                                                TbitBle.initialize(MainActivity.this);
+                                                TbitBle.initialize(MainActivity.this, new MyProtocolAdapter());
                                                 TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }
