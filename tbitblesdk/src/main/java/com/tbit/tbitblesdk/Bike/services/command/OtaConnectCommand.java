@@ -1,6 +1,8 @@
 package com.tbit.tbitblesdk.Bike.services.command;
 
+import com.tbit.tbitblesdk.Bike.services.OtaService;
 import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 
@@ -10,11 +12,10 @@ import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 
 public class OtaConnectCommand extends OtaCommand {
 
-    private static final String TAG = "OtaConnectCommand";
     private Byte[] key;
 
-    public OtaConnectCommand(ResultCallback resultCallback, Byte[] key) {
-        super(resultCallback);
+    public OtaConnectCommand(OtaService otaServices, Byte[]key, ResultCallback resultCallback, ProgressCallback progressCallback) {
+        super(otaServices, resultCallback, progressCallback);
         this.key = key;
     }
 

@@ -8,20 +8,14 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.tbit.tbitblesdk.bluetooth.BleClient;
+import com.tbit.tbitblesdk.Bike.OtaFile;
+import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.WriteDescriptorListener;
-import com.tbit.tbitblesdk.Bike.BluEvent;
-import com.tbit.tbitblesdk.Bike.OtaFile;
-import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.math.BigInteger;
 import java.util.UUID;
@@ -54,26 +48,20 @@ public class OtaService implements Handler.Callback,
     boolean preparedForLastBlock = false;
     boolean endSignalSent = false;
     boolean rebootsignalSent = false;
+    int chunkCounter = -1;
+    int blockCounter = 0;
     private IBleClient bleClient;
     private int retryCount = 0;
     private Step step = Step.MemDev;
     private OtaFile otaFile;
     private Handler handler;
-
-    int chunkCounter = -1;
-    int blockCounter = 0;
-
     private ResultCallback resultCallback;
     private ProgressCallback progressCallback;
 
-    public OtaService(IBleClient bleClient, OtaFile file, ResultCallback resultCallback,
-                      ProgressCallback progressCallback) {
-        EventBus.getDefault().register(this);
+    public OtaService(IBleClient bleClient, OtaFile file) {
         this.bleClient = bleClient;
         this.otaFile = file;
         this.handler = new Handler(Looper.getMainLooper(), this);
-        this.resultCallback = resultCallback;
-        this.progressCallback = progressCallback;
         this.bleClient.getListenerManager().addWriteCharacterListener(this);
         this.bleClient.getListenerManager().addChangeCharacterListener(this);
         this.bleClient.getListenerManager().addWriteDescriptorListener(this);
@@ -166,7 +154,9 @@ public class OtaService implements Handler.Callback,
         }
     }
 
-    public void update() {
+    public void update(ResultCallback resultCallback, ProgressCallback progressCallback) {
+        this.resultCallback = resultCallback;
+        this.progressCallback = progressCallback;
         handler.sendEmptyMessageDelayed(HANDLE_UPDATE_DELAY, UPDATE_DELAY_TIMEOUT);
     }
 
@@ -338,11 +328,6 @@ public class OtaService implements Handler.Callback,
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onBleNotOpened(BluEvent.OtaStart otaStart) {
-        update();
-    }
-
     @Override
     public boolean handleMessage(Message msg) {
         switch (msg.what) {
@@ -377,23 +362,19 @@ public class OtaService implements Handler.Callback,
         doOnWrite(characteristic.getUuid(), status);
     }
 
-    public enum Step {
-        MemDev, GpioMap, PatchLength, WriteData
-    }
-
     private byte[] intToUINT32Byte(int value) {
         byte[] result = new byte[4];
-        result[0] = (byte)(value & 0xFF);
-        result[1] = (byte)((value >> 8) & 0xFF);
-        result[2] = (byte)((value >> 16) & 0xFF);
-        result[3] = (byte)((value >> 24) & 0xFF);
+        result[0] = (byte) (value & 0xFF);
+        result[1] = (byte) ((value >> 8) & 0xFF);
+        result[2] = (byte) ((value >> 16) & 0xFF);
+        result[3] = (byte) ((value >> 24) & 0xFF);
         return result;
     }
 
     private byte[] intToUNINT16Byte(int value) {
         byte[] result = new byte[2];
-        result[0] = (byte)(value & 0xFF);
-        result[1] = (byte)((value >> 8) & 0xFF);
+        result[0] = (byte) (value & 0xFF);
+        result[1] = (byte) ((value >> 8) & 0xFF);
         return result;
     }
 
@@ -404,6 +385,9 @@ public class OtaService implements Handler.Callback,
         handler.removeCallbacksAndMessages(null);
         if (otaFile != null)
             otaFile.close();
-        EventBus.getDefault().unregister(this);
+    }
+
+    public enum Step {
+        MemDev, GpioMap, PatchLength, WriteData
     }
 }

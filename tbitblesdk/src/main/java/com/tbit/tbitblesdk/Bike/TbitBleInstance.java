@@ -312,9 +312,10 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
             if (otaService != null) {
                 otaService.destroy();
             }
-            this.otaService = new OtaService(bleClient, otaFile, resultCallback, progressCallback);
+            this.otaService = new OtaService(bleClient, otaFile);
 
-            Command otaConnectCommand = new OtaConnectCommand(resultCallback, key);
+            Command otaConnectCommand = new OtaConnectCommand(otaService, key, resultCallback, progressCallback);
+
             bikeConnectHelper.connect(deviceId, resultCallback, otaConnectCommand);
 
         } catch (IOException e) {
@@ -330,17 +331,17 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
             resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             return;
         }
-        Command otaConnectCommand = new OtaCommand(resultCallback);
-
-        bikeService.addCommand(otaConnectCommand);
 
         try {
             OtaFile otaFile = OtaFile.getByFile(file);
             if (otaService != null) {
                 otaService.destroy();
             }
-            this.otaService = new OtaService(bleClient, otaFile, resultCallback, progressCallback);
+            this.otaService = new OtaService(bleClient, otaFile);
 
+            Command otaConnectCommand = new OtaCommand(otaService, resultCallback, progressCallback);
+
+            bikeService.addCommand(otaConnectCommand);
         } catch (IOException e) {
             resultCallback.onResult(ResultCode.OTA_FILE_ILLEGAL);
             e.printStackTrace();
