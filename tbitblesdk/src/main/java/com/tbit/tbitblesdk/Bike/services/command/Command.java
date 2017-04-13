@@ -32,10 +32,10 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     private static final int DEFAULT_COMMAND_TIMEOUT = 10000;
     private static final int HANDLE_TIMEOUT = 0;
 
-    private ResultCallback resultCallback;
-    protected Handler handler;
     protected int state;
     protected int retryCount;
+    protected Handler handler;
+    private ResultCallback resultCallback;
     protected CommandHolder commandHolder;
     protected RequestDispatcher requestDispatcher;
     protected ReceivedPacketDispatcher receivedPacketDispatcher;
