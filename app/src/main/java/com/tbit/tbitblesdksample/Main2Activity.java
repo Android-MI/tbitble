@@ -134,7 +134,7 @@ public class Main2Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
-        checkDateValidity();
+//        checkDateValidity();
 
         initView();
         helper = new EasyPermissionHelper(this);
@@ -147,7 +147,7 @@ public class Main2Activity extends AppCompatActivity {
                                             public void run() {
                                                 prepareFile();
                                                 showSetting();
-                                                TbitBle.initialize(Main2Activity.this);
+                                                TbitBle.initialize(Main2Activity.this, new MyProtocolAdapter());
                                                 TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }

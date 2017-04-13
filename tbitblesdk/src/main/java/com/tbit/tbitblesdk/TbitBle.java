@@ -25,10 +25,14 @@ public class TbitBle {
     private TbitBle() {
     }
 
-    public static void initialize(Context context) {
+    public static void initialize(Context context, ProtocolAdapter protocolAdapter) {
         if (instance == null) {
             instance = new TbitBleInstance();
             BleGlob.setContext(context);
+
+            ProtocolInfo.packetCrcTable = protocolAdapter.getPacketCrcTable();
+            ProtocolInfo.adKey = protocolAdapter.getAdKey();
+            ProtocolInfo.maxEncryptCount = protocolAdapter.getMaxAdEncryptedCount();
         }
     }
 
