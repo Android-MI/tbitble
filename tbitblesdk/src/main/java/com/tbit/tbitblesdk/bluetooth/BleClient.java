@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothProfile;
 import android.os.Build;
 import android.util.Log;
 
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.listener.ReadCharacterListener;
@@ -45,6 +46,8 @@ public class BleClient implements IBleClient {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
 
+            BleLog.log("onConnectionStateChange", "status: " + status + " newState: " + newState);
+
             for (ConnectStateChangeListener listener : listenerManager.connectStateChangeListeners) {
                 listener.onConnectionStateChange(status, newState);
             }
@@ -64,6 +67,8 @@ public class BleClient implements IBleClient {
             super.onServicesDiscovered(gatt, status);
             connectionState = STATE_SERVICES_DISCOVERED;
 
+            BleLog.log("onServicesDiscovered", "status: " + status);
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
 //                printServices(gatt);
                 bluetoothGatt = gatt;
@@ -80,6 +85,8 @@ public class BleClient implements IBleClient {
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(gatt, characteristic, status);
 
+            BleLog.log("onCharacteristicWrite", ByteUtil.bytesToHexString(characteristic.getValue()) +"\nstatus: " + status);
+
             for (WriteCharacterListener listener : listenerManager.writeCharacterListeners) {
                 listener.onCharacteristicWrite(characteristic, status, characteristic.getValue());
             }
@@ -88,6 +95,8 @@ public class BleClient implements IBleClient {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
+
+            BleLog.log("onCharacteristicChanged", ByteUtil.bytesToHexString(characteristic.getValue()));
 
             for (ChangeCharacterListener listener : listenerManager.changeCharacterListeners) {
                 listener.onCharacterChange(characteristic, characteristic.getValue());
@@ -98,6 +107,8 @@ public class BleClient implements IBleClient {
         public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
             super.onReadRemoteRssi(gatt, rssi, status);
 
+            BleLog.log("onReadRemoteRssi", "rssi: " + rssi + "\n status: " + status);
+
             for (ReadRssiListener listener : listenerManager.readRssiListeners) {
                 listener.onReadRemoteRssi(rssi, status);
             }
@@ -106,6 +117,8 @@ public class BleClient implements IBleClient {
         @Override
         public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             super.onDescriptorWrite(gatt, descriptor, status);
+
+            BleLog.log("onDescriptorWrite", descriptor.getCharacteristic().getUuid() + "\nstatus: " + status);
 
             for (WriteDescriptorListener listener : listenerManager.writeDescriptorListeners) {
                 listener.onDescriptorWrite(descriptor, status);
@@ -117,6 +130,8 @@ public class BleClient implements IBleClient {
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
 
+            BleLog.log("onCharacteristicRead", ByteUtil.bytesToHexString(characteristic.getValue()) + "\nstatus: " + status);
+
             for (ReadCharacterListener listener : listenerManager.readCharacterListeners) {
                 listener.onCharacteristicRead(characteristic, status,
                         characteristic.getValue());
@@ -126,6 +141,8 @@ public class BleClient implements IBleClient {
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
             super.onDescriptorRead(gatt, descriptor, status);
+
+            BleLog.log("onDescriptorRead", descriptor.getCharacteristic().getUuid() + "\nstatus: " + status);
 
             for (ReadDescriptorListener listener : listenerManager.readDescriptorListeners) {
                 listener.onDescriptorWrite(descriptor, status);
@@ -149,7 +166,7 @@ public class BleClient implements IBleClient {
     @Override
     public void connect(final BluetoothDevice device, final boolean autoConnect) {
         disconnectInternal();
-        Log.i(TAG, "connect name：" + device.getName()
+        BleLog.log("connect" , "connect name：" + device.getName()
                 + " mac:" + device.getAddress()
                 + " autoConnect：" + autoConnect);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -210,41 +227,41 @@ public class BleClient implements IBleClient {
     public boolean setCharacteristicNotification(UUID service, UUID character, UUID descriptor, boolean enable) {
         BluetoothGattCharacteristic characteristic = getCharacter(service, character);
         if (characteristic == null) {
-            Log.e(TAG, String.format("characteristic not exist!"));
+            BleLog.log("setCharacteristicNotification", "characteristic not exist!");
             return false;
         }
 
         if (!isCharacteristicNotifyable(characteristic)) {
-            Log.e(TAG, String.format("characteristic not notifyable!"));
+            BleLog.log("setCharacteristicNotification", "characteristic not notifyable!");
             return false;
         }
 
         if (bluetoothGatt == null) {
-            Log.e(TAG, String.format("ble gatt null"));
+            BleLog.log("setCharacteristicNotification", "ble gatt null");
             return false;
         }
 
         if (!bluetoothGatt.setCharacteristicNotification(characteristic, enable)) {
-            Log.e(TAG, String.format("setCharacteristicNotification failed"));
+            BleLog.log("setCharacteristicNotification", "setCharacteristicNotification failed");
             return false;
         }
 
         BluetoothGattDescriptor gattDescriptor = characteristic.getDescriptor(descriptor);
 
         if (descriptor == null) {
-            Log.e(TAG, String.format("getDescriptor for notify null!"));
+            BleLog.log("setCharacteristicNotification", "getDescriptor for notify null!");
             return false;
         }
 
         byte[] value = (enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 
         if (!gattDescriptor.setValue(value)) {
-            Log.e(TAG, String.format("setValue for notify descriptor failed!"));
+            BleLog.log("setCharacteristicNotification", "setValue for notify descriptor failed!");
             return false;
         }
 
         if (!bluetoothGatt.writeDescriptor(gattDescriptor)) {
-            Log.e(TAG, String.format("writeDescriptor for notify failed"));
+            BleLog.log("setCharacteristicNotification", "writeDescriptor for notify failed");
             return false;
         }
         return true;
@@ -269,11 +286,11 @@ public class BleClient implements IBleClient {
     @Override
     public boolean requestConnectionPriority(int connectionPriority) {
         if (bluetoothGatt == null) {
-            Log.e(TAG, "gatt is null");
+            BleLog.log("requestConnectionPriority", "gatt is null");
             return false;
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            Log.e(TAG, "requestConnectionPriority need above android M" );
+            BleLog.log("requestConnectionPriority", "requestConnectionPriority need above android M");
             return false;
         }
         return bluetoothGatt.requestConnectionPriority(connectionPriority);
@@ -283,11 +300,11 @@ public class BleClient implements IBleClient {
     public boolean write(UUID serviceUUID, UUID characteristicUUID, byte[] value, boolean withResponse) {
         Log.d(TAG, "writeRXCharacteristic: " + ByteUtil.bytesToHexString(value));
         if (!isConnected()) {
-            Log.d(TAG, "writeRXCharacteristic: no connected!");
+            BleLog.log("write", "writeRXCharacteristic: no connected!");
             return false;
         }
         if (bluetoothGatt == null) {
-            Log.d(TAG, "writeRXCharacteristic: bluetoothGatt == null");
+            BleLog.log("write", "writeRXCharacteristic: bluetoothGatt == null");
             return false;
         }
         BluetoothGattService service = bluetoothGatt.getService(serviceUUID);
@@ -303,9 +320,9 @@ public class BleClient implements IBleClient {
                 BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         boolean status = bluetoothGatt.writeCharacteristic(characteristic);
         if (status) {
-            Log.d(TAG, "--写入成功！");
+            BleLog.log("write", "--写入成功！");
         } else {
-            Log.d(TAG, "--写入失败！");
+            BleLog.log("write", "--写入失败！");
         }
         return status;
     }

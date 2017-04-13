@@ -26,19 +26,16 @@ import com.tbit.tbitblesdk.bluetooth.BleClient;
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
+import com.tbit.tbitblesdk.bluetooth.debug.LogCallback;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScanHelper;
 import com.tbit.tbitblesdk.bluetooth.scanner.Scanner;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
-import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +44,7 @@ import java.io.IOException;
  * Created by Salmon on 2016/12/5 0005.
  */
 
-class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
+class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, LogCallback {
     private static final String TAG = "TbitBleInstance";
     private TbitListener listener;
     private TbitDebugListener debugListener;
@@ -67,8 +64,9 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
     private Handler handler;
 
     TbitBleInstance() {
-        EventBus.getDefault().register(this);
         listener = new EmptyListener();
+
+        BleLog.setLogCallback(this);
 
         handler = new Handler(Looper.getMainLooper(), this);
 
@@ -283,7 +281,6 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
             connectResultCallback = null;
         if (connectStateCallback != null)
             connectStateCallback = null;
-        EventBus.getDefault().unregister(this);
     }
 
     void connectiveOta(String deviceId, String keyStr, File file,
@@ -372,13 +369,6 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
         return !TextUtils.isEmpty(deviceID);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onDebudLogEvent(BluEvent.DebugLogEvent event) {
-        if (debugListener != null) {
-            debugListener.onLogStrReceived(event.getKey() + "\n" + event.getLogStr());
-        }
-    }
-
     @Override
     public void onConnectionStateChange(int status, int newState) {
         if (newState == BluetoothGatt.STATE_DISCONNECTED) {
@@ -396,5 +386,18 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback {
     @Override
     public boolean handleMessage(Message msg) {
         return true;
+    }
+
+    @Override
+    public void onLogReceived(final String msg) {
+        if (debugListener != null) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    debugListener.onLogStrReceived(msg);
+
+                }
+            });
+        }
     }
 }

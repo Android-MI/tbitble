@@ -2,15 +2,13 @@ package com.tbit.tbitblesdk.Bike.services.command;
 
 import android.util.Log;
 
-import com.tbit.tbitblesdk.Bike.BluEvent;
+import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.services.OtaService;
+import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
-import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
-import com.tbit.tbitblesdk.Bike.util.PacketUtil;
-
 
 import java.util.List;
 

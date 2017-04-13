@@ -1,12 +1,10 @@
 package com.tbit.tbitblesdk.bluetooth.scanner.decorator;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
-import com.tbit.tbitblesdk.Bike.BluEvent;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
 
-import org.greenrobot.eventbus.EventBus;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LogCallback extends BaseCallback {
     private Map<String, Integer> results = new ConcurrentHashMap<>();
-    private EventBus bus = EventBus.getDefault();
     private StringBuilder sb;
 
     public LogCallback(ScannerCallback callback) {
@@ -59,19 +56,18 @@ public class LogCallback extends BaseCallback {
                     .append("\n");
         }
         sb.append("#####################################");
-        Log.d("DebugScanner", sb.toString());
-        bus.post(new BluEvent.DebugLogEvent("Scan Record", sb.toString()));
+        BleLog.log("ScanLog", sb.toString());
     }
 
     private void printLogStart() {
-        bus.post(new BluEvent.DebugLogEvent("Scan Started", "Scan Started : "));
+        BleLog.log("ScanLog", "Scan Started");
     }
 
     private void printLogTimeout() {
-        bus.post(new BluEvent.DebugLogEvent("Scan Timeout", "Scan Timeout : "));
+        BleLog.log("ScanLog", "Scan Timeout");
     }
 
     protected void printLogCanceled() {
-        bus.post(new BluEvent.DebugLogEvent("Scan Canceled", "Scan Canceled"));
+        BleLog.log("ScanLog", "Scan Canceled");
     }
 }
