@@ -115,6 +115,8 @@ class TbitBleInstance {
         connect(macAddr, key, new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
+                if (connectResponsed)
+                    return;
                 connectResponsed = true;
                 listener.onConnectResponse(resultCode);
             }
@@ -453,8 +455,10 @@ class TbitBleInstance {
     public void onDisconnected(BluEvent.DisConnected event) {
         Log.i(TAG, "onDisconnected: ");
         listener.onDisconnected(ResultCode.DISCONNECTED);
-        if (!connectResponsed)
+        if (!connectResponsed) {
+            connectResponsed = true;
             listener.onConnectResponse(ResultCode.DISCONNECTED);
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
