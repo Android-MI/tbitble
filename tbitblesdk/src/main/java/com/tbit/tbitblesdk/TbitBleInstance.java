@@ -185,6 +185,8 @@ class TbitBleInstance {
 
     void common(byte commandId, byte key, Byte[] value,
                 ResultCallback resultCallback, PacketCallback packetCallback) {
+        if (!baseCheck(resultCallback))
+            return;
         Packet packet = PacketUtil.createPacket(128, commandId, key, value);
         common(new CommonCommand(resultCallback, packetCallback, packet));
     }
