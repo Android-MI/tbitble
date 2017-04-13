@@ -238,6 +238,9 @@ class TbitBleInstance {
 
     void disConnect() {
 //        bikeBleConnector.disConnect();
+        connectResponsed = true;
+        if (bikeScanHelper != null && bikeScanHelper.isScanning())
+            bikeScanHelper.stop();
         bluetoothIO.disconnect();
     }
 
