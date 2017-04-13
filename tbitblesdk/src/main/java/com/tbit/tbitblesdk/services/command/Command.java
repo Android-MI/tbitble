@@ -3,8 +3,15 @@ package com.tbit.tbitblesdk.services.command;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
+import com.tbit.tbitblesdk.protocol.BluEvent;
 import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.protocol.ResultCode;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * Created by Salmon on 2017/3/14 0014.
@@ -29,6 +36,8 @@ public abstract class Command implements Handler.Callback {
         this.retryCount = 0;
         this.handler = new Handler(Looper.getMainLooper(), this);
         this.state = NOT_EXECUTE_YET;
+
+        EventBus.getDefault().register(this);
     }
 
     public boolean execute(CommandHolder commandHolder, int sequenceId) {
@@ -49,6 +58,11 @@ public abstract class Command implements Handler.Callback {
         }
 
         return true;
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDisconnected(BluEvent.DisConnected event) {
+        onDisconnected();
     }
 
     public void result(Packet resultPacket) {
@@ -126,6 +140,8 @@ public abstract class Command implements Handler.Callback {
      * finish被调用之后，不能再次被使用
      */
     public void finish() {
+        if (EventBus.getDefault().isRegistered(this))
+            EventBus.getDefault().unregister(this);
         state = FINISHED;
         commandHolder = null;
     }
