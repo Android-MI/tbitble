@@ -7,6 +7,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
@@ -99,6 +100,7 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     }
 
     private void publishData(byte[] data) {
+        BleLog.log("ReceivedDispatcherPublish", ByteUtil.bytesToHexString(data));
         Packet packet = new Packet(data);
         for (PacketResponseListener listener : packetResponseList) {
             if (listener.onPacketReceived(packet))
@@ -116,7 +118,6 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
             @Override
             public void run() {
                 Byte[] data = ByteUtil.byteArrayToBoxed(value);
-                Log.d(TAG, "onCharacterChange: " + ByteUtil.bytesToHexString(data));
                 receivedData.addAll(Arrays.asList(data));
                 tryResolve();
             }
