@@ -24,23 +24,23 @@ import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.tbit.tbitblesdk.TbitBle;
-import com.tbit.tbitblesdk.TbitDebugListener;
-import com.tbit.tbitblesdk.TbitListener;
-import com.tbit.tbitblesdk.TbitListenerAdapter;
-import com.tbit.tbitblesdk.protocol.BikeState;
+import com.tbit.tbitblesdk.Bike.TbitBle;
+import com.tbit.tbitblesdk.Bike.TbitDebugListener;
+import com.tbit.tbitblesdk.Bike.TbitListener;
+import com.tbit.tbitblesdk.Bike.TbitListenerAdapter;
+import com.tbit.tbitblesdk.Bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.protocol.Packet;
-import com.tbit.tbitblesdk.protocol.PacketValue;
-import com.tbit.tbitblesdk.services.command.Command;
-import com.tbit.tbitblesdk.services.command.callback.ProgressCallback;
-import com.tbit.tbitblesdk.services.command.callback.ResultCallback;
-import com.tbit.tbitblesdk.services.scanner.ScanBuilder;
-import com.tbit.tbitblesdk.services.scanner.ScannerCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.FilterNameCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.LogCallback;
-import com.tbit.tbitblesdk.services.scanner.decorator.NoneRepeatCallback;
-import com.tbit.tbitblesdk.util.BikeUtil;
-import com.tbit.tbitblesdk.util.PacketUtil;
+import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
+import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.ScanBuilder;
+import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.FilterNameCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.LogCallback;
+import com.tbit.tbitblesdk.bluetooth.scanner.decorator.NoneRepeatCallback;
+import com.tbit.tbitblesdk.Bike.util.BikeUtil;
+import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdksample.aes.AesTool;
 
 import java.io.File;
@@ -63,7 +63,8 @@ public class Main2Activity extends AppCompatActivity {
     // 022009020
     private static final String TAG = "MainActivity";
     private static final String KEY = "d6 15 61 bc 02 4e 33 70 b1 7b 57 24 60 83 25 81 02 7d b3 56 ab e6 11 1b ce 33 bb c2 32 1e cd f2";
-    private static String filesDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/fw_27.img";
+    private static String IMAGE_FILE_NAME = "fw_28.img";
+    private String imagePath = Environment.getExternalStorageDirectory().getAbsolutePath();
     private Handler handler = new Handler(Looper.getMainLooper());
     private EditText editId, editKey, editValue;
     private TextView textLog;
@@ -75,55 +76,12 @@ public class Main2Activity extends AppCompatActivity {
     private TextView titleText;
     private Button buttonOta;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
-    TbitListener listener = new TbitListenerAdapter() {
-        @Override
-        public void onConnectResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("连接回应: 成功");
-            else
-            showLog("连接回应: " + resultCode);
-        }
-
-        @Override
-        public void onUnlockResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("解锁回应: 成功");
-            else
-                showLog("解锁回应: " + resultCode);
-        }
-
-        @Override
-        public void onLockResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("上锁回应: 成功");
-            else
-                showLog("上锁回应: " + resultCode);
-        }
-
-        @Override
-        public void onUpdateResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("更新状态回应: 成功");
-            else
-                showLog("更新状态回应: " + resultCode);
-        }
-
-        @Override
-        public void onStateUpdated(BikeState state) {
-            Log.d(TAG, "最新状态: " + state.toString());
-        }
-
-        @Override
-        public void onDisconnected(int resultCode) {
-            showLog("请按连接");
-        }
-
-    };
 
     TbitDebugListener debugListener = new TbitDebugListener() {
         @Override
         public void onLogStrReceived(String logStr) {
-            showLog(logStr);
+            Log.d(TAG, logStr);
+//            showLog(logStr);
         }
     };
     private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
@@ -148,7 +106,6 @@ public class Main2Activity extends AppCompatActivity {
                                                 prepareFile();
                                                 showSetting();
                                                 TbitBle.initialize(Main2Activity.this, new MyProtocolAdapter());
-                                                TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }
                                         });
@@ -156,7 +113,9 @@ public class Main2Activity extends AppCompatActivity {
 
                                     @Override
                                     public void atLeastOneDenied(List<String> list, List<String> list1) {
-
+                                        Toast.makeText(Main2Activity.this, "请同意全部权限", Toast.LENGTH_SHORT)
+                                                .show();
+                                        finish();
                                     }
                                 }, Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA,
@@ -175,18 +134,16 @@ public class Main2Activity extends AppCompatActivity {
     }
 
     private void prepareFile() {
-        File file = new File(filesDir);
-        if (file.exists())
-            return;
+        String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota/" + getPackageName();
+        imagePath = filePath + "/" +IMAGE_FILE_NAME;
         AssetManager manager = getAssets();
         try {
-            InputStream ins = manager.open("fw_27.img");
-            String root = Environment.getExternalStorageDirectory().getAbsolutePath() + "/suota";
-            file = new File(root);
+            InputStream ins = manager.open(IMAGE_FILE_NAME);
+            File file = new File(filePath);
             if (file == null || !file.exists()) {
-                file.mkdir();
+                file.mkdirs();
             }
-            file = new File(filesDir);
+            file = new File(imagePath);
             OutputStream os = new FileOutputStream(file);
             int bytesRead = 0;
             byte[] buffer = new byte[8192];
@@ -244,27 +201,32 @@ public class Main2Activity extends AppCompatActivity {
 
     public void unlock(View view) {
         showLog("解锁按下");
-        TbitBle.unlock();
+        TbitBle.unlock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("解锁回应: 成功");
+                else
+                    showLog("解锁回应: " + resultCode);
+            }
+        });
     }
 
     public void lock(View view) {
         showLog("上锁按下");
-        TbitBle.lock();
+        TbitBle.lock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("上锁回应: 成功");
+                else
+                    showLog("上锁回应: " + resultCode);
+            }
+        });
     }
 
     public void common(View view) {
-        TbitBle.commonCommand(new Command() {
-            @Override
-            protected Packet onCreateSendPacket(int sequenceId) {
-                return PacketUtil.createPacket(sequenceId, (byte) 0x03, (byte) 0x02,
-                        new Byte[]{0x00});
-            }
 
-            @Override
-            public boolean compare(Packet receivedPacket) {
-                return false;
-            }
-        });
     }
 
     public void reconnect(View view) {
@@ -284,7 +246,20 @@ public class Main2Activity extends AppCompatActivity {
 
     public void update(View view) {
         showLog("更新状态按下");
-        TbitBle.update();
+        TbitBle.update(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("更新状态回应: 成功");
+                else
+                    showLog("更新状态回应: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                showLog("最新状态: " + bikeState.toString());
+            }
+        });
     }
 
     public void disconnect(View view) {
@@ -335,32 +310,32 @@ public class Main2Activity extends AppCompatActivity {
 
         // 方式一：
         // 过滤设备名字的装饰器
-            FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
+        FilterNameCallback filterNameCallback = new FilterNameCallback(DEVICE_NAME, scannerCallback);
         // 确保结果非重复的装饰器
-            NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
+        NoneRepeatCallback noneRepeatCallback = new NoneRepeatCallback(filterNameCallback);
         // 收集日志的装饰器，这个最好放在最外层包裹
-            LogCallback logCallback = new LogCallback(noneRepeatCallback);
+        LogCallback logCallback = new LogCallback(noneRepeatCallback);
 
         // 方式二：(与上述效果相同)
-            ScanBuilder builder = new ScanBuilder(scannerCallback);
-            ScannerCallback decoratedCallback = builder
-                    .setFilter(DEVICE_NAME)
-                    .setRepeatable(false)
-                    .setLogMode(true)
-                    .build();
+        ScanBuilder builder = new ScanBuilder(scannerCallback);
+        ScannerCallback decoratedCallback = builder
+                .setFilter(DEVICE_NAME)
+                .setRepeatable(false)
+                .setLogMode(true)
+                .build();
 
         // 开始扫描(目前同一时间仅支持启动一个扫描),返回状态码
-            int code = TbitBle.startScan(logCallback, 10000);
+        int code = TbitBle.startScan(logCallback, 10000);
 
         // 结束当前扫描
-            TbitBle.stopScan();
+        TbitBle.stopScan();
 
         // 通过rssi值计算距离
         double distance = BikeUtil.calcDistByRSSI(-55);
     }
 
     public void ota(View view) {
-        TbitBle.ota(new File(filesDir), new ResultCallback() {
+        TbitBle.ota(new File(imagePath), new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
                 Log.d(TAG, "onOtaResponse: " + resultCode);
@@ -385,7 +360,8 @@ public class Main2Activity extends AppCompatActivity {
     @Override
     public void finish() {
         super.finish();
-        TbitBle.destroy();
+        if (TbitBle.hasInitialized())
+            TbitBle.destroy();
     }
 
     @Override
@@ -498,7 +474,20 @@ public class Main2Activity extends AppCompatActivity {
 //        String key = "";
         if (TextUtils.isEmpty(key))
             key = KEY;
-        TbitBle.connect(deviceId, key);
+        TbitBle.connect(deviceId, key, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("连接回应: 成功");
+                else
+                    showLog("连接回应: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+
+            }
+        });
     }
 
     private void otaConnectInside(String deviceId) {
@@ -509,7 +498,7 @@ public class Main2Activity extends AppCompatActivity {
         String key = AesTool.Genkey("[WA-205_BLE_OTA]",deviceId);
 //        String key = "";
         key = key.substring(0, 48);
-        TbitBle.connectiveOta(deviceId, key, new File(filesDir), new ResultCallback() {
+        TbitBle.connectiveOta(deviceId, key, new File(imagePath), new ResultCallback() {
             @Override
             public void onResult(int resultCode) {
                 Log.d(TAG, "onOtaResponse: " + resultCode);

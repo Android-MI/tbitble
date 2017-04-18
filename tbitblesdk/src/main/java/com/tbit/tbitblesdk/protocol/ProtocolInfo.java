@@ -1,14 +1,11 @@
-package com.tbit.tbitblesdksample;
-
-
-import com.tbit.tbitblesdk.protocol.ProtocolAdapter;
+package com.tbit.tbitblesdk.protocol;
 
 /**
- * Created by Salmon on 2017/4/13 0013.
+ * Created by Salmon on 2017/3/9 0009.
  */
+public class ProtocolInfo {
 
-public class MyProtocolAdapter extends ProtocolAdapter {
-    public static final int[] PACKET_CRC_TABLE = {
+    public static int[] packetCrcTable = {
             0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000,
             0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000,
             0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000,
@@ -37,24 +34,9 @@ public class MyProtocolAdapter extends ProtocolAdapter {
             0X0000, 0X0000, 0X0000, 0X0000, 0X0000, 0X0000
     };
 
-    public static final int MAC_ENCRYPTED_COUNT = 95;
+    public static int maxEncryptCount = 95;
 
-    public static final char[] AD_Key = {
+    public static char[] adKey = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-    @Override
-    public int[] getPacketCrcTable() {
-        return PACKET_CRC_TABLE;
-    }
-
-    @Override
-    public char[] getAdKey() {
-        return AD_Key;
-    }
-
-    @Override
-    public int getMaxAdEncryptedCount() {
-        return MAC_ENCRYPTED_COUNT;
-    }
 }
