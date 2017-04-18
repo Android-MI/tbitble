@@ -239,7 +239,7 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     }
 
     void disConnect() {
-//        bikeBleConnector.disConnect();
+        bikeConnectHelper.disConnect();
         bleClient.disconnect();
     }
 

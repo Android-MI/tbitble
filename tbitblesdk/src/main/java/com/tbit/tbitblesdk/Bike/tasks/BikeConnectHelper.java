@@ -29,6 +29,10 @@ import io.reactivex.functions.Function;
 public class BikeConnectHelper {
     private static final String TAG = "BikeConnectHelper";
 
+    private static final int STATE_CONNECT = 0;
+    private static final int STATE_DISCONNECT = 1;
+
+    private int state;
     private BikeService bikeService;
     private Scanner scanner;
     private RequestDispatcher requestDispatcher;
@@ -42,6 +46,7 @@ public class BikeConnectHelper {
     }
 
     public void connect(String deviceId, final ResultCallback resultCallback, final Command command) {
+        state = STATE_CONNECT;
         // 搜索设备
         Observable.create(new SearchObservable(deviceId, scanner))
                 // 连接设备
@@ -71,12 +76,16 @@ public class BikeConnectHelper {
                 .subscribe(new Consumer<BikeConfig>() {
                     @Override
                     public void accept(@NonNull BikeConfig bikeConfig) throws Exception {
+                        if (state == STATE_DISCONNECT)
+                            return;
                         bikeService.setBikeConfig(bikeConfig);
                         bikeService.addCommand(command);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(@NonNull Throwable throwable) throws Exception {
+                        if (state == STATE_DISCONNECT)
+                            return;
                         if (throwable instanceof ResultCodeThrowable) {
                             resultCallback.onResult(((ResultCodeThrowable) throwable).getResultCode());
                         } else {
@@ -97,6 +106,12 @@ public class BikeConnectHelper {
                     }
                 });
 
+    }
+
+    public void disConnect() {
+        if (scanner.isScanning())
+            scanner.stop();
+        state = STATE_DISCONNECT;
     }
 
     public void destroy() {
