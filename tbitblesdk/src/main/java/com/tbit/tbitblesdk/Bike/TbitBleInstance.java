@@ -397,8 +397,8 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    debugListener.onLogStrReceived(msg);
-
+                    if (debugListener != null)
+                        debugListener.onLogStrReceived(msg);
                 }
             });
         }
