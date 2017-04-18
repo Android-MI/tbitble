@@ -1,10 +1,8 @@
 package com.tbit.tbitblesdk.Bike.services;
 
-import android.util.Log;
-
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
-import com.tbit.tbitblesdk.Bike.services.command.CommandHolder;
+import com.tbit.tbitblesdk.Bike.services.command.CommandDispatcher;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdk.Bike.util.StateUpdateHelper;
@@ -12,21 +10,19 @@ import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.request.WriterRequest;
-import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.dispatcher.EmptyResponse;
 import com.tbit.tbitblesdk.protocol.dispatcher.PacketResponseListener;
 import com.tbit.tbitblesdk.protocol.dispatcher.ReceivedPacketDispatcher;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
  * Created by Salmon on 2017/3/15 0015.
  */
 
-public class BikeService implements CommandHolder, PacketResponseListener, ConnectStateChangeListener {
+public class BikeService implements PacketResponseListener, ConnectStateChangeListener {
     private static final String TAG = "BikeService";
     private static final int SEQUENCE_ID_START = 128;
 
@@ -34,15 +30,14 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
     private BikeState bikeState;
     private IBleClient bleClient;
     private BikeConfig bikeConfig;
-    private Command currentCommand;
-    private List<Command> commandList;
+    private CommandDispatcher commandDispatcher;
     private RequestDispatcher requestDispatcher;
     private ReceivedPacketDispatcher receivedPacketDispatcher;
 
     public BikeService(IBleClient bleClient, RequestDispatcher requestDispatcher) {
         this.bleClient = bleClient;
         this.bikeState = new BikeState();
-        this.commandList = new LinkedList<>();
+        this.commandDispatcher = new CommandDispatcher();
         this.sequenceId = SEQUENCE_ID_START;
         this.receivedPacketDispatcher = new ReceivedPacketDispatcher(bleClient);
         this.requestDispatcher = requestDispatcher;
@@ -62,28 +57,15 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
         command.setRequestDispatcher(requestDispatcher);
         command.setReceivedPacketDispatcher(receivedPacketDispatcher);
         command.setBikeConfig(bikeConfig);
-        this.commandList.add(command);
-        notifyCommandAdded();
-    }
-
-    public void notifyCommandAdded() {
-        if (currentCommand != null && currentCommand.getState() != Command.FINISHED)
-            return;
-        if (commandList.size() == 0)
-            return;
-        Command nextCommand = commandList.remove(0);
-        executeCommand(nextCommand);
-    }
-
-    private void executeCommand(Command command) {
-        currentCommand = command;
-        command.process(this, getSequenceId());
+        command.setSequenceId(getSequenceId());
+        this.commandDispatcher.addCommand(command);
     }
 
     public void destroy() {
         receivedPacketDispatcher.removePacketResponseListener(this);
         bleClient.getListenerManager().addConnectStateChangeListener(this);
         receivedPacketDispatcher.destroy();
+        commandDispatcher.destroy();
     }
 
     public BikeState getBikeState() {
@@ -97,13 +79,6 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
 
         requestDispatcher.addRequest(new WriterRequest(bikeConfig.getUuid().SPS_SERVICE_UUID,
                 bikeConfig.getUuid().SPS_RX_UUID, data, false, new EmptyResponse()));
-
-        Log.i(TAG, "Send ACK:" + ByteUtil.bytesToHexString(data));
-    }
-
-    @Override
-    public void onCommandCompleted() {
-        notifyCommandAdded();
     }
 
     private int getSequenceId() {
@@ -113,8 +88,6 @@ public class BikeService implements CommandHolder, PacketResponseListener, Conne
 
     @Override
     public boolean onPacketReceived(Packet receivedPacket) {
-        Log.i(TAG, "ReceivedPacket Value：" + receivedPacket.toString());
-
         // BikeService不直接发送指令，所有ack都忽略
         if (receivedPacket.getHeader().isAck())
             return false;
