@@ -35,8 +35,17 @@ public class ConnectObservable implements ObservableOnSubscribe<SearchResult> {
                     e.onNext(searchResult);
                     e.onComplete();
                 } else {
+                    int parsedResult = ResultCode.FAILED;
+                    switch (resultCode) {
+                        case Code.REQUEST_TIMEOUT:
+                            parsedResult = ResultCode.TIMEOUT;
+                            break;
+                        case Code.REQUEST_FAILED:
+                            parsedResult = ResultCode.DISCONNECTED;
+                            break;
+                    }
                     e.onError(new ResultCodeThrowable("ConnectObservable：errCode: " + resultCode,
-                            ResultCode.FAILED));
+                            parsedResult));
                 }
             }
         }, 3));
