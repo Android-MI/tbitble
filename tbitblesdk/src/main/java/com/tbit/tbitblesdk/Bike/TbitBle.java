@@ -43,6 +43,7 @@ public class TbitBle {
         instance.setListener(listener);
     }
 
+    @Deprecated
     public static void unSetListener() {
         if (instance != null)
             instance.setListener(null);
@@ -53,6 +54,7 @@ public class TbitBle {
         instance.setDebugListener(listener);
     }
 
+    @Deprecated
     public static void connect(String macAddr, String key) {
         checkInstanceNotNull();
         instance.connect(macAddr, key);
@@ -90,6 +92,7 @@ public class TbitBle {
         instance.common(commandId, key, value);
     }
 
+    @Deprecated
     public static void unlock() {
         checkInstanceNotNull();
         instance.unlock();
@@ -100,6 +103,7 @@ public class TbitBle {
         instance.unlock(resultCallback);
     }
 
+    @Deprecated
     public static void lock() {
         checkInstanceNotNull();
         instance.lock();
@@ -110,6 +114,7 @@ public class TbitBle {
         instance.lock(resultCallback);
     }
 
+    @Deprecated
     public static void update() {
         checkInstanceNotNull();
         instance.update();
@@ -120,11 +125,13 @@ public class TbitBle {
         instance.update(resultCallback, stateCallback);
     }
 
+    @Deprecated
     public static void reconnect(ResultCallback resultCallback, StateCallback stateCallback) {
         checkInstanceNotNull();
         instance.reConnect(resultCallback, stateCallback);
     }
 
+    @Deprecated
     public static void reconnect() {
         checkInstanceNotNull();
         instance.reConnect();
