@@ -10,6 +10,7 @@ import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.request.BleRequest;
 import com.tbit.tbitblesdk.bluetooth.request.BleResponse;
@@ -92,9 +93,14 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
 
         sendCommand();
 
-        handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
+        startTiming();
 
         return true;
+    }
+
+    protected void startTiming() {
+        BleLog.log("StartTiming", "Timeout: " + getTimeout());
+        handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
     }
 
     public void cancel() {
