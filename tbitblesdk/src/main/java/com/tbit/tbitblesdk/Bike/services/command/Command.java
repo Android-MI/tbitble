@@ -98,7 +98,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     }
 
     public void cancel() {
-        response(ResultCode.CANCELD);
+        response(ResultCode.CANCELED);
     }
 
     protected void sendCommand() {
