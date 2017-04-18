@@ -15,6 +15,9 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 
@@ -28,11 +31,13 @@ public class BikeConnectHelper {
     private BikeService bikeService;
     private Scanner scanner;
     private RequestDispatcher requestDispatcher;
+    private CompositeDisposable compositeDisposable;
 
     public BikeConnectHelper(BikeService bikeService, Scanner scanner, RequestDispatcher requestDispatcher) {
         this.bikeService = bikeService;
         this.scanner = scanner;
         this.requestDispatcher = requestDispatcher;
+        this.compositeDisposable = new CompositeDisposable();
     }
 
     public void connect(String deviceId, final ResultCallback resultCallback, final Command command) {
@@ -78,8 +83,22 @@ public class BikeConnectHelper {
                             resultCallback.onResult(ResultCode.FAILED);
                         }
                     }
+                }, new Action() {
+                    @Override
+                    public void run() throws Exception {
+
+                    }
+                }, new Consumer<Disposable>() {
+                    @Override
+                    public void accept(@NonNull Disposable disposable) throws Exception {
+                        compositeDisposable.add(disposable);
+                    }
                 });
 
+    }
+
+    public void destroy() {
+        this.compositeDisposable.dispose();
     }
 
 }
