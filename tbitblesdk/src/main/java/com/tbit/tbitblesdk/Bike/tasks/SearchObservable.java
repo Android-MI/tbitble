@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.tasks.exceptions.ResultCodeThrowable;
 import com.tbit.tbitblesdk.Bike.util.BikeUtil;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.model.SearchResult;
 import com.tbit.tbitblesdk.bluetooth.scanner.Scanner;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
@@ -77,6 +78,7 @@ public class SearchObservable implements ObservableOnSubscribe<SearchResult>, Sc
         if (isFound) {
             scanner.stop();
             emitter.onNext(new SearchResult(bluetoothDevice, i, bytes));
+            BleLog.log("BroadcastAD", dataStr);
         }
     }
 }
