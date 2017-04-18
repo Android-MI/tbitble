@@ -7,6 +7,7 @@ import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.Bike.tasks.exceptions.ResultCodeThrowable;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.model.SearchResult;
 import com.tbit.tbitblesdk.bluetooth.scanner.Scanner;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
@@ -82,6 +83,7 @@ public class BikeConnectHelper {
                             throwable.printStackTrace();
                             resultCallback.onResult(ResultCode.FAILED);
                         }
+                        BleLog.log("BikeConnectHelper", throwable.getMessage());
                     }
                 }, new Action() {
                     @Override
