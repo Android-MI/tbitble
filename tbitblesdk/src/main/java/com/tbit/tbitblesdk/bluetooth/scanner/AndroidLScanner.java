@@ -95,6 +95,7 @@ public class AndroidLScanner implements Scanner {
         BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         if (bluetoothLeScanner != null)
             bluetoothLeScanner.stopScan(bleCallback);
+        callback = null;
     }
 
     private void timeUp() {
@@ -111,6 +112,7 @@ public class AndroidLScanner implements Scanner {
         BluetoothLeScanner bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
         if (bluetoothLeScanner != null)
             bluetoothLeScanner.stopScan(bleCallback);
+        callback = null;
     }
 
     private static class AndroidLScannerHandler extends Handler {

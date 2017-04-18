@@ -71,6 +71,7 @@ public class BelowAndroidLScanner implements Scanner {
         }
         handler.removeCallbacksAndMessages(null);
         bluetoothAdapter.stopLeScan(bleCallback);
+        callback = null;
     }
 
     private void timeUp() {
@@ -85,6 +86,7 @@ public class BelowAndroidLScanner implements Scanner {
         }
         handler.removeCallbacksAndMessages(null);
         bluetoothAdapter.stopLeScan(bleCallback);
+        callback = null;
     }
 
     static class ScanHandler extends Handler {
