@@ -36,6 +36,7 @@ import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
+import com.tbit.tbitblesdk.protocol.callback.RssiCallback;
 
 import java.io.File;
 import java.io.IOException;
@@ -284,6 +285,10 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
             connectResultCallback = null;
         if (connectStateCallback != null)
             connectStateCallback = null;
+    }
+
+    void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
+        bikeService.readRssi(resultCallback, rssiCallback);
     }
 
     void connectiveOta(String deviceId, String keyStr, File file,

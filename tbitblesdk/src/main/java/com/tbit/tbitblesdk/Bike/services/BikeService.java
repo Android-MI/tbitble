@@ -1,17 +1,23 @@
 package com.tbit.tbitblesdk.Bike.services;
 
+import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.Bike.services.command.CommandDispatcher;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdk.Bike.util.StateUpdateHelper;
+import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
+import com.tbit.tbitblesdk.bluetooth.request.RssiRequest;
+import com.tbit.tbitblesdk.bluetooth.request.RssiResponse;
 import com.tbit.tbitblesdk.bluetooth.request.WriterRequest;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
+import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
+import com.tbit.tbitblesdk.protocol.callback.RssiCallback;
 import com.tbit.tbitblesdk.protocol.dispatcher.EmptyResponse;
 import com.tbit.tbitblesdk.protocol.dispatcher.PacketResponseListener;
 import com.tbit.tbitblesdk.protocol.dispatcher.ReceivedPacketDispatcher;
@@ -120,6 +126,38 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         }
 
         return true;
+    }
+
+    public void readRssi(final ResultCallback resultCallback, final RssiCallback rssiCallback) {
+        this.requestDispatcher.addRequest(new RssiRequest(new RssiResponse() {
+            @Override
+            public void onRssi(int rssi) {
+                rssiCallback.onRssiReceived(rssi);
+            }
+
+            @Override
+            public void onResponse(int resultCode) {
+                int parsedResultCode;
+                switch (resultCode) {
+                    case Code.BLE_NOT_CONNECTED:
+                        parsedResultCode = ResultCode.DISCONNECTED;
+                        break;
+                    case Code.BLE_DISABLED:
+                        parsedResultCode = ResultCode.BLE_NOT_OPENED;
+                        break;
+                    case Code.REQUEST_SUCCESS:
+                        parsedResultCode = ResultCode.SUCCEED;
+                        break;
+                    case Code.REQUEST_TIMEOUT:
+                        parsedResultCode = ResultCode.TIMEOUT;
+                        break;
+                    default:
+                        parsedResultCode = ResultCode.FAILED;
+                        break;
+                }
+                resultCallback.onResult(parsedResultCode);
+            }
+        }));
     }
 
     @Override

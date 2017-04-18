@@ -12,6 +12,7 @@ import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
+import com.tbit.tbitblesdk.protocol.callback.RssiCallback;
 
 import java.io.File;
 
@@ -168,6 +169,11 @@ public class TbitBle {
         checkInstanceNotNull();
         instance.destroy();
         instance = null;
+    }
+
+    public static void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
+        checkInstanceNotNull();
+        instance.readRssi(resultCallback, rssiCallback);
     }
 
     public static boolean hasInitialized() {
