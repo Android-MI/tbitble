@@ -58,6 +58,11 @@ public class TbitBle {
         instance.connect(macAddr, key);
     }
 
+    public static void connect(String machineId, String key, ResultCallback resultCallback, StateCallback stateCallback) {
+        checkInstanceNotNull();
+        instance.connect(machineId, key, resultCallback, stateCallback);
+    }
+
     public static int startScan(ScannerCallback callback, long timeout) {
         checkInstanceNotNull();
         return instance.startScan(callback, timeout);
@@ -90,14 +95,29 @@ public class TbitBle {
         instance.unlock();
     }
 
+    public static void unlock(ResultCallback resultCallback) {
+        checkInstanceNotNull();
+        instance.unlock(resultCallback);
+    }
+
     public static void lock() {
         checkInstanceNotNull();
         instance.lock();
     }
 
+    public static void lock(ResultCallback resultCallback) {
+        checkInstanceNotNull();
+        instance.lock(resultCallback);
+    }
+
     public static void update() {
         checkInstanceNotNull();
         instance.update();
+    }
+
+    public static void update(ResultCallback resultCallback, StateCallback stateCallback) {
+        checkInstanceNotNull();
+        instance.update(resultCallback, stateCallback);
     }
 
     public static void reconnect(ResultCallback resultCallback, StateCallback stateCallback) {
