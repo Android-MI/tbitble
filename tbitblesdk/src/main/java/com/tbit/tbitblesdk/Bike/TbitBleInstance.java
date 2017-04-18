@@ -272,7 +272,10 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     }
 
     void destroy() {
-//        bikeBleConnector.destroy();
+        BleLog.setLogCallback(null);
+
+        setDebugListener(null);
+        bikeConnectHelper.destroy();
         bikeService.destroy();
         bleClient.close();
         if (otaService != null)
