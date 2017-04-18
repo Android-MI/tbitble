@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothProfile;
 
 import com.tbit.tbitblesdk.bluetooth.Code;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.listener.ServiceDiscoverListener;
 
@@ -57,6 +58,7 @@ public class ConnectRequest extends BleRequest implements ConnectStateChangeList
     }
 
     private void tryReconnect() {
+        BleLog.log("ConnectRequest", "tryReconnect");
         if (retryCount < maxRetryTimes) {
             doConnect();
             retryCount++;
