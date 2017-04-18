@@ -189,15 +189,17 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     protected void response(int resultCode) {
         if (!isProcessable())
             return;
-        onFinish();
-        resultCallback.onResult(resultCode);
+        if (resultCallback != null)
+            resultCallback.onResult(resultCode);
         commandHolder.onCommandCompleted();
+        onFinish();
     }
 
     protected void onFinish() {
         state = FINISHED;
         receivedPacketDispatcher.removePacketResponseListener(this);
         bleClient.getListenerManager().removeConnectStateChangeListener(this);
+        resultCallback = null;
     }
 
     protected int getRetryTimes() {

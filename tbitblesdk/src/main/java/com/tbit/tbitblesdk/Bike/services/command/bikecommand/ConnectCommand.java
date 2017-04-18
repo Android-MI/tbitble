@@ -86,7 +86,7 @@ public class ConnectCommand extends UpdatableCommand {
             }
         }
 
-        stateCallback.onStateUpdated(bikeState);
+        updateState();
         response(resultCode);
     }
 

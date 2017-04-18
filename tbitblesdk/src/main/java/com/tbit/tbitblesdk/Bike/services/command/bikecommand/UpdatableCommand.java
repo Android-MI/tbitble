@@ -53,4 +53,15 @@ public abstract class UpdatableCommand extends Command {
     protected void parseDeviceFault(Byte[] data) {
         StateUpdateHelper.updateDeviceFault(bikeState, data);
     }
+
+    protected void updateState() {
+        if (stateCallback != null)
+            stateCallback.onStateUpdated(bikeState);
+    }
+
+    @Override
+    protected void onFinish() {
+        super.onFinish();
+        stateCallback = null;
+    }
 }
