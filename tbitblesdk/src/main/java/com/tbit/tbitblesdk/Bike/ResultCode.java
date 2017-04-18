@@ -11,6 +11,8 @@ public class ResultCode {
     public static final int FAILED = -1;
     // 超时
     public static final int TIMEOUT = -2;
+    // 操作被取消
+    public static final int CANCELED = -3;
     // 手机蓝牙未开启
     public static final int BLE_NOT_OPENED = -1001;
     // 设备不支持蓝牙BLE或非指定终端
