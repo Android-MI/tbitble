@@ -178,6 +178,11 @@ public class TbitBle {
         instance = null;
     }
 
+    public static void cancelAllCommand() {
+        checkInstanceNotNull();
+        instance.cancelAllCommand();
+    }
+
     public static void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
         checkInstanceNotNull();
         instance.readRssi(resultCallback, rssiCallback);

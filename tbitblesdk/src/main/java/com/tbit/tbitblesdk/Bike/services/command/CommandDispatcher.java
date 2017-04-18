@@ -44,6 +44,10 @@ public class CommandDispatcher implements CommandHolder {
     }
 
     public void destroy() {
+        cancelAll();
+    }
+
+    public void cancelAll() {
         if (currentCommand != null) {
             currentCommand.cancel();
             currentCommand = null;

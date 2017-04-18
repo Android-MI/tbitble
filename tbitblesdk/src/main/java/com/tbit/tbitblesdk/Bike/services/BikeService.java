@@ -128,6 +128,10 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         return true;
     }
 
+    public void cancelAllCommand() {
+        this.commandDispatcher.cancelAll();
+    }
+
     public void readRssi(final ResultCallback resultCallback, final RssiCallback rssiCallback) {
         this.requestDispatcher.addRequest(new RssiRequest(new RssiResponse() {
             @Override

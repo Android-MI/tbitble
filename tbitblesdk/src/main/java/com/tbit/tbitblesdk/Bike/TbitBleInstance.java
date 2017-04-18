@@ -353,6 +353,10 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
         }
     }
 
+    void cancelAllCommand() {
+        bikeService.cancelAllCommand();
+    }
+
     private boolean baseCheck(ResultCallback resultCallback) {
         boolean result;
         if (!BleGlob.isBluetoothEnabled()) {

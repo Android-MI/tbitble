@@ -104,7 +104,14 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     }
 
     public void cancel() {
-        response(ResultCode.CANCELED);
+        if (isProcessable()) {
+            response(ResultCode.CANCELED);
+        } else {
+            if (resultCallback != null)
+                resultCallback.onResult(ResultCode.CANCELED);
+            state = FINISHED;
+            resultCallback = null;
+        }
     }
 
     protected void sendCommand() {
