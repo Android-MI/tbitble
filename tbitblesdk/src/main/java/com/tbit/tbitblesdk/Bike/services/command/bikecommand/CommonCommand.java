@@ -24,7 +24,8 @@ public class CommonCommand extends Command {
 
     @Override
     protected void onResult(Packet receivedPacket) {
-        packetCallback.onPacketReceived(receivedPacket);
+        if (packetCallback != null)
+            packetCallback.onPacketReceived(receivedPacket);
         response(ResultCode.SUCCEED);
     }
 
@@ -37,5 +38,11 @@ public class CommonCommand extends Command {
     protected Packet onCreateSendPacket(int sequenceId) {
         packetUnready.getHeader().setSequenceId((byte) sequenceId);
         return packetUnready;
+    }
+
+    @Override
+    protected void onFinish() {
+        super.onFinish();
+        packetCallback = null;
     }
 }
