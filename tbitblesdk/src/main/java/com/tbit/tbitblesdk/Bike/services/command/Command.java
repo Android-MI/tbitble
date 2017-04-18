@@ -41,6 +41,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     protected ReceivedPacketDispatcher receivedPacketDispatcher;
     protected BikeConfig bikeConfig;
     protected IBleClient bleClient;
+    protected int sequenceId;
     private Packet sendPacket;
 
     public Command(ResultCallback resultCallback) {
@@ -66,7 +67,11 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         this.requestDispatcher = requestDispatcher;
     }
 
-    public boolean process(CommandHolder commandHolder, int sequenceId) {
+    public void setSequenceId(int sequenceId) {
+        this.sequenceId = sequenceId;
+    }
+
+    public boolean process(CommandHolder commandHolder) {
         if (state != NOT_EXECUTE_YET)
             return false;
 
@@ -90,6 +95,10 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
 
         return true;
+    }
+
+    public void cancel() {
+        response(ResultCode.CANCELD);
     }
 
     protected void sendCommand() {
@@ -191,7 +200,6 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
             return;
         if (resultCallback != null)
             resultCallback.onResult(resultCode);
-        commandHolder.onCommandCompleted();
         onFinish();
     }
 
@@ -199,7 +207,9 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         state = FINISHED;
         receivedPacketDispatcher.removePacketResponseListener(this);
         bleClient.getListenerManager().removeConnectStateChangeListener(this);
+        commandHolder.onCommandCompleted();
         resultCallback = null;
+        commandHolder = null;
     }
 
     protected int getRetryTimes() {
