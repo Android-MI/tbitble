@@ -2,6 +2,7 @@ package com.tbit.tbitblesdk.Bike;
 
 import android.content.Context;
 
+import com.tbit.tbitblesdk.Bike.services.command.callback.SimpleCommonCallback;
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
@@ -85,6 +86,12 @@ public class TbitBle {
                                      ResultCallback resultCallback, PacketCallback packetCallback) {
         checkInstanceNotNull();
         instance.common(commandId, key, value, resultCallback, packetCallback);
+    }
+
+    public static void commonCommand(byte commandId, byte key, Byte[] value,
+                                     SimpleCommonCallback simpleCommonCallback) {
+        checkInstanceNotNull();
+        instance.common(commandId, key, value, simpleCommonCallback, simpleCommonCallback);
     }
 
     @Deprecated
