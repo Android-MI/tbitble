@@ -29,6 +29,7 @@ import com.tbit.tbitblesdk.Bike.TbitDebugListener;
 import com.tbit.tbitblesdk.Bike.TbitListener;
 import com.tbit.tbitblesdk.Bike.TbitListenerAdapter;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
@@ -75,55 +76,12 @@ public class Main2Activity extends AppCompatActivity {
     private TextView titleText;
     private Button buttonOta;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
-    TbitListener listener = new TbitListenerAdapter() {
-        @Override
-        public void onConnectResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("连接回应: 成功");
-            else
-                showLog("连接回应: " + resultCode);
-        }
-
-        @Override
-        public void onUnlockResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("解锁回应: 成功");
-            else
-                showLog("解锁回应: " + resultCode);
-        }
-
-        @Override
-        public void onLockResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("上锁回应: 成功");
-            else
-                showLog("上锁回应: " + resultCode);
-        }
-
-        @Override
-        public void onUpdateResponse(int resultCode) {
-            if (resultCode == 0)
-                showLog("更新状态回应: 成功");
-            else
-                showLog("更新状态回应: " + resultCode);
-        }
-
-        @Override
-        public void onStateUpdated(BikeState state) {
-            Log.d(TAG, "最新状态: " + state.toString());
-        }
-
-        @Override
-        public void onDisconnected(int resultCode) {
-            showLog("请按连接");
-        }
-
-    };
 
     TbitDebugListener debugListener = new TbitDebugListener() {
         @Override
         public void onLogStrReceived(String logStr) {
-            showLog(logStr);
+            Log.d(TAG, logStr);
+//            showLog(logStr);
         }
     };
     private Button autoLockButton, autoUnlockButton, autoUpdateButton, autoConnectButton;
@@ -148,7 +106,6 @@ public class Main2Activity extends AppCompatActivity {
                                                 prepareFile();
                                                 showSetting();
                                                 TbitBle.initialize(Main2Activity.this, new MyProtocolAdapter());
-                                                TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }
                                         });
@@ -244,12 +201,28 @@ public class Main2Activity extends AppCompatActivity {
 
     public void unlock(View view) {
         showLog("解锁按下");
-        TbitBle.unlock();
+        TbitBle.unlock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("解锁回应: 成功");
+                else
+                    showLog("解锁回应: " + resultCode);
+            }
+        });
     }
 
     public void lock(View view) {
         showLog("上锁按下");
-        TbitBle.lock();
+        TbitBle.lock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("上锁回应: 成功");
+                else
+                    showLog("上锁回应: " + resultCode);
+            }
+        });
     }
 
     public void common(View view) {
@@ -273,7 +246,20 @@ public class Main2Activity extends AppCompatActivity {
 
     public void update(View view) {
         showLog("更新状态按下");
-        TbitBle.update();
+        TbitBle.update(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("更新状态回应: 成功");
+                else
+                    showLog("更新状态回应: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                showLog("最新状态: " + bikeState.toString());
+            }
+        });
     }
 
     public void disconnect(View view) {
@@ -488,7 +474,20 @@ public class Main2Activity extends AppCompatActivity {
 //        String key = "";
         if (TextUtils.isEmpty(key))
             key = KEY;
-        TbitBle.connect(deviceId, key);
+        TbitBle.connect(deviceId, key, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                if (resultCode == 0)
+                    showLog("连接回应: 成功");
+                else
+                    showLog("连接回应: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+
+            }
+        });
     }
 
     private void otaConnectInside(String deviceId) {

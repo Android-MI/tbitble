@@ -32,4 +32,7 @@ dependencies {
     compile 'com.journeyapps:zxing-android-embedded:3.4.0'
 //    compile 'com.github.billy96322:tbitble:0.5.5'
     compile project(':tbitblesdk')
+
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
 }

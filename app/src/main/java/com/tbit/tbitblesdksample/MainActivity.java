@@ -30,6 +30,7 @@ import com.tbit.tbitblesdk.Bike.TbitBle;
 import com.tbit.tbitblesdk.Bike.TbitDebugListener;
 import com.tbit.tbitblesdk.Bike.TbitListener;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
+import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
@@ -56,45 +57,6 @@ public class MainActivity extends AppCompatActivity {
     private EasyPermissionHelper helper;
     private EditTextDialog editTextDialog;
     private DateFormat format = new SimpleDateFormat("HH:mm:ss");
-    TbitListener listener = new TbitListener() {
-        @Override
-        public void onConnectResponse(int resultCode) {
-            showLog("onConnectResponse: " + resultCode);
-        }
-
-        @Override
-        public void onUnlockResponse(int resultCode) {
-            showLog("onUnlockResponse: " + resultCode);
-        }
-
-        @Override
-        public void onLockResponse(int resultCode) {
-            showLog("onLockResponse: " + resultCode);
-        }
-
-        @Override
-        public void onUpdateResponse(int resultCode) {
-            showLog("onUpdateResponse: " + resultCode);
-        }
-
-        @Override
-        public void onStateUpdated(BikeState state) {
-            showLog("onStateUpdated: " + state.toString());
-            //也可以这样
-            Log.d(TAG, "onStateUpdated: " + TbitBle.getState());
-        }
-
-        @Override
-        public void onDisconnected(int resultCode) {
-//            showLog("onDisconnected: " + resultCode);
-        }
-
-        @Override
-        public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
-
-        }
-
-    };
 
     TbitDebugListener debugListener = new TbitDebugListener() {
         @Override
@@ -124,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
                                             public void run() {
                                                 showSetting();
                                                 TbitBle.initialize(MainActivity.this, new MyProtocolAdapter());
-                                                TbitBle.setListener(listener);
                                                 TbitBle.setDebugListener(debugListener);
                                             }
                                         });
@@ -320,7 +281,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void update(View view) {
         showLog("更新状态按下");
-        TbitBle.update();
+        TbitBle.update(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                showLog("onUpdateResponse: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                showLog("onStateUpdated: " + bikeState.toString());
+            }
+        });
     }
 
     public void switchFac(View view) {
@@ -477,7 +448,17 @@ public class MainActivity extends AppCompatActivity {
         key = AesTool.Genkey(deviceId);
         if (TextUtils.isEmpty(key))
             key = KEY;
-        TbitBle.connect(deviceId, key);
+        TbitBle.connect(deviceId, key, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+                showLog("onConnectResponse: " + resultCode);
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+                showLog("onStateUpdated: " + bikeState.toString());
+            }
+        });
     }
 
     public enum Action {
