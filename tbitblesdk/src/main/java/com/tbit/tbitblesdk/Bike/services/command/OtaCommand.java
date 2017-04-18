@@ -1,10 +1,10 @@
 package com.tbit.tbitblesdk.Bike.services.command;
 
-import android.util.Log;
 
 import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.services.OtaService;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
+import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.callback.ProgressCallback;
@@ -46,22 +46,26 @@ public class OtaCommand extends Command implements ResultCallback, ProgressCallb
         byte dataTwo = data[1];
         if (dataOne == (byte) 0x00) {
             //进入ota成功，下载升级文件，发送文件到硬件
-            Log.i(TAG, "--进入ota模式成功");
+            BleLog.log(TAG, "--进入ota模式成功");
             this.state = STATE_COMMAND;
+            // 移除原来的超时回应
+            handler.removeCallbacksAndMessages(null);
+            // 重新计时120秒
             this.timeout = 120 * 1000;
+            startTiming();
             this.otaService.update(this, this);
         } else if (dataOne == (byte) 0x01) {
             if (dataTwo == (byte) 0x01) {
                 //电量过低
                 response(ResultCode.OTA_FAILED_LOW_POWER);
-                Log.i(TAG, "--进入ota模式失败，电池电量过低");
+                BleLog.log(TAG, "--进入ota模式失败，电池电量过低");
             } else if (dataTwo == (byte) 0x02) {
                 //密钥错误
-                Log.i(TAG, "--进入ota模式失败，密钥错误");
+                BleLog.log(TAG, "--进入ota模式失败，密钥错误");
                 response(ResultCode.OTA_FAILED_ERR_KEY);
             } else {
                 //未知原因
-                Log.i(TAG, "--进入ota模式失败，发生未知错误");
+                BleLog.log(TAG, "--进入ota模式失败，发生未知错误");
                 response(ResultCode.OTA_FAILED_UNKNOWN);
             }
         }
@@ -91,9 +95,15 @@ public class OtaCommand extends Command implements ResultCallback, ProgressCallb
     }
 
     @Override
-    public void onProgress(int progress) {
-        if (progressCallback != null)
-            progressCallback.onProgress(progress);
+    public void onProgress(final int progress) {
+        if (progressCallback != null) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressCallback.onProgress(progress);
+                }
+            });
+        }
     }
 
     @Override
