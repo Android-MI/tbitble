@@ -266,7 +266,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         return DEFAULT_COMMAND_TIMEOUT;
     }
 
-    public void timeout() {
+    private void timeout() {
         if (!isProcessable())
             return;
         onTimeout();
