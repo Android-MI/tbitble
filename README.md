@@ -73,7 +73,7 @@ if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        TbitBle.initialize(MainActivity.this);
+        TbitBle.initialize(MainActivity.this, new MyProtocolAdapter());
     }
 }
 ```
