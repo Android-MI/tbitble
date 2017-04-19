@@ -2,6 +2,7 @@ package com.tbit.tbitblesdk.Bike.tasks;
 
 import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.tasks.exceptions.ResultCodeThrowable;
+import com.tbit.tbitblesdk.Bike.util.BikeUtil;
 import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.model.SearchResult;
@@ -35,15 +36,7 @@ public class ConnectObservable implements ObservableOnSubscribe<SearchResult> {
                     e.onNext(searchResult);
                     e.onComplete();
                 } else {
-                    int parsedResult = ResultCode.FAILED;
-                    switch (resultCode) {
-                        case Code.REQUEST_TIMEOUT:
-                            parsedResult = ResultCode.TIMEOUT;
-                            break;
-                        case Code.REQUEST_FAILED:
-                            parsedResult = ResultCode.DISCONNECTED;
-                            break;
-                    }
+                    int parsedResult = BikeUtil.parseResultCode(resultCode);
                     e.onError(new ResultCodeThrowable("ConnectObservable：errCode: " + resultCode,
                             parsedResult));
                 }

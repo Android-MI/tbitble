@@ -4,6 +4,7 @@ import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.Bike.services.config.Uuid;
 import com.tbit.tbitblesdk.Bike.tasks.exceptions.ResultCodeThrowable;
+import com.tbit.tbitblesdk.Bike.util.BikeUtil;
 import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.request.BleResponse;
@@ -35,9 +36,11 @@ public class SetNotificationObservable implements ObservableOnSubscribe<BikeConf
             public void onResponse(int resultCode) {
                 if (resultCode == Code.REQUEST_SUCCESS)
                     e.onNext(bikeConfig);
-                else
+                else {
+                    int parsedResult = BikeUtil.parseResultCode(resultCode);
                     e.onError(new ResultCodeThrowable("SetNotificationObservable: " + resultCode,
-                            ResultCode.BLE_NOT_SUPPORTED));
+                            parsedResult));
+                }
             }
         }, uuid.SPS_SERVICE_UUID, uuid.SPS_TX_UUID, uuid.SPS_NOTIFY_DESCRIPTOR, true));
     }
