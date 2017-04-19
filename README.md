@@ -56,7 +56,7 @@
 ### 使用
 #### 关于权限
 在Android 6.0 及以上系统，除了需要**动态**申请文中说明的权限，最好也将该开关打开
-```
+```Java
 LocationManager locationManager =
         (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -69,7 +69,7 @@ if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 #### 初始化
 
 在程序**入口**的Activity中初始化
-```
+```Java
 public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 **或者**
 
 在Application中进行初始化，与在入口Activity中初始化类似，但需要确保只在主进程被初始化
-```
+```Java
 private boolean isMainProcess() {
     int pid = Process.myPid();
     String processNameString = "";
@@ -96,7 +96,7 @@ private boolean isMainProcess() {
 }
 ```
 #### 操作
-```
+```Java
 // 如果是Android 6.0以上需要在权限被同意之后再做初始化工作以下操作
 
 // 连接命令，参数为设备编号，密钥
@@ -164,7 +164,7 @@ TbitBle.readRssi(new ResultCallback() {
 TbitBle.destroy();
 ```
 #### 通用指令
-```
+```Java
 //使用SimpleCommonCallback帮助解析
 TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
                 new SimpleCommonCallback(new ResultCallback() {
@@ -192,14 +192,14 @@ TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
 以上操作均需要在**主线程**执行
 
 #### 直接可以获得的参数
-```
+```Java
 // 获得当前蓝牙连接状态
 TbitBle.getBleConnectionState();
 // 获得最后一次更新的车辆状态信息(需要更新请执行更新操作并等待相应回调)
 TbitBle.getState()
 ```
 #### 蓝牙状态信息
-```
+```Java
 public static final int STATE_DISCONNECTED = 0;
 public static final int STATE_SCANNING = 1;
 public static final int STATE_CONNECTING = 2;
@@ -208,7 +208,7 @@ public static final int STATE_SERVICES_DISCOVERED = 4;
 ```
 
 #### 车辆状态字段
-```
+```Java
 // 电量
 private float battery;
 
@@ -249,7 +249,7 @@ private ControllerState controllerState;
 ```
 
 #### 控制器状态字段
-```
+```Java
 // 总里程，单位是 KM
 private int totalMillage;
 // 单次里程，单位是 0.1KM
@@ -277,7 +277,7 @@ private int[] errCode = new int[]{0,0,0,0,0,0,0,0};
 
 #### 扫描设备
 
-```
+```Java
 // 最终得到的结果的回调
 ScannerCallback scannerCallback = new ScannerCallback() {
     @Override
