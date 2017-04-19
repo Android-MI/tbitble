@@ -1,13 +1,12 @@
 package com.tbit.tbitblesdk.Bike.services;
 
-import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
 import com.tbit.tbitblesdk.Bike.services.command.CommandDispatcher;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+import com.tbit.tbitblesdk.Bike.util.BikeUtil;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
 import com.tbit.tbitblesdk.Bike.util.StateUpdateHelper;
-import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
 import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
@@ -141,25 +140,8 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
 
             @Override
             public void onResponse(int resultCode) {
-                int parsedResultCode;
-                switch (resultCode) {
-                    case Code.BLE_NOT_CONNECTED:
-                        parsedResultCode = ResultCode.DISCONNECTED;
-                        break;
-                    case Code.BLE_DISABLED:
-                        parsedResultCode = ResultCode.BLE_NOT_OPENED;
-                        break;
-                    case Code.REQUEST_SUCCESS:
-                        parsedResultCode = ResultCode.SUCCEED;
-                        break;
-                    case Code.REQUEST_TIMEOUT:
-                        parsedResultCode = ResultCode.TIMEOUT;
-                        break;
-                    default:
-                        parsedResultCode = ResultCode.FAILED;
-                        break;
-                }
-                resultCallback.onResult(parsedResultCode);
+                int parsedResult = BikeUtil.parseResultCode(resultCode);
+                resultCallback.onResult(parsedResult);
             }
         }));
     }

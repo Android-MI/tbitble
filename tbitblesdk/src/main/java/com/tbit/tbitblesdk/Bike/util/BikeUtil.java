@@ -3,8 +3,10 @@ package com.tbit.tbitblesdk.Bike.util;
 
 import android.text.TextUtils;
 
+import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 import com.tbit.tbitblesdk.Bike.model.ParsedAd;
+import com.tbit.tbitblesdk.bluetooth.Code;
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 
 import java.io.File;
@@ -57,7 +59,7 @@ public class BikeUtil {
                     break;
                 }
             }
-            builder.append((char)(0x2A + j));
+            builder.append((char) (0x2A + j));
         }
         return builder.toString();
     }
@@ -67,7 +69,7 @@ public class BikeUtil {
      */
     public static double calcDistByRSSI(int rssi) {
         int iRssi = Math.abs(rssi);
-        double power = (iRssi-59)/(10*2.0);
+        double power = (iRssi - 59) / (10 * 2.0);
         return Math.pow(10, power);
     }
 
@@ -124,5 +126,30 @@ public class BikeUtil {
             return false;
         }
         return true;
+    }
+
+    public static int parseResultCode(int bleCode) {
+        int parsedResultCode;
+        switch (bleCode) {
+            case Code.BLE_NOT_CONNECTED:
+                parsedResultCode = ResultCode.DISCONNECTED;
+                break;
+            case Code.BLE_DISABLED:
+                parsedResultCode = ResultCode.BLE_NOT_OPENED;
+                break;
+            case Code.REQUEST_SUCCESS:
+                parsedResultCode = ResultCode.SUCCEED;
+                break;
+            case Code.REQUEST_TIMEOUT:
+                parsedResultCode = ResultCode.TIMEOUT;
+                break;
+            case Code.BLE_NOT_SUPPORTED:
+                parsedResultCode = ResultCode.BLE_NOT_SUPPORTED;
+                break;
+            default:
+                parsedResultCode = ResultCode.FAILED;
+                break;
+        }
+        return parsedResultCode;
     }
 }

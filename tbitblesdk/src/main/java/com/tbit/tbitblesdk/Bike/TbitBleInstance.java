@@ -288,6 +288,8 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     }
 
     void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
+        if (!baseCheck(resultCallback))
+            return;
         bikeService.readRssi(resultCallback, rssiCallback);
     }
 
