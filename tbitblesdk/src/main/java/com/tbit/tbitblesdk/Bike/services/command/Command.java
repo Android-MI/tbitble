@@ -30,20 +30,22 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     public static final int PROCESSING = 1;
     public static final int FINISHED = 2;
 
+    private static final int DEFAULT_ACK_TIMEOUT = 3000;
     private static final int DEFAULT_COMMAND_TIMEOUT = 10000;
     private static final int HANDLE_TIMEOUT = 0;
+    private static final int HANDLE_ACK_TIMEOUT = 1;
 
     protected int state;
     protected int retryCount;
     protected Handler handler;
-    private ResultCallback resultCallback;
+    protected ResultCallback resultCallback;
     protected CommandHolder commandHolder;
     protected RequestDispatcher requestDispatcher;
     protected ReceivedPacketDispatcher receivedPacketDispatcher;
     protected BikeConfig bikeConfig;
     protected IBleClient bleClient;
     protected int sequenceId;
-    private Packet sendPacket;
+    protected Packet sendPacket;
 
     public Command(ResultCallback resultCallback) {
         this.retryCount = 0;
@@ -103,6 +105,21 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         handler.sendEmptyMessageDelayed(HANDLE_TIMEOUT, getTimeout());
     }
 
+    protected void stopTiming() {
+        BleLog.log("StopTiming", "StopTiming");
+        handler.removeMessages(HANDLE_TIMEOUT);
+    }
+
+    protected void startAckTiming() {
+        BleLog.log("StartAckTiming", "Timeout: 3000");
+        handler.sendEmptyMessageDelayed(HANDLE_ACK_TIMEOUT, DEFAULT_ACK_TIMEOUT);
+    }
+
+    protected void stopAckTiming() {
+        BleLog.log("StopAckTiming", "StopAckTiming");
+        handler.removeMessages(HANDLE_ACK_TIMEOUT);
+    }
+
     public void cancel() {
         if (isProcessable()) {
             response(ResultCode.CANCELED);
@@ -118,6 +135,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         BleRequest writeRequest = new WriterRequest(bikeConfig.getUuid().SPS_SERVICE_UUID,
                 bikeConfig.getUuid().SPS_RX_UUID, sendPacket.toByteArray(), false, this);
         requestDispatcher.addRequest(writeRequest);
+        startAckTiming();
     }
 
     @Override
@@ -179,6 +197,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     }
 
     protected void onAck(Packet packet) {
+        stopAckTiming();
         if (packet.getHeader().isError())
             onAckFailed();
         else
@@ -198,6 +217,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
     }
 
     protected void retry() {
+        BleLog.log("Command", "retry-" + isProcessable() + "-" + retryCount);
         if (!isProcessable())
             return;
         if (retryCount < getRetryTimes()) {
@@ -218,6 +238,7 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
 
     protected void onFinish() {
         state = FINISHED;
+        handler.removeCallbacksAndMessages(null);
         receivedPacketDispatcher.removePacketResponseListener(this);
         bleClient.getListenerManager().removeConnectStateChangeListener(this);
         commandHolder.onCommandCompleted();
@@ -262,6 +283,9 @@ public abstract class Command implements Handler.Callback, BleResponse, PacketRe
         switch (msg.what) {
             case HANDLE_TIMEOUT:
                 timeout();
+                break;
+            case HANDLE_ACK_TIMEOUT:
+                retry();
                 break;
         }
         return true;
