@@ -16,76 +16,46 @@
 ```
 
 ## 状态码
-```
-// 操作成功
-public static final int SUCCEED = 0;
-// 操作失败 (未知原因)
-public static final int FAILED = -1;
-// 超时
-public static final int TIMEOUT = -2;
-// 手机蓝牙未开启
-public static final int BLE_NOT_OPENED = -1001;
-// 设备不支持蓝牙BLE或非指定终端
-public static final int BLE_NOT_SUPPORTED = -1002;
-// 权限错误
-public static final int PERMISSION_DENIED = -1003;
-// 未连接或连接已断开
-public static final int DISCONNECTED = -1004;
-// 该指令正在处理中，请稍后发送(部分指令不能短时间重复发送，会收到此条状态)
-public static final int PROCESSING = -1005;
-// 低于API18
-public static final int LOWER_THAN_API_18 = -1006;
-// 设备编号不合法
-public static final int MAC_ADDRESS_ILLEGAL = -2001;
-// 未找到设备
-public static final int DEVICE_NOT_FOUNDED = -2002;
-// 连接错误 - sdk层检测密钥不正确(包括密钥规格不正确和无法通过校验两种可能)
-public static final int KEY_ILLEGAL = -2003;
-// 连接错误 - 广播数据包解析错误
-public static final int BROARCAST_RESOLUTION_FAILED = -2004;
-// 控制指令错误 - 指令非法
-public static final int ILLEGAL_COMMAND = -3001;
-// 控制指令错误 - 运动状态
-public static final int MOTION_STATE = -3002;
-// 控制指令错误 - 非绑定状态
-public static final int NOT_BINDING = -3003;
-// OTA升级文件不合法
-public static final int OTA_FILE_ILLEGAL = -4001;
-// OTA升级失败 - 电量不足
-public static final int OTA_FAILED_LOW_POWER = -4002;
-// OTA升级失败 - 未知原因
-public static final int OTA_FAILED_UNKNOWN = -4003;
-// OTA升级失败 - 写入失败
-public static final int OTA_WRITE_FAILED = -4004;
-// OTA升级失败 - 密钥错误
-public static final int OTA_FAILED_ERR_KEY = -4005;
-// OTA升级失败 - Invalid image bank
-public static final int OTA_FAILED_IMAGE_BANK = -4006;
-// OTA升级失败 - Invalid image header
-public static final int OTA_FAILED_IMAGE_HEADER = -4007;
-// OTA升级失败 - Invalid image size
-public static final int OTA_FAILED_IMAGE_SIZE = -4008;
-// OTA升级失败 - Invalid product header
-public static final int OTA_FAILED_PRODUCT_HEADER = -4009;
-// OTA升级失败 - Same Image Error
-public static final int OTA_FAILED_SAME_IMAGE = -4010;
-// OTA升级失败 - Failed to read from external memory device
-public static final int OTA_FAILED_TO_READ_FROM_EXTERNAL_MEM = -4011;
-// 连接失败，未知原因
-public static final int CONNECT_FAILED_UNKNOWN = -8000;
-// 连接失败，密钥非法
-public static final int CONNECT_FAILED_ILLEGAL_KEY = -8001;
-// 连接失败，数据校验非法
-public static final int CONNECT_DATA_VERIFICATION_FAILED = -8002;
-// 连接失败，指令不支持
-public static final int CONNECT_COMMAND_NOT_SUPPORT= -8003;
-// 连接失败，已有设备连接
-public static final int CONNECT_ALREADY_CONNECTED= -8004;
-```
+| 状态码     | 说明           |
+| ------------ |:-----------  --:|
+| 0             | 操作成功     |
+| -1            | 操作失败 (未知原因)     |
+| -2            | 超时         |
+| -3            | 操作被取消         |
+| -1001      | 手机蓝牙未开启         |
+| -1002      | 设备不支持蓝牙BLE或非指定终端         |
+| -1003      | 权限错误         |
+| -1004      | 未连接或连接已断开         |
+| -1005      | 该指令正在处理中，请稍后发送         |
+| -1006      | 低于API18         |
+| -2001      | 设备编号不合法         |
+| -2002      | 未找到设备         |
+| -2003      | 连接错误 - 密钥规格不正确         |
+| -2004      | 连接错误 - 广播数据包解析错误         |
+| -3001      | 控制指令错误 - 指令非法         |
+| -3002      | 控制指令错误 - 运动状态         |
+| -3003      | 控制指令错误 - 非绑定状态         |
+| -4001      | OTA升级文件不合法         |
+| -4002      | OTA升级失败 - 电量不足        |
+| -4003      | OTA升级失败 - 未知原因         |
+| -4004      | OTA升级失败 - 写入失败         |
+| -4005      | OTA升级失败 - 密钥错误         |
+| -4006      | OTA升级失败 - Invalid image bank         |
+| -4007      | OTA升级失败 - Invalid image header         |
+| -4008      | OTA升级失败 - Invalid image size         |
+| -4009      | OTA升级失败 - Invalid product header        |
+| -4010      | OTA升级失败 - Same Image Error         |
+| -4011      | OTA升级失败 - Failed to read from external memory device         |
+| -8000      | 连接失败，未知原因         |
+| -8001      | 连接失败，密钥非法         |
+| -8002      | 连接失败，数据校验非法        |
+| -8003      | 连接失败，指令不支持         |
+| -8004      | 连接失败，已有设备连接         |
+
 
 ### 使用
 #### 关于权限
-在Android 6.0 及以上系统，除了需要申请文中说明的权限，最好也将该开关打开
+在Android 6.0 及以上系统，除了需要**动态**申请文中说明的权限，最好也将该开关打开
 ```
 LocationManager locationManager =
         (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -104,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         TbitBle.initialize(MainActivity.this);
-        TbitBle.setListener(listener);
     }
 }
 ```
@@ -131,20 +100,94 @@ private boolean isMainProcess() {
 // 如果是Android 6.0以上需要在权限被同意之后再做初始化工作以下操作
 
 // 连接命令，参数为设备编号，密钥
-TbitBle.connect(deviceId, key);
+TbitBle.connect(deviceId, key, new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+              // 连接回应
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+              // 连接成功状态更新
+            }
+        });
+
 // 解锁
-TbitBle.unlock();
+TbitBle.unlock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+               // 解锁回应
+            }
+        });
+
 // 上锁
-TbitBle.lock();
+TbitBle.lock(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+               // 上锁回应
+            }
+        });
+
 // 更新状态
-TbitBle.update();
-// 重新连接
-TbitBle.reconnect();
+TbitBle.update(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+              // 更新状态回复
+            }
+        }, new StateCallback() {
+            @Override
+            public void onStateUpdated(BikeState bikeState) {
+              // 最新状态
+            }
+        });
+
 // 断开连接
 TbitBle.disConnect();
+// 取消队列中的所有任务
+TbitBle.cancelAllCommand();
+
+// 读取rssi(在已经连接的前提下)
+TbitBle.readRssi(new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+              // 状态
+            }
+        }, new RssiCallback() {
+            @Override
+            public void onRssiReceived(int rssi) {
+              // rssi
+            }
+        });
+
 // 销毁（在退出程序的Activity中的onDestroy中调用）
 // 销毁后无法再进行操作，如需要请重新初始化
 TbitBle.destroy();
+```
+#### 通用指令
+```
+//使用SimpleCommonCallback帮助解析
+TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
+                new SimpleCommonCallback(new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                      // 通用回复
+                    }
+                }));
+
+// 自行解析packet内容
+TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
+                new ResultCallback() {
+                    @Override
+                    public void onResult(int resultCode) {
+                      // 发送状态回复
+                    }
+                }, new PacketCallback() {
+                    @Override
+                    public void onPacketReceived(Packet packet) {
+                      // 收到packet回复
+                    }
+                });
+
 ```
 以上操作均需要在**主线程**执行
 
@@ -231,55 +274,6 @@ private int battery;
 private int[] errCode = new int[]{0,0,0,0,0,0,0,0};
 ```
 
-#### 结果回调
-
-```
-TbitListener listener = new TbitListener() {
-        @Override
-        public void onConnectResponse(int resultCode) {
-            Log.d(TAG, "onConnectResponse: " + resultCode);
-        }
-
-        @Override
-        public void onUnlockResponse(int resultCode) {
-            Log.d(TAG, "onUnlockResponse: " + resultCode);
-        }
-
-        @Override
-        public void onLockResponse(int resultCode) {
-            Log.d(TAG, "onLockResponse: " + resultCode);
-        }
-
-        @Override
-        public void onUpdateResponse(int resultCode) {
-            Log.d(TAG, "onUpdateResponse: " + resultCode);
-        }
-
-        @Override
-        public void onStateUpdated(BikeState state) {
-            Log.d(TAG, "onStateUpdated: " + state.toString());
-
-            //也可以这样，下述方式在全局均可调用
-            Log.d(TAG, "onStateUpdated: " + TbitBle.getState());
-        }
-
-        @Override
-        public void onDisconnected(int resultCode) {
-            Log.d(TAG, "onDisconnected: " + resultCode);
-        }
-
-        @Override
-        public void onCommonCommandResponse(int resultCode, PacketValue packetValue) {
-            // packetValue 有为null的可能
-            if(packetValue == null)
-                ...
-        }
-    };
-```
-上述回调方法分别会对应相应的操作，需要注意
-* 请求更新状态的时候，会得到请求成功的回调**onUpdateResponse**，但是状态更新需要等到**onStateUpdated**才获得最新的状态。
-* **onConnectResponse**方法可能会被多次回调，相应的逻辑在这里要做判断避免重复被执行
-
 
 #### 扫描设备
 
@@ -355,4 +349,3 @@ dependencies {
         compile 'com.github.billy96322:tbitble:0.5.3'
     }
 ```
-
