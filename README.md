@@ -143,8 +143,6 @@ TbitBle.update(new ResultCallback() {
 
 // 断开连接
 TbitBle.disConnect();
-// 取消队列中的所有任务
-TbitBle.cancelAllCommand();
 
 // 读取rssi(在已经连接的前提下)
 TbitBle.readRssi(new ResultCallback() {
@@ -164,16 +162,8 @@ TbitBle.readRssi(new ResultCallback() {
 TbitBle.destroy();
 ```
 #### 通用指令
+通用指令的回应仅仅代表**回应是否成功**，不代表指令的结果是否成功，结果需要自行解析
 ```Java
-//使用SimpleCommonCallback帮助解析
-TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
-                new SimpleCommonCallback(new ResultCallback() {
-                    @Override
-                    public void onResult(int resultCode) {
-                      // 通用回复
-                    }
-                }));
-
 // 自行解析packet内容
 TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
                 new ResultCallback() {
@@ -189,6 +179,49 @@ TbitBle.commonCommand((byte)0x03, (byte)0x02, new Byte[]{0x01},
                 });
 
 ```
+
+#### 清空命令队列
+该功能用于，当发出一个或多个请求尚未得到回应的时候需要解释当前的Activity，为防止泄漏可以在该Activity的onDestroy方法中调用取消所有任务的方法。
+```Java
+// 取消队列中的所有任务
+TbitBle.cancelAllCommand();
+```
+
+#### OTA升级
+升级文件的后缀必须是**.img**
+```Java
+// OTA升级
+TbitBle.ota(new File(imagePath), new ResultCallback() {
+            @Override
+            public void onResult(int resultCode) {
+              // 升级状态回应
+            }
+        }, new ProgressCallback() {
+            @Override
+            public void onProgress(int progress) {
+              // 升级进度
+            }
+        });
+```
+
+#### 日志记录
+为了更好的排查问题，当出现非预期的错误的时候，将日志拼接并记录。
+```Java
+// 注册日志监听器
+TbitBle.setDebugListener(new TbitDebugListener() {
+        @Override
+        public void onLogStrReceived(String logStr) {
+            detailLogBuilder.insert(0, "\n\n")
+                    .insert(0, logStr)
+                    .insert(0, "\n")
+                    .insert(0, getTime());  // 最好一并记录下时间
+        }
+    };);
+
+// 反注册日志监听器
+TbitBle.setDebugListener(null);
+```
+
 以上操作均需要在**主线程**执行
 
 #### 直接可以获得的参数
@@ -198,6 +231,7 @@ TbitBle.getBleConnectionState();
 // 获得最后一次更新的车辆状态信息(需要更新请执行更新操作并等待相应回调)
 TbitBle.getState()
 ```
+
 #### 蓝牙状态信息
 ```Java
 public static final int STATE_DISCONNECTED = 0;
@@ -346,6 +380,6 @@ allprojects {
 
 ``` gradle
 dependencies {
-        compile 'com.github.billy96322:tbitble:0.5.3'
+        compile 'com.github.billy96322:tbitble:0.6.7'
     }
 ```
