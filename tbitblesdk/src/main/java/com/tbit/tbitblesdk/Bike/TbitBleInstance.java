@@ -194,6 +194,12 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     void common(byte commandId, byte key, Byte[] value,
                 ResultCallback resultCallback, PacketCallback packetCallback) {
         Packet packet = PacketUtil.createPacket(128, commandId, key, value);
+        common(packet, resultCallback, packetCallback);
+    }
+
+    void common(Packet packet, ResultCallback resultCallback, PacketCallback packetCallback) {
+        if (!baseCheck(resultCallback))
+            return;
         common(new CommonCommand(resultCallback, packetCallback, packet));
     }
 

@@ -6,6 +6,7 @@ import com.tbit.tbitblesdk.Bike.services.command.callback.SimpleCommonCallback;
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
+import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.ProtocolAdapter;
 import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 import com.tbit.tbitblesdk.protocol.callback.PacketCallback;
@@ -86,6 +87,12 @@ public class TbitBle {
                                      ResultCallback resultCallback, PacketCallback packetCallback) {
         checkInstanceNotNull();
         instance.common(commandId, key, value, resultCallback, packetCallback);
+    }
+
+    public static void commonCommand(Packet packet, ResultCallback resultCallback,
+                                     PacketCallback packetCallback) {
+        checkInstanceNotNull();
+        instance.common(packet, resultCallback, packetCallback);
     }
 
     public static void commonCommand(byte commandId, byte key, Byte[] value,
