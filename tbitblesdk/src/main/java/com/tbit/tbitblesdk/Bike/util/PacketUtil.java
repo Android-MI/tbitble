@@ -19,7 +19,8 @@ public class PacketUtil {
     public static Packet createPacket(int sequenceId, byte commandId, PacketValue.DataBean... dataBeans) {
         PacketValue packetValue = new PacketValue();
         packetValue.setCommandId(commandId);
-        packetValue.addData(dataBeans);
+        if (dataBeans != null)
+            packetValue.addData(dataBeans);
 
         short valueLength = (short) packetValue.getSize();
         int crc16 = CrcUtil.crcTable(ProtocolInfo.packetCrcTable, packetValue.toArray());
