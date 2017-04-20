@@ -180,10 +180,12 @@ public class BleClient implements IBleClient {
 
     @Override
     public void disconnect() {
+        BleLog.log("BleClient", "disconnect called");
         disconnectInternal();
     }
 
     private void disconnectInternal() {
+        BleLog.log("BleClient", "disconnectInternal called");
         if (bluetoothGatt == null) {
             Log.w(TAG, "--BluetoothAdapter not initialized");
             return;
