@@ -12,12 +12,10 @@ import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.listener.ConnectStateChangeListener;
 import com.tbit.tbitblesdk.bluetooth.request.RssiRequest;
 import com.tbit.tbitblesdk.bluetooth.request.RssiResponse;
-import com.tbit.tbitblesdk.bluetooth.request.WriterRequest;
 import com.tbit.tbitblesdk.protocol.Packet;
 import com.tbit.tbitblesdk.protocol.PacketValue;
 import com.tbit.tbitblesdk.protocol.callback.ResultCallback;
 import com.tbit.tbitblesdk.protocol.callback.RssiCallback;
-import com.tbit.tbitblesdk.protocol.dispatcher.EmptyResponse;
 import com.tbit.tbitblesdk.protocol.dispatcher.PacketResponseListener;
 import com.tbit.tbitblesdk.protocol.dispatcher.ReceivedPacketDispatcher;
 
@@ -44,9 +42,10 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         this.bikeState = new BikeState();
         this.commandDispatcher = new CommandDispatcher();
         this.sequenceId = SEQUENCE_ID_START;
-        this.receivedPacketDispatcher = new ReceivedPacketDispatcher(bleClient);
         this.requestDispatcher = requestDispatcher;
+        this.receivedPacketDispatcher = new ReceivedPacketDispatcher(bleClient, requestDispatcher);
 
+        // 此处注册接受包的是为了解析心跳数据
         this.receivedPacketDispatcher.addPacketResponseListener(this);
         this.bleClient.getListenerManager().addConnectStateChangeListener(this);
     }
@@ -54,7 +53,8 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
     public void setBikeConfig(BikeConfig bikeConfig) {
         this.bikeConfig = bikeConfig;
         this.receivedPacketDispatcher.setServiceUuid(bikeConfig.getUuid().SPS_SERVICE_UUID);
-        this.receivedPacketDispatcher.setCharacterUuid(bikeConfig.getUuid().SPS_TX_UUID);
+        this.receivedPacketDispatcher.setTxUuid(bikeConfig.getUuid().SPS_TX_UUID);
+        this.receivedPacketDispatcher.setRxUuid(bikeConfig.getUuid().SPS_RX_UUID);
     }
 
     public void addCommand(Command command) {
@@ -77,15 +77,6 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         return bikeState;
     }
 
-    private void sendACK(int sequenceId, boolean error) {
-        Packet packet = PacketUtil.createAck(sequenceId, error);
-
-        final byte[] data = packet.toByteArray();
-
-        requestDispatcher.addRequest(new WriterRequest(bikeConfig.getUuid().SPS_SERVICE_UUID,
-                bikeConfig.getUuid().SPS_RX_UUID, data, false, new EmptyResponse()));
-    }
-
     private int getSequenceId() {
         return sequenceId = sequenceId >= 255 ?
                 SEQUENCE_ID_START : ++sequenceId;
@@ -97,18 +88,11 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         if (receivedPacket.getHeader().isAck())
             return false;
 
-        // 0x09是板间命令，不做应答和解析
-        if (receivedPacket.getPacketValue().getCommandId() == 0x09)
-            return false;
-
         int commandId = receivedPacket.getPacketValue().getCommandId();
 
         if (!(0x04 == commandId &&
                 PacketUtil.checkPacketValueContainKey(receivedPacket, 0x85)))
             return false;
-
-        // 接收终端的消息校验正确，给终端应答
-        sendACK(receivedPacket.getHeader().getSequenceId(), false);
 
         // 从头部更新system_state
         StateUpdateHelper.updateSysState(bikeState, receivedPacket.getHeader().getSystemState());

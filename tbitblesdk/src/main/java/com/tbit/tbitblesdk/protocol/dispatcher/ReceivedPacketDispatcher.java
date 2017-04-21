@@ -4,12 +4,13 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import com.tbit.tbitblesdk.bluetooth.IBleClient;
+import com.tbit.tbitblesdk.bluetooth.RequestDispatcher;
 import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
+import com.tbit.tbitblesdk.protocol.AckSender;
 import com.tbit.tbitblesdk.protocol.Packet;
 
 import java.util.Arrays;
@@ -36,24 +37,31 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     private Handler handler;
 
     private UUID serviceUuid;
-    private UUID characterUuid;
+    private UUID txUuid;
+    private AckSender ackSender;
 
-    public ReceivedPacketDispatcher(IBleClient bleClient) {
+    public ReceivedPacketDispatcher(IBleClient bleClient, RequestDispatcher requestDispatcher) {
         this.bleClient = bleClient;
+        this.ackSender = new AckSender(requestDispatcher);
         this.handler = new Handler(Looper.myLooper(), this);
         bleClient.getListenerManager().addChangeCharacterListener(this);
     }
 
-    public void setServiceUuid(UUID serviceUuid) {
-        this.serviceUuid = serviceUuid;
+    public void setRxUuid(UUID rxUuid) {
+        this.ackSender.setRxUuid(rxUuid);
     }
 
-    public void setCharacterUuid(UUID characterUuid) {
-        this.characterUuid = characterUuid;
+    public void setServiceUuid(UUID serviceUuid) {
+        this.serviceUuid = serviceUuid;
+        this.ackSender.setServiceUuid(serviceUuid);
+    }
+
+    public void setTxUuid(UUID txUuid) {
+        this.txUuid = txUuid;
     }
 
     public void addPacketResponseListener(PacketResponseListener packetResponseListener) {
-        packetResponseList.add(0,packetResponseListener);
+        packetResponseList.add(0, packetResponseListener);
     }
 
     public void removePacketResponseListener(PacketResponseListener packetResponseListener) {
@@ -69,8 +77,7 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         //0xAA才是数据包的头
         if (!receivedData.get(0).equals(HEAD_FLAG)) {
             Iterator<Byte> iterator = receivedData.iterator();
-            while (iterator.hasNext())
-            {
+            while (iterator.hasNext()) {
                 if (!iterator.next().equals(HEAD_FLAG)) {
                     iterator.remove();
                 } else {
@@ -102,6 +109,18 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     private void publishData(byte[] data) {
         BleLog.log("ReceivedDispatcherPublish", ByteUtil.bytesToHexString(data));
         Packet packet = new Packet(data);
+
+        if (!packet.getHeader().isAck()) {
+
+            // 0x09是板间命令，不做应答和解析
+            if (packet.getPacketValue().getCommandId() == 0x09) {
+                BleLog.log("ReceivedDispatcherPublish", "drop broad command");
+                return;
+            }
+
+            ackSender.sendACK(packet.getHeader().getSequenceId(), false);
+        }
+
         for (PacketResponseListener listener : packetResponseList) {
             if (listener.onPacketReceived(packet))
                 break;
@@ -112,7 +131,7 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     public void onCharacterChange(BluetoothGattCharacteristic characteristic, final byte[] value) {
         if (!serviceUuid.equals(characteristic.getService().getUuid()))
             return;
-        if (!characterUuid.equals(characteristic.getUuid()))
+        if (!txUuid.equals(characteristic.getUuid()))
             return;
         handler.post(new Runnable() {
             @Override
