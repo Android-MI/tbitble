@@ -3,6 +3,7 @@ package com.tbit.tbitblesdk.bluetooth.scanner.decorator;
 import android.bluetooth.BluetoothDevice;
 
 import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
+import com.tbit.tbitblesdk.bluetooth.model.SearchResult;
 import com.tbit.tbitblesdk.bluetooth.scanner.ScannerCallback;
 
 
@@ -14,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public class LogCallback extends BaseCallback {
-    private Map<String, Integer> results = new ConcurrentHashMap<>();
+    private Map<String, SearchResult> results = new ConcurrentHashMap<>();
     private StringBuilder sb;
 
     public LogCallback(ScannerCallback callback) {
@@ -44,15 +45,21 @@ public class LogCallback extends BaseCallback {
 
     @Override
     public void onDeviceFounded(BluetoothDevice bluetoothDevice, int i, byte[] bytes) {
-        results.put(bluetoothDevice.getAddress(), i);
+        if (!results.containsKey(bluetoothDevice.getAddress()))
+            results.put(bluetoothDevice.getAddress(), new SearchResult(bluetoothDevice, i, bytes));
         callback.onDeviceFounded(bluetoothDevice, i, bytes);
     }
 
     private void printLogScannedLog() {
         sb = new StringBuilder();
         sb.append("#####################################\n");
-        for (Map.Entry<String, Integer> entry : results.entrySet()) {
-            sb.append("mac: " + entry.getKey() + " rssi : " + entry.getValue())
+        for (Map.Entry<String, SearchResult> entry : results.entrySet()) {
+            sb.append("mac: " + entry.getKey())
+                    .append("|")
+                    .append(" rssi : " + entry.getValue().getRssi())
+                    .append("|")
+                    .append(" name : " + entry.getValue().getDevice().getName())
+                    .append("|")
                     .append("\n");
         }
         sb.append("#####################################");
