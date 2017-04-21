@@ -40,8 +40,22 @@ public class BikeConfigDispatcher {
                 }
                 break;
             }
-            case 1:
-                result = new Config_206();
+            case 1: {
+                switch (subHardVersion) {
+                    case 1:
+                        result = new Config_206();
+                        break;
+                    case 2:
+                        result = new Config_206();
+                        break;
+                    case 3:
+                        result = new Config_207();
+                        break;
+                    default:
+                        result = new Config_206();
+                        break;
+                }
+            }
                 break;
             default:
                 result = new Config_206();
