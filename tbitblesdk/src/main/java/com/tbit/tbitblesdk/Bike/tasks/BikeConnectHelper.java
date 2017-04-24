@@ -115,6 +115,8 @@ public class BikeConnectHelper {
     }
 
     public void destroy() {
+        if (scanner.isScanning())
+            scanner.stop();
         this.compositeDisposable.dispose();
     }
 

@@ -24,7 +24,7 @@ public abstract class BleRequest implements Handler.Callback {
     protected BleResponse bleResponse;
 
     public BleRequest(BleResponse response) {
-        this.handler = new Handler(Looper.myLooper(), this);
+        this.handler = new Handler(Looper.getMainLooper(), this);
         this.isFinished = false;
         this.bleResponse = response;
     }
