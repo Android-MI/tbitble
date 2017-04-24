@@ -95,6 +95,24 @@ private boolean isMainProcess() {
     return TextUtils.equals(BuildConfig.APPLICATION_ID, processNameString);
 }
 ```
+#### RxJava依赖冲突
+本SDK依赖Rxjava2, 如果出现和你当前项目的依赖冲突，按如下操作排除冲突
+```gradle
+
+android {
+	...
+	packagingOptions {
+    		exclude 'META-INF/rxjava.properties'
+	}
+}
+
+dependencies {
+	compile ('com.github.billy96322:tbitble:x.y.z') {
+	    exclude module: 'rxjava', group: 'io.reactivex'
+	    exclude module: 'rxandroid', group: 'io.reactivex'
+	}
+}
+```
 #### 操作
 ```Java
 // 如果是Android 6.0以上需要在权限被同意之后再做初始化工作以下操作
@@ -376,10 +394,9 @@ allprojects {
 	}
 ```
 
- 添加依赖
-
+ 添加依赖(具体版本参照readme上的版本图标)
 ``` gradle
 dependencies {
-        compile 'com.github.billy96322:tbitble:0.6.7'
-    }
+        compile 'com.github.billy96322:tbitble:x.y.z' 
+}
 ```
