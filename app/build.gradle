@@ -24,15 +24,17 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:design:23.1.0'
-    compile 'com.android.support:appcompat-v7:25.0.0'
-    testCompile 'junit:junit:4.12'
 
-    compile 'com.github.billy96322:EasyPermission:0.0.1'
-    compile 'com.journeyapps:zxing-android-embedded:3.4.0'
-//    compile 'com.github.billy96322:tbitble:0.5.5'
+    //    compile 'com.github.billy96322:tbitble:0.5.5'
     compile project(':tbitblesdk')
 
+    compile 'com.android.support:design:23.1.0'
+    compile 'com.android.support:appcompat-v7:25.0.0'
+    compile 'com.github.billy96322:EasyPermission:0.0.1'
+    compile 'com.journeyapps:zxing-android-embedded:3.4.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-beta1'
+    testCompile 'junit:junit:4.12'
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
     releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
+    compile 'com.jakewharton:butterknife:7.0.1'
 }
