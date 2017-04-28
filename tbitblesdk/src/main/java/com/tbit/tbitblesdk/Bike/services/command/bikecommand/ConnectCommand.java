@@ -86,7 +86,8 @@ public class ConnectCommand extends UpdatableCommand {
             }
         }
 
-        updateState();
+        if (resultCode == ResultCode.SUCCEED)
+            updateState();
         response(resultCode);
     }
 
