@@ -39,12 +39,17 @@ public class RssiRequest extends BleRequest implements ReadRssiListener {
     }
 
     @Override
-    public void onReadRemoteRssi(int rssi, int status) {
+    public void onReadRemoteRssi(final int rssi, int status) {
         stopTiming();
 
         if (BluetoothGatt.GATT_SUCCESS == status) {
-            rssiResponse.onRssi(rssi);
             response(Code.REQUEST_SUCCESS);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    rssiResponse.onRssi(rssi);
+                }
+            });
         } else {
             response(Code.REQUEST_FAILED);
         }
