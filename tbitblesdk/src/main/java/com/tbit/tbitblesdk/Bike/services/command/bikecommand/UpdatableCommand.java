@@ -35,7 +35,7 @@ public abstract class UpdatableCommand extends Command {
     }
 
     protected void parseControllerState(Byte[] data) {
-        StateUpdateHelper.updateControllerState(bikeState, data);
+        bikeConfig.getResolver().resolveControllerState(bikeState, data);
     }
 
     protected void parseBaseStation(Byte[] data) {
@@ -43,7 +43,7 @@ public abstract class UpdatableCommand extends Command {
     }
 
     protected void parseAll(Byte[] data) {
-        StateUpdateHelper.updateAll(bikeState, data);
+        bikeConfig.getResolver().resolveAll(bikeState, data);
     }
 
     protected void parseVoltage(Byte[] data) {

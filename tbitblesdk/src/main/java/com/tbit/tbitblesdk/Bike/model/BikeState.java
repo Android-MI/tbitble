@@ -38,6 +38,26 @@ public class BikeState {
     private int[] version = new int[]{0, 0};
     // 控制器信息
     private ControllerState controllerState = new ControllerState();
+    // 原始信息
+    private Byte[] rawData = new Byte[]{};
+    // 卫星数
+    private int satelliteCount;
+
+    public int getSatelliteCount() {
+        return satelliteCount;
+    }
+
+    public void setSatelliteCount(int satelliteCount) {
+        this.satelliteCount = satelliteCount;
+    }
+
+    public Byte[] getRawData() {
+        return rawData;
+    }
+
+    public void setRawData(Byte[] rawData) {
+        this.rawData = rawData;
+    }
 
     public ControllerState getControllerState() {
         return controllerState;

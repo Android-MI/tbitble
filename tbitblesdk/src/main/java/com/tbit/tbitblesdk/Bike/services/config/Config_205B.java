@@ -2,6 +2,8 @@ package com.tbit.tbitblesdk.Bike.services.config;
 
 import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandComparator;
 import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandInsideComparator;
+import com.tbit.tbitblesdk.Bike.services.resolver.BeforeW207Resolver;
+import com.tbit.tbitblesdk.Bike.services.resolver.Resolver;
 
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ public class Config_205B implements BikeConfig {
 
     private Uuid uuid;
     private CommandComparator commandComparator;
+    private Resolver resolver;
 
     public Config_205B() {
         uuid = new Uuid();
@@ -23,6 +26,7 @@ public class Config_205B implements BikeConfig {
         uuid.SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
 
         commandComparator = new CommandInsideComparator();
+        resolver = new BeforeW207Resolver();
     }
 
     @Override
@@ -33,5 +37,10 @@ public class Config_205B implements BikeConfig {
     @Override
     public CommandComparator getComparator() {
         return commandComparator;
+    }
+
+    @Override
+    public Resolver getResolver() {
+        return resolver;
     }
 }

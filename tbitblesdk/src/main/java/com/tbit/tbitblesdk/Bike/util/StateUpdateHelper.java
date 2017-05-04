@@ -17,30 +17,32 @@ public class StateUpdateHelper {
             return;
         ControllerState controllerState = bikeStates.getControllerState();
 
-        byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
+        controllerState.setRawData(data);
 
-        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 0, 2)));
-
-        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 2, 4)));
-
-        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 4, 6)));
-
-        Byte originError = data[6];
-        int[] error = controllerState.getErrCode();
-        error[0] = bitResolver(originError, 0x01);
-        error[1] = bitResolver(originError, 0x02);
-        error[2] = bitResolver(originError, 0x04);
-        error[3] = bitResolver(originError, 0x08);
-        error[4] = bitResolver(originError, 0x10);
-        error[5] = bitResolver(originError, 0x20);
-        error[6] = bitResolver(originError, 0x40);
-        error[7] = bitResolver(originError, 0x80);
-
-        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 9)));
-
-        controllerState.setElectricCurrent(byteArrayToInt(Arrays.copyOfRange(originData, 9, 11)));
-
-        controllerState.setBattery(byteArrayToInt(Arrays.copyOfRange(originData, 11, 13)));
+//        byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
+//
+//        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 0, 2)));
+//
+//        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 2, 4)));
+//
+//        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 4, 6)));
+//
+//        Byte originError = data[6];
+//        int[] error = controllerState.getErrCode();
+//        error[0] = bitResolver(originError, 0x01);
+//        error[1] = bitResolver(originError, 0x02);
+//        error[2] = bitResolver(originError, 0x04);
+//        error[3] = bitResolver(originError, 0x08);
+//        error[4] = bitResolver(originError, 0x10);
+//        error[5] = bitResolver(originError, 0x20);
+//        error[6] = bitResolver(originError, 0x40);
+//        error[7] = bitResolver(originError, 0x80);
+//
+//        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 9)));
+//
+//        controllerState.setElectricCurrent(byteArrayToInt(Arrays.copyOfRange(originData, 9, 11)));
+//
+//        controllerState.setBattery(byteArrayToInt(Arrays.copyOfRange(originData, 11, 13)));
     }
 
     public static void updateBaseStation(BikeState bikeStates, Byte[] data) {
@@ -69,6 +71,17 @@ public class StateUpdateHelper {
         boolean isFlagged = (state & flag) == flag;
         return isFlagged ? 1 : 0;
     }
+    
+    public static void byteToBitArray(Byte b, int[] array) {
+        array[0] = bitResolver(b, 0x01);
+        array[1] = bitResolver(b, 0x02);
+        array[2] = bitResolver(b, 0x04);
+        array[3] = bitResolver(b, 0x08);
+        array[4] = bitResolver(b, 0x10);
+        array[5] = bitResolver(b, 0x20);
+        array[6] = bitResolver(b, 0x40);
+        array[7] = bitResolver(b, 0x80);
+    }
 
     public static int byteArrayToInt(byte[] data) {
 //        return ByteUtil.bytesToInt(data);
@@ -80,6 +93,8 @@ public class StateUpdateHelper {
     public static void updateAll(BikeState bikeStates, Byte[] data) {
         if (data == null || data.length == 0)
             return;
+
+        bikeStates.setRawData(data);
 
         if (data.length >= 10) {
             Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
@@ -127,6 +142,12 @@ public class StateUpdateHelper {
     public static void updateLocation(BikeState bikeStates, Byte[] data) {
         double[] result = ByteUtil.getPoint(data);
         bikeStates.setLocation(result);
+    }
+
+    public static void updateSatelliteCount(BikeState bikeStates, Byte[] data) {
+        if (data == null || data.length == 0)
+            return;
+        bikeStates.setSatelliteCount(data[data.length - 1]);
     }
 
     public static void updateSignal(BikeState bikeStates, Byte[] data) {
