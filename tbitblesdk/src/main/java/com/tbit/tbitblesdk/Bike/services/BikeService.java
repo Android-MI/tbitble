@@ -103,7 +103,7 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
             int key = b.key & 0xff;
             Byte[] value = b.value;
             if (key == 0x85) {
-                StateUpdateHelper.updateAll(bikeState, value);
+                bikeConfig.getResolver().resolveAll(bikeState, value);
                 break;
             }
         }

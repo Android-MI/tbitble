@@ -19,30 +19,30 @@ public class StateUpdateHelper {
 
         controllerState.setRawData(data);
 
-//        byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
-//
-//        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 0, 2)));
-//
-//        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 2, 4)));
-//
-//        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 4, 6)));
-//
-//        Byte originError = data[6];
-//        int[] error = controllerState.getErrCode();
-//        error[0] = bitResolver(originError, 0x01);
-//        error[1] = bitResolver(originError, 0x02);
-//        error[2] = bitResolver(originError, 0x04);
-//        error[3] = bitResolver(originError, 0x08);
-//        error[4] = bitResolver(originError, 0x10);
-//        error[5] = bitResolver(originError, 0x20);
-//        error[6] = bitResolver(originError, 0x40);
-//        error[7] = bitResolver(originError, 0x80);
-//
-//        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 9)));
-//
-//        controllerState.setElectricCurrent(byteArrayToInt(Arrays.copyOfRange(originData, 9, 11)));
-//
-//        controllerState.setBattery(byteArrayToInt(Arrays.copyOfRange(originData, 11, 13)));
+        byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
+
+        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 0, 2)));
+
+        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 2, 4)));
+
+        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 4, 6)));
+
+        Byte originError = data[6];
+        int[] error = controllerState.getErrCode();
+        error[0] = bitResolver(originError, 0x01);
+        error[1] = bitResolver(originError, 0x02);
+        error[2] = bitResolver(originError, 0x04);
+        error[3] = bitResolver(originError, 0x08);
+        error[4] = bitResolver(originError, 0x10);
+        error[5] = bitResolver(originError, 0x20);
+        error[6] = bitResolver(originError, 0x40);
+        error[7] = bitResolver(originError, 0x80);
+
+        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 9)));
+
+        controllerState.setElectricCurrent(byteArrayToInt(Arrays.copyOfRange(originData, 9, 11)));
+
+        controllerState.setBattery(byteArrayToInt(Arrays.copyOfRange(originData, 11, 13)));
     }
 
     public static void updateBaseStation(BikeState bikeStates, Byte[] data) {
