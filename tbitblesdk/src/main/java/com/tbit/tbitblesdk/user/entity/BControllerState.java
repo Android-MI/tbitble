@@ -30,13 +30,13 @@ public class BControllerState {
     // 外接电压
     private int extVoltage;
     // 速度双字节
-    private int speed;
+    private int chargeCount;
     // 运行电流
     private int movingEi;
 
     public static BControllerState resolve(Byte[] data) {
         BControllerState controllerState = new BControllerState();
-        if (data == null || data.length != 19)
+        if (data == null || data.length < 19)
             return controllerState;
 
         byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
@@ -55,7 +55,7 @@ public class BControllerState {
 
         controllerState.setMovingEi(byteArrayToInt(Arrays.copyOfRange(originData, 4, 5)));
 
-        controllerState.setSpeed(byteArrayToInt(Arrays.copyOfRange(originData, 5, 7)));
+        controllerState.setChargeCount(byteArrayToInt(Arrays.copyOfRange(originData, 5, 7)));
 
         controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 8)));
 
@@ -70,12 +70,12 @@ public class BControllerState {
         return controllerState;
     }
 
-    public int getSpeed() {
-        return speed;
+    public int getChargeCount() {
+        return chargeCount;
     }
 
-    public void setSpeed(int speed) {
-        this.speed = speed;
+    public void setChargeCount(int chargeCount) {
+        this.chargeCount = chargeCount;
     }
 
     public int[] getStatus2() {
@@ -161,7 +161,7 @@ public class BControllerState {
                 ", humidity=" + humidity +
                 ", voltage=" + voltage +
                 ", extVoltage=" + extVoltage +
-                ", speed=" + speed +
+                ", chargeCount=" + chargeCount +
                 ", movingEi=" + movingEi +
                 '}';
     }

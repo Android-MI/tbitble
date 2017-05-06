@@ -11,7 +11,9 @@ import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 import com.tbit.tbitblesdk.bluetooth.listener.ChangeCharacterListener;
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 import com.tbit.tbitblesdk.protocol.AckSender;
+import com.tbit.tbitblesdk.protocol.CrcUtil;
 import com.tbit.tbitblesdk.protocol.Packet;
+import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +32,8 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     private static final int HEAD_LENGTH = 8;
     private static final Byte HEAD_FLAG = new Byte((byte) 0xAA);
     private static final int PACKET_LENGTH_INDEX = 5;
+    private static final int CRC_START_FLAG = 6;
+    private static final int CRC_END_FLAG = 8;
 
     private IBleClient bleClient;
     private List<Byte> receivedData = Collections.synchronizedList(new LinkedList<Byte>());
@@ -102,8 +106,28 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         for (int i = 0; i < totalLength; i++) {
             data[i] = receivedData.remove(0);
         }
+
+        // 校验crc
+        byte[] crc = Arrays.copyOfRange(data, CRC_START_FLAG, CRC_END_FLAG);
+        byte[] value = Arrays.copyOfRange(data, HEAD_LENGTH, data.length);
+        if (!checkCrc(crc, value)) {
+            BleLog.log("ReceivedDispatcherCheckCrc", "CheckCrc Failed");
+            return;
+        }
+
         // 发布数据
         publishData(data);
+    }
+
+    private boolean checkCrc(byte[] crc, byte[] value) {
+        try {
+            short i = CrcUtil.crcTable(ProtocolInfo.packetCrcTable, value);
+            byte[] calculatedCrc = ByteUtil.shortToByte(i);
+            return Arrays.equals(crc, calculatedCrc);
+        } catch (Exception e) {
+            BleLog.log("ReceivedDispatcherCheckCrc", "CheckCrc Exception: " + e.getMessage());
+            return false;
+        }
     }
 
     private void publishData(byte[] data) {

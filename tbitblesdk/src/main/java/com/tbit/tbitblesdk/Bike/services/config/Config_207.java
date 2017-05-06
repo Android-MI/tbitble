@@ -2,6 +2,7 @@ package com.tbit.tbitblesdk.Bike.services.config;
 
 import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandComparator;
 import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandInsideComparator;
+import com.tbit.tbitblesdk.Bike.services.command.comparator.SequenceIdComparator;
 import com.tbit.tbitblesdk.Bike.services.resolver.Resolver;
 import com.tbit.tbitblesdk.Bike.services.resolver.W207Resolver;
 
@@ -24,7 +25,7 @@ public class Config_207 implements BikeConfig {
         uuid.SPS_NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
         uuid.SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
 
-        commandComparator = new CommandInsideComparator();
+        commandComparator = new SequenceIdComparator();
         resolver = new W207Resolver();
     }
 

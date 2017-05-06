@@ -43,13 +43,23 @@ public class W207State {
     //控制器工作状态
     private int ctrlState;
 
+    //脚撑
+    private boolean sustained;
+
     private W207State() {
     }
 
     public static W207State resolve(BikeState bikeState) {
         W207State state = new W207State();
 
-        state.setLongitudeDegree(bikeState.getLocation()[0]);
+        double[] longitudes = resolveLocations(bikeState.getLocation()[0]);
+        double[] latitude = resolveLocations(bikeState.getLocation()[1]);
+
+        state.setLongitudeDegree(longitudes[0]);
+        state.setLongitudeMinute(longitudes[1]);
+        state.setLatitudeDegree(latitude[0]);
+        state.setLatitudeMinute(latitude[1]);
+
         state.setLatitudeDegree(bikeState.getLocation()[1]);
         state.setSatellite(bikeState.getSatelliteCount());
 
@@ -57,12 +67,67 @@ public class W207State {
 
         state.setTotalMileage(controllerState.getTotalMillage());
         state.setBattery(controllerState.getVoltage());
-//        state.setChargeCount();
-//        state.setCharging();
+
+        int[] sysState = bikeState.getSystemState();
+
+        state.setCharging(sysState[2] == 1);
         state.setErrorCode(controllerState.getStatus2());
-//        state.setCtrlState();
+
+        state.setChargeCount(controllerState.getChargeCount());
+
+        state.setSustained(sysState[7] == 1);
+
+        String res = String.valueOf(sysState[1]) + String.valueOf(sysState[0]);
+
+        int flag = Integer.valueOf(res, 2);
+
+        int ctrlValue = 1;
+        switch (flag) {
+            case 0:
+                ctrlValue = 2;
+                break;
+            case 1:
+                ctrlValue = 1;
+                break;
+            case 2:
+                ctrlValue = 3;
+                break;
+        }
+        state.setCtrlState(ctrlValue);
 
         return state;
+    }
+
+    // 0:degree 1:minute
+    private static double[] resolveLocations(double d) {
+        double[] locations = new double[]{0,0};
+
+        try {
+            double degree = (double)((int)(d));
+
+            locations[0] = degree;
+
+            double min = (d % 1) * 60;
+
+            String degreeStr = String.valueOf(min);
+
+            min = Double.parseDouble(degreeStr.substring(0,degreeStr.indexOf(".")+5));
+
+            locations[1] = min;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return locations;
+    }
+
+    public boolean isSustained() {
+        return sustained;
+    }
+
+    public void setSustained(boolean sustained) {
+        this.sustained = sustained;
     }
 
     public double getLatitudeDegree() {

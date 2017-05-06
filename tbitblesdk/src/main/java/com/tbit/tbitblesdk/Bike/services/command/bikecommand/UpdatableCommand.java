@@ -27,7 +27,7 @@ public abstract class UpdatableCommand extends Command {
     }
 
     protected void parseLocation(Byte[] data) {
-        StateUpdateHelper.updateLocation(bikeState, data);
+        bikeConfig.getResolver().resolveLocations(bikeState, data);
     }
 
     protected void parseSignal(Byte[] data) {

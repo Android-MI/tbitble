@@ -11,4 +11,6 @@ public interface Resolver {
     void resolveAll(BikeState bikeState, Byte[] data);
 
     void resolveControllerState(BikeState bikeState, Byte[] data);
+
+    void resolveLocations(BikeState bikeState, Byte[] data);
 }

@@ -18,4 +18,9 @@ public class BeforeW207Resolver implements Resolver {
     public void resolveControllerState(BikeState bikeState, Byte[] data) {
         StateUpdateHelper.updateControllerState(bikeState, data);
     }
+
+    @Override
+    public void resolveLocations(BikeState bikeState, Byte[] data) {
+        StateUpdateHelper.updateLocation(bikeState, data);
+    }
 }

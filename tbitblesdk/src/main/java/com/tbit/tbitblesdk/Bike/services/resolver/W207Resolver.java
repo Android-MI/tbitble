@@ -2,6 +2,7 @@ package com.tbit.tbitblesdk.Bike.services.resolver;
 
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.model.ControllerState;
+import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 
 import java.util.Arrays;
 
@@ -52,10 +53,19 @@ public class W207Resolver implements Resolver {
 
     @Override
     public void resolveControllerState(BikeState bikeState, Byte[] data) {
-        if (data == null || data.length != 19)
+        if (data == null || data.length < 19)
             return;
         ControllerState controllerState = bikeState.getControllerState();
 
         controllerState.setRawData(data);
+    }
+
+    @Override
+    public void resolveLocations(BikeState bikeState, Byte[] data) {
+        if (data.length < 11)
+            return;
+        double[] result = ByteUtil.getPoint(data);
+        bikeState.setLocation(result);
+        bikeState.setSatelliteCount(data[10]);
     }
 }
