@@ -15,27 +15,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by Salmon on 2017/3/3 0003.
  */
 
-public class BelowAndroidLScanner implements Scanner {
+public class BelowAndroidLScanner implements Scanner, Handler.Callback {
     private static final int HANDLE_STOP = 0;
     private static final int HANDLE_TIMEOUT = 1;
 
     private ScannerCallback callback;
     private BluetoothAdapter bluetoothAdapter;
-    private ScanHandler handler;
+    private Handler handler;
     private AtomicBoolean needProcess = new AtomicBoolean(false);
     private long timeoutMillis;
 
     private BluetoothAdapter.LeScanCallback bleCallback = new BluetoothAdapter.LeScanCallback() {
         @Override
         public void onLeScan(final BluetoothDevice bluetoothDevice, final int i, final byte[] bytes) {
-            if (callback != null)
-                callback.onDeviceFounded(bluetoothDevice, i, bytes);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (callback != null)
+                        callback.onDeviceFounded(bluetoothDevice, i, bytes);
+                }
+            });
         }
     };
 
     public BelowAndroidLScanner() {
         this.bluetoothAdapter = BleGlob.getBluetoothAdapter();
-        this.handler = new ScanHandler(this);
+        this.handler = new Handler(Looper.getMainLooper(), this);
     }
 
     @Override
@@ -89,29 +94,19 @@ public class BelowAndroidLScanner implements Scanner {
         callback = null;
     }
 
-    static class ScanHandler extends Handler {
-        WeakReference<BelowAndroidLScanner> scannerReference;
-
-        public ScanHandler(BelowAndroidLScanner belowAndroidLScanner) {
-            super(Looper.getMainLooper());
-            this.scannerReference = new WeakReference<>(belowAndroidLScanner);
+    @Override
+    public boolean handleMessage(Message msg) {
+        switch (msg.what) {
+            case HANDLE_STOP:
+                stopInternal();
+                break;
+            case HANDLE_TIMEOUT:
+                timeUp();
+                break;
+            default:
+                break;
         }
-
-        @Override
-        public void handleMessage(Message msg) {
-            BelowAndroidLScanner scanner = scannerReference.get();
-            if (scanner == null)
-                return;
-            switch (msg.what) {
-                case HANDLE_STOP:
-                    scanner.stopInternal();
-                    break;
-                case HANDLE_TIMEOUT:
-                    scanner.timeUp();
-                    break;
-                default:
-                    break;
-            }
-        }
+        return true;
     }
+
 }
