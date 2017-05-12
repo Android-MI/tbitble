@@ -60,7 +60,6 @@ public class W207State {
         state.setLatitudeDegree(latitude[0]);
         state.setLatitudeMinute(latitude[1]);
 
-        state.setLatitudeDegree(bikeState.getLocation()[1]);
         state.setSatellite(bikeState.getSatelliteCount());
 
         BControllerState controllerState = BControllerState.resolve(bikeState.getControllerState().getRawData());
