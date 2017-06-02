@@ -1,5 +1,7 @@
 package com.tbit.tbitblesdk.protocol;
 
+import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+
 /**
  * Created by Salmon on 2017/4/12 0012.
  */
@@ -11,5 +13,9 @@ public abstract class ProtocolAdapter {
     public abstract char[] getAdKey();
 
     public abstract int getMaxAdEncryptedCount();
+
+    public BikeConfig getConfig() {
+        return null;
+    }
 
 }

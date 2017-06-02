@@ -46,6 +46,9 @@ public class W207State {
     //脚撑
     private boolean sustained;
 
+    // 定位方式
+    private int gpsState = 0;
+
     private W207State() {
     }
 
@@ -60,7 +63,9 @@ public class W207State {
         state.setLatitudeDegree(latitude[0]);
         state.setLatitudeMinute(latitude[1]);
 
-        state.setSatellite(bikeState.getSatelliteCount());
+        state.setSatellite(bikeState.getSignal()[1]);
+
+        state.setGpsState(bikeState.getGpsState());
 
         BControllerState controllerState = BControllerState.resolve(bikeState.getControllerState().getRawData());
 
@@ -99,10 +104,10 @@ public class W207State {
 
     // 0:degree 1:minute
     private static double[] resolveLocations(double d) {
-        double[] locations = new double[]{0,0};
+        double[] locations = new double[]{0, 0};
 
         try {
-            double degree = (double)((int)(d));
+            double degree = (double) ((int) (d));
 
             locations[0] = degree;
 
@@ -110,7 +115,7 @@ public class W207State {
 
             String degreeStr = String.valueOf(min);
 
-            min = Double.parseDouble(degreeStr.substring(0,degreeStr.indexOf(".")+5));
+            min = Double.parseDouble(degreeStr.substring(0, degreeStr.indexOf(".") + 5));
 
             locations[1] = min;
 
@@ -119,6 +124,14 @@ public class W207State {
         }
 
         return locations;
+    }
+
+    public int getGpsState() {
+        return gpsState;
+    }
+
+    public void setGpsState(int gpsState) {
+        this.gpsState = gpsState;
     }
 
     public boolean isSustained() {
@@ -231,6 +244,8 @@ public class W207State {
                 ", charging=" + charging +
                 ", errorCode=" + Arrays.toString(errorCode) +
                 ", ctrlState=" + ctrlState +
+                ", sustained=" + sustained +
+                ", gpsState=" + gpsState +
                 '}';
     }
 }

@@ -1,5 +1,7 @@
 package com.tbit.tbitblesdk.protocol;
 
+import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+
 /**
  * Created by Salmon on 2017/3/9 0009.
  */
@@ -39,4 +41,6 @@ public class ProtocolInfo {
     public static char[] adKey = {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+    public static BikeConfig bikeConfig = null;
 }

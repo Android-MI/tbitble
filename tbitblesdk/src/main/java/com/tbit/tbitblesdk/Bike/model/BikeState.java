@@ -40,15 +40,15 @@ public class BikeState {
     private ControllerState controllerState = new ControllerState();
     // 原始信息
     private Byte[] rawData = new Byte[]{};
-    // 卫星数
-    private int satelliteCount;
+    // 定位方式
+    private int gpsState = 0;
 
-    public int getSatelliteCount() {
-        return satelliteCount;
+    public int getGpsState() {
+        return gpsState;
     }
 
-    public void setSatelliteCount(int satelliteCount) {
-        this.satelliteCount = satelliteCount;
+    public void setGpsState(int gpsState) {
+        this.gpsState = gpsState;
     }
 
     public Byte[] getRawData() {
@@ -151,7 +151,7 @@ public class BikeState {
                 ", operateFaultCode=" + operateFaultCode +
                 ", baseStation=" + Arrays.toString(baseStation) +
                 ", version=" + Arrays.toString(version) +
-                ", controllerState=" + controllerState.toString() +
+                ", gpsState=" + gpsState +
                 '}';
     }
 }

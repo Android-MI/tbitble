@@ -6,9 +6,9 @@ import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 
 import java.util.Arrays;
 
+import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.bitResolver;
 import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.updateBaseStation;
 import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.updateLocation;
-import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.updateSatelliteCount;
 import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.updateSignal;
 import static com.tbit.tbitblesdk.Bike.util.StateUpdateHelper.updateVoltage;
 
@@ -25,13 +25,11 @@ public class W207Resolver implements Resolver {
 
         bikeStates.setRawData(data);
 
-        if (data.length >= 10) {
-            Byte[] locationData = Arrays.copyOfRange(data, 0, 10);
-            updateLocation(bikeStates, locationData);
-        }
         if (data.length >= 11) {
-            Byte[] locationData = Arrays.copyOfRange(data, 10, 11);
-            updateSatelliteCount(bikeStates, locationData);
+            Byte[] locationData = Arrays.copyOfRange(data, 0, 8);
+            updateLocation(bikeStates, locationData);
+            Byte[] heading = Arrays.copyOfRange(data, 8, 11);
+            bikeStates.setGpsState(bitResolver(heading[0], 4));
         }
         if (data.length >= 14) {
             Byte[] signalData = Arrays.copyOfRange(data, 11, 14);
@@ -66,6 +64,8 @@ public class W207Resolver implements Resolver {
             return;
         double[] result = ByteUtil.getPoint(data);
         bikeState.setLocation(result);
-        bikeState.setSatelliteCount(data[10]);
+
+        Byte[] heading = Arrays.copyOfRange(data, 8, 10);
+        bikeState.setGpsState(bitResolver(heading[0], 4));
     }
 }

@@ -144,12 +144,6 @@ public class StateUpdateHelper {
         bikeStates.setLocation(result);
     }
 
-    public static void updateSatelliteCount(BikeState bikeStates, Byte[] data) {
-        if (data == null || data.length == 0)
-            return;
-        bikeStates.setSatelliteCount(data[data.length - 1]);
-    }
-
     public static void updateSignal(BikeState bikeStates, Byte[] data) {
         if (data == null || data.length != 3)
             return;

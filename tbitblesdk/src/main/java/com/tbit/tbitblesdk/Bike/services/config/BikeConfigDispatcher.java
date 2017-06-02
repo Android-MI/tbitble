@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
+import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 
 /**
  * Created by Salmon on 2017/3/20 0020.
@@ -12,6 +13,8 @@ import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
 public class BikeConfigDispatcher {
 
     public static BikeConfig dispatch(ManufacturerAd manufacturerAd) {
+
+        if (ProtocolInfo.bikeConfig != null) return ProtocolInfo.bikeConfig;
 
         int hardVersion = manufacturerAd.getHardwareVersion();
 
@@ -22,11 +25,6 @@ public class BikeConfigDispatcher {
 
         // 0x1f => 0001 1111 低5位代表副板本号
         int subHardVersion = hardVersion & 0x1f;
-
-        Log.d("asd", "dispatch: " + hardVersion);
-        Log.d("asd", "dispatch: " + softVersion);
-        Log.d("asd", "dispatch: " + mainHardVersion);
-        Log.d("asd", "dispatch: " + subHardVersion);
 
         BikeConfig result;
 
@@ -51,7 +49,7 @@ public class BikeConfigDispatcher {
             case 1: {
                 switch (subHardVersion) {
                     case 1:
-                        result = new Config_207();
+                        result = new Config_206();
                         break;
                     case 2:
                         result = new Config_206();

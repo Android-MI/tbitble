@@ -37,6 +37,7 @@ public class TbitBle {
             ProtocolInfo.packetCrcTable = adapter.getPacketCrcTable();
             ProtocolInfo.adKey = adapter.getAdKey();
             ProtocolInfo.maxEncryptCount = adapter.getMaxAdEncryptedCount();
+            ProtocolInfo.bikeConfig = adapter.getConfig();
         }
     }
 
