@@ -29,7 +29,7 @@ public class W207Resolver implements Resolver {
             Byte[] locationData = Arrays.copyOfRange(data, 0, 8);
             updateLocation(bikeStates, locationData);
             Byte[] heading = Arrays.copyOfRange(data, 8, 11);
-            bikeStates.setGpsState(bitResolver(heading[0], 4));
+            bikeStates.setGpsState(bitResolver(heading[0], 16));
         }
         if (data.length >= 14) {
             Byte[] signalData = Arrays.copyOfRange(data, 11, 14);
@@ -66,6 +66,7 @@ public class W207Resolver implements Resolver {
         bikeState.setLocation(result);
 
         Byte[] heading = Arrays.copyOfRange(data, 8, 10);
-        bikeState.setGpsState(bitResolver(heading[0], 4));
+        bikeState.setGpsState(bitResolver(heading[0], 16));
     }
+
 }
