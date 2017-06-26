@@ -87,6 +87,7 @@ public class BikeUtil {
     }
 
     public static Byte[] resolveKey(String keyStr, int length) {
+        if (TextUtils.isEmpty(keyStr)) return null;
         length = length * 2;
         Byte[] result = new Byte[]{};
         keyStr = keyStr.replace(" ", "");
