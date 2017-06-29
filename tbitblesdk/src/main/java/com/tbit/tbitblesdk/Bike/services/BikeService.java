@@ -43,7 +43,7 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         this.commandDispatcher = new CommandDispatcher();
         this.sequenceId = SEQUENCE_ID_START;
         this.requestDispatcher = requestDispatcher;
-        this.receivedPacketDispatcher = new ReceivedPacketDispatcher(bleClient, requestDispatcher);
+        this.receivedPacketDispatcher = new BikeReceivedPacketDispatcher(bleClient, requestDispatcher, bikeState);
 
         // 此处注册接受包的是为了解析心跳数据
         this.receivedPacketDispatcher.addPacketResponseListener(this);
@@ -55,6 +55,10 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         this.receivedPacketDispatcher.setServiceUuid(bikeConfig.getUuid().SPS_SERVICE_UUID);
         this.receivedPacketDispatcher.setTxUuid(bikeConfig.getUuid().SPS_TX_UUID);
         this.receivedPacketDispatcher.setRxUuid(bikeConfig.getUuid().SPS_RX_UUID);
+    }
+
+    public BikeConfig getBikeConfig() {
+        return this.bikeConfig;
     }
 
     public void addCommand(Command command) {
@@ -93,9 +97,6 @@ public class BikeService implements PacketResponseListener, ConnectStateChangeLi
         if (!(0x04 == commandId &&
                 PacketUtil.checkPacketValueContainKey(receivedPacket, 0x85)))
             return false;
-
-        // 从头部更新system_state
-        StateUpdateHelper.updateSysState(bikeState, receivedPacket.getHeader().getSystemState());
 
         // 解析并且更新数据
         List<PacketValue.DataBean> resolvedData = receivedPacket.getPacketValue().getData();
