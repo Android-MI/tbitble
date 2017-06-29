@@ -19,6 +19,7 @@ import com.tbit.tbitblesdk.Bike.services.command.bikecommand.LockCommand;
 import com.tbit.tbitblesdk.Bike.services.command.bikecommand.UnlockCommand;
 import com.tbit.tbitblesdk.Bike.services.command.bikecommand.UpdateCommand;
 import com.tbit.tbitblesdk.Bike.services.command.callback.StateCallback;
+import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.Bike.tasks.BikeConnectHelper;
 import com.tbit.tbitblesdk.Bike.util.BikeUtil;
 import com.tbit.tbitblesdk.Bike.util.PacketUtil;
@@ -252,6 +253,10 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     BikeState getState() {
 //        return bikeBleConnector.getState();
         return bikeService.getBikeState();
+    }
+
+    BikeConfig getConfig() {
+        return bikeService.getBikeConfig();
     }
 
     int getBleConnectionState() {

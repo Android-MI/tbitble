@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk.protocol;
 
-import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+import com.tbit.tbitblesdk.Bike.services.config.ConfigDispatcher;
+import com.tbit.tbitblesdk.Bike.services.config.DefaultConfigDispatcher;
 
 /**
  * Created by Salmon on 2017/3/9 0009.
@@ -42,5 +43,5 @@ public class ProtocolInfo {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-    public static BikeConfig bikeConfig = null;
+    public static ConfigDispatcher configDispatcher = new DefaultConfigDispatcher();
 }

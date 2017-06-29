@@ -34,42 +34,6 @@ public class BControllerState {
     // 运行电流
     private int movingEi;
 
-    public static BControllerState resolve(Byte[] data) {
-        BControllerState controllerState = new BControllerState();
-        if (data == null || data.length < 19)
-            return controllerState;
-
-        byte[] originData = ByteUtil.byteArrayToUnBoxed(data);
-
-        int[] status2 = controllerState.getStatus2();
-        Byte b2 = data[1];
-        byteToBitArray(b2, status2);
-
-        int[] status3 = controllerState.getStatus3();
-        Byte b3 = data[2];
-        byteToBitArray(b3, status3);
-
-        int[] status4 = controllerState.getStatus4();
-        Byte b4 = data[3];
-        byteToBitArray(b4, status4);
-
-        controllerState.setMovingEi(byteArrayToInt(Arrays.copyOfRange(originData, 4, 5)));
-
-        controllerState.setChargeCount(byteArrayToInt(Arrays.copyOfRange(originData, 5, 7)));
-
-        controllerState.setVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 7, 8)));
-
-        controllerState.setHumidity(byteArrayToInt(Arrays.copyOfRange(originData, 8, 9)));
-
-        controllerState.setTotalMillage(byteArrayToInt(Arrays.copyOfRange(originData, 9, 13)));
-
-        controllerState.setSingleMillage(byteArrayToInt(Arrays.copyOfRange(originData, 13, 17)));
-
-        controllerState.setExtVoltage(byteArrayToInt(Arrays.copyOfRange(originData, 17, 19)));
-
-        return controllerState;
-    }
-
     public int getChargeCount() {
         return chargeCount;
     }

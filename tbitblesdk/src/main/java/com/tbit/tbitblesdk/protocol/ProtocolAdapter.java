@@ -1,6 +1,7 @@
 package com.tbit.tbitblesdk.protocol;
 
-import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
+import com.tbit.tbitblesdk.Bike.services.config.ConfigDispatcher;
+import com.tbit.tbitblesdk.Bike.services.config.DefaultConfigDispatcher;
 
 /**
  * Created by Salmon on 2017/4/12 0012.
@@ -14,8 +15,8 @@ public abstract class ProtocolAdapter {
 
     public abstract int getMaxAdEncryptedCount();
 
-    public BikeConfig getConfig() {
-        return null;
+    public ConfigDispatcher getConfigDispatcher() {
+        return new DefaultConfigDispatcher();
     }
 
 }

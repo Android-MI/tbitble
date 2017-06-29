@@ -51,6 +51,10 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         bleClient.getListenerManager().addChangeCharacterListener(this);
     }
 
+    protected final List<PacketResponseListener> getPacketResponseList() {
+        return packetResponseList;
+    }
+
     public void setRxUuid(UUID rxUuid) {
         this.ackSender.setRxUuid(rxUuid);
     }
@@ -58,6 +62,10 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
     public void setServiceUuid(UUID serviceUuid) {
         this.serviceUuid = serviceUuid;
         this.ackSender.setServiceUuid(serviceUuid);
+    }
+
+    protected final AckSender getAckSender() {
+        return ackSender;
     }
 
     public void setTxUuid(UUID txUuid) {
@@ -130,7 +138,7 @@ public class ReceivedPacketDispatcher implements ChangeCharacterListener, Handle
         }
     }
 
-    private void publishData(byte[] data) {
+    protected void publishData(byte[] data) {
         BleLog.log("ReceivedDispatcherPublish", ByteUtil.bytesToHexString(data));
         Packet packet = new Packet(data);
 

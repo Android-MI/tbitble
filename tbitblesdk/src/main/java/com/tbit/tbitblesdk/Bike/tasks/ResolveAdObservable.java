@@ -4,8 +4,10 @@ import com.tbit.tbitblesdk.Bike.ResultCode;
 import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 import com.tbit.tbitblesdk.Bike.model.ParsedAd;
 import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
-import com.tbit.tbitblesdk.Bike.services.config.BikeConfigDispatcher;
+import com.tbit.tbitblesdk.Bike.services.config.DefaultConfigDispatcher;
 import com.tbit.tbitblesdk.Bike.tasks.exceptions.ResultCodeThrowable;
+import com.tbit.tbitblesdk.protocol.ProtocolAdapter;
+import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
@@ -29,7 +31,7 @@ public class ResolveAdObservable implements ObservableOnSubscribe<BikeConfig> {
             ParsedAd ad = ParsedAd.parseData(originData);
             byte[] data = ad.getManufacturer();
             ManufacturerAd manufacturerAd = ManufacturerAd.resolveManufacturerAd(data);
-            BikeConfig bikeConfig = BikeConfigDispatcher.dispatch(manufacturerAd);
+            BikeConfig bikeConfig = ProtocolInfo.configDispatcher.dispatch(manufacturerAd);
             e.onNext(bikeConfig);
         } catch (Exception e1) {
             e.onError(new ResultCodeThrowable("ResolveAdObservable: " + e1.getMessage(),

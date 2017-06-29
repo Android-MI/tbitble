@@ -3,6 +3,7 @@ package com.tbit.tbitblesdk.Bike;
 import android.content.Context;
 
 import com.tbit.tbitblesdk.Bike.services.command.callback.SimpleCommonCallback;
+import com.tbit.tbitblesdk.Bike.services.config.BikeConfig;
 import com.tbit.tbitblesdk.bluetooth.BleGlob;
 import com.tbit.tbitblesdk.Bike.model.BikeState;
 import com.tbit.tbitblesdk.Bike.services.command.Command;
@@ -37,7 +38,7 @@ public class TbitBle {
             ProtocolInfo.packetCrcTable = adapter.getPacketCrcTable();
             ProtocolInfo.adKey = adapter.getAdKey();
             ProtocolInfo.maxEncryptCount = adapter.getMaxAdEncryptedCount();
-            ProtocolInfo.bikeConfig = adapter.getConfig();
+            ProtocolInfo.configDispatcher = adapter.getConfigDispatcher();
         }
     }
 
@@ -194,6 +195,11 @@ public class TbitBle {
     public static void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
         checkInstanceNotNull();
         instance.readRssi(resultCallback, rssiCallback);
+    }
+
+    public static BikeConfig getConfig() {
+        checkInstanceNotNull();
+        return instance.getConfig();
     }
 
     public static boolean hasInitialized() {

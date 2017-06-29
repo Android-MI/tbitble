@@ -4,17 +4,15 @@ import android.util.Log;
 
 import com.tbit.tbitblesdk.Bike.model.ManufacturerAd;
 import com.tbit.tbitblesdk.bluetooth.debug.BleLog;
-import com.tbit.tbitblesdk.protocol.ProtocolInfo;
 
 /**
  * Created by Salmon on 2017/3/20 0020.
  */
 
-public class BikeConfigDispatcher {
+public class DefaultConfigDispatcher implements ConfigDispatcher {
 
-    public static BikeConfig dispatch(ManufacturerAd manufacturerAd) {
-
-        if (ProtocolInfo.bikeConfig != null) return ProtocolInfo.bikeConfig;
+    @Override
+    public BikeConfig dispatch(ManufacturerAd manufacturerAd) {
 
         int hardVersion = manufacturerAd.getHardwareVersion();
 

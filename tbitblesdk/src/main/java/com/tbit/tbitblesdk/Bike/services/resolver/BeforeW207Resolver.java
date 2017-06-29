@@ -7,7 +7,7 @@ import com.tbit.tbitblesdk.Bike.util.StateUpdateHelper;
  * Created by Salmon on 2017/4/27 0027.
  */
 
-public class BeforeW207Resolver implements Resolver {
+public class BeforeW207Resolver implements Resolver<BikeState> {
 
     @Override
     public void resolveAll(BikeState bikeState, Byte[] data) {
@@ -22,5 +22,10 @@ public class BeforeW207Resolver implements Resolver {
     @Override
     public void resolveLocations(BikeState bikeState, Byte[] data) {
         StateUpdateHelper.updateLocation(bikeState, data);
+    }
+
+    @Override
+    public BikeState resolveCustomState(BikeState bikeState) {
+        return bikeState;
     }
 }
