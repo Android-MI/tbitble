@@ -1,5 +1,7 @@
 package com.tbit.tbitblesdk.Bike.model;
 
+import android.text.TextUtils;
+
 import com.tbit.tbitblesdk.bluetooth.util.ByteUtil;
 
 import java.util.Arrays;
@@ -93,6 +95,9 @@ public class ManufacturerAd {
         manufacturerAd.setManuId(new byte[]{data[0]});
         manufacturerAd.setMaskId(new byte[]{data[1]});
         String machineId = ByteUtil.bytesToHexStringWithoutSpace(Arrays.copyOfRange(data, 2, 8));
+        // 由于终端未标识设备编号长度，此处只截取9位数，后期会在maskId中作标识
+        if (!TextUtils.isEmpty(machineId) && machineId.length() >= 9)
+            machineId = machineId.substring(0, 9);
         manufacturerAd.setMachineId(machineId);
         manufacturerAd.setReverse(new byte[]{data[8]});
         manufacturerAd.setHardwareVersion(data[9]);
