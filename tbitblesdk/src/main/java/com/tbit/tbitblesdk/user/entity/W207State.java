@@ -38,7 +38,7 @@ public class W207State {
     private boolean charging;
 
     // 故障码
-    private int[] errorCode = new int[]{0, 0, 0, 0, 0, 0};
+    private int[] errorCode = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     //控制器工作状态
     private int ctrlState;

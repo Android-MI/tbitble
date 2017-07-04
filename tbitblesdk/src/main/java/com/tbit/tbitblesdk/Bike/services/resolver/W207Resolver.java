@@ -97,7 +97,11 @@ public class W207Resolver implements Resolver<W207State> {
         int[] sysState = bikeState.getSystemState();
 
         state.setCharging(sysState[2] == 1);
-        state.setErrorCode(controllerState.getStatus2());
+
+        int[] status2 = controllerState.getStatus2();
+        int[] errCode = new int[]{0,0,0,0,0,0,0,0,0};
+        System.arraycopy(status2, 0, errCode, 0, status2.length);
+        state.setErrorCode(errCode);
 
         state.setChargeCount(controllerState.getChargeCount());
 
