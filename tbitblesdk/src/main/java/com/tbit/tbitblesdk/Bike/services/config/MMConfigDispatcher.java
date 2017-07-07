@@ -26,9 +26,10 @@ public class MMConfigDispatcher implements ConfigDispatcher {
 
         switch (softVersion) {
             case 0:
+            case 1:
                 result = new Config_207();
                 break;
-            case 1:
+            case 2:
                 result = new Config_207_2();
                 break;
             default:

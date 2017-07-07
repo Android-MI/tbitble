@@ -159,6 +159,11 @@ public class TbitBle {
         return instance.getBleConnectionState();
     }
 
+    public static boolean isConnected() {
+        checkInstanceNotNull();
+        return instance.isConnected();
+    }
+
     public static BikeState getState() {
         checkInstanceNotNull();
         return instance.getState();

@@ -260,7 +260,12 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
     }
 
     int getBleConnectionState() {
-        return bleClient.getConnectionState();
+        return bikeService.getBikeConfig() == null ?
+                0 : bleClient.getConnectionState();
+    }
+
+    boolean isConnected() {
+        return getBleConnectionState() > 3;
     }
 
     int startScan(ScannerCallback callback, long timeout) {
@@ -375,7 +380,7 @@ class TbitBleInstance implements ConnectStateChangeListener, Handler.Callback, L
         if (!BleGlob.isBluetoothEnabled()) {
             result = false;
             resultCallback.onResult(ResultCode.BLE_NOT_OPENED);
-        } else if (bleClient.getConnectionState() < 3) {
+        } else if (!isConnected()) {
             result = false;
             resultCallback.onResult(ResultCode.DISCONNECTED);
         } else {
