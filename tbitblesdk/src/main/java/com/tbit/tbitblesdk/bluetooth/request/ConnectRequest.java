@@ -34,6 +34,11 @@ public class ConnectRequest extends BleRequest implements ConnectStateChangeList
     }
 
     @Override
+    protected int getTimeout() {
+        return 7000;
+    }
+
+    @Override
     protected void onPrepare() {
         super.onPrepare();
         bleClient.getListenerManager().addConnectStateChangeListener(this);
