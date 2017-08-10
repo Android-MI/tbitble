@@ -197,6 +197,11 @@ public class TbitBle {
         instance.cancelAllCommand();
     }
 
+    public static boolean atLeastConnectedOnce() {
+        checkInstanceNotNull();
+        return instance.atLeastConnectedOnce();
+    }
+
     public static void readRssi(ResultCallback resultCallback, RssiCallback rssiCallback) {
         checkInstanceNotNull();
         instance.readRssi(resultCallback, rssiCallback);
