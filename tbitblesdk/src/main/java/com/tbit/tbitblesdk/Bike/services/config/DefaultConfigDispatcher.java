@@ -47,22 +47,22 @@ public class DefaultConfigDispatcher implements ConfigDispatcher {
             case 1: {
                 switch (subHardVersion) {
                     case 1:
-                        result = new Config_206();
+                        result = new Config_206(softVersion);
                         break;
                     case 2:
-                        result = new Config_206();
+                        result = new Config_206(softVersion);
                         break;
                     case 3:
                         result = new Config_207();
                         break;
                     default:
-                        result = new Config_206();
+                        result = new Config_206(softVersion);
                         break;
                 }
             }
                 break;
             default:
-                result = new Config_206();
+                result = new Config_206(softVersion);
                 break;
         }
 

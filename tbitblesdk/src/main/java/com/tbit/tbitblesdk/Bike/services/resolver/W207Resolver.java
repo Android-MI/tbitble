@@ -47,8 +47,8 @@ public class W207Resolver implements Resolver<W207State> {
             Byte[] baseStationData = Arrays.copyOfRange(data, 16, 24);
             updateBaseStation(bikeStates, baseStationData);
         }
-        if (data.length >= 44) {
-            Byte[] controllerInfoData = Arrays.copyOfRange(data, 24, 44);
+        if (data.length >= 43) {
+            Byte[] controllerInfoData = Arrays.copyOfRange(data, 24, 43);
             resolveControllerState(bikeStates, controllerInfoData);
         }
     }
@@ -76,6 +76,8 @@ public class W207Resolver implements Resolver<W207State> {
     @Override
     public W207State resolveCustomState(BikeState bikeState) {
         W207State state = new W207State();
+        if (bikeState.getControllerState().getRawData().length < 19)
+            return state;
 
         double[] longitudes = resolveLocations(bikeState.getLocation()[0]);
         double[] latitude = resolveLocations(bikeState.getLocation()[1]);

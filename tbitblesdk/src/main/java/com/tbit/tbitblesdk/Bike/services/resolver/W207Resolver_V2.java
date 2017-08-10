@@ -76,6 +76,8 @@ public class W207Resolver_V2 implements Resolver<W207State> {
     @Override
     public W207State resolveCustomState(BikeState bikeState) {
         W207State state = new W207State();
+        if (bikeState.getControllerState().getRawData().length < 19)
+            return state;
 
         double[] longitudes = W207Resolver.resolveLocations(bikeState.getLocation()[0]);
         double[] latitude = W207Resolver.resolveLocations(bikeState.getLocation()[1]);

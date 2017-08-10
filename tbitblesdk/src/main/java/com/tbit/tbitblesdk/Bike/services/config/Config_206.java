@@ -4,6 +4,7 @@ import com.tbit.tbitblesdk.Bike.services.command.comparator.CommandComparator;
 import com.tbit.tbitblesdk.Bike.services.command.comparator.SequenceIdComparator;
 import com.tbit.tbitblesdk.Bike.services.resolver.BeforeW207Resolver;
 import com.tbit.tbitblesdk.Bike.services.resolver.Resolver;
+import com.tbit.tbitblesdk.Bike.services.resolver.W206Resolver;
 
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public class Config_206 implements BikeConfig {
     private CommandComparator commandComparator;
     private Resolver resolver;
 
-    public Config_206() {
+    public Config_206(int softVersion) {
         uuid = new Uuid();
         uuid.SPS_SERVICE_UUID = UUID.fromString("0000fef6-0000-1000-8000-00805f9b34fb");
         uuid.SPS_TX_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb8");
@@ -25,7 +26,7 @@ public class Config_206 implements BikeConfig {
         uuid.SPS_CTRL_UUID = UUID.fromString("0783b03e-8535-b5a0-7140-a304d2495cb9");
 
         commandComparator = new SequenceIdComparator();
-        resolver = new BeforeW207Resolver();
+        resolver = new W206Resolver(softVersion);
     }
 
     @Override

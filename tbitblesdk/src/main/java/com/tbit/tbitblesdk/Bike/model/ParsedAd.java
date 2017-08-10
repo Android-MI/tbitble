@@ -101,7 +101,7 @@ public class ParsedAd {
                     byte[] data = new byte[length];
                     buffer.get(data, 0, length);
                     parsedAd.manufacturer = data;
-                    length -= 2;
+                    length = 0;
                     break;
                 default: // skip
                     break;
